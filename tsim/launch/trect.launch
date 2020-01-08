@@ -1,0 +1,11 @@
+<launch>
+  <!-- turtlesim -->
+  <node name="roaming_turtle" pkg="turtlesim" type="turtlesim_node" />
+
+  <!-- turtle_rect -->
+  <!-- <node name="turtle_rect" pkg="tsim" type="tsim_node" /> -->
+
+  <!-- load trajectory parameters -->
+  <rosparam command="load" file="$(find tsim)/config/turtle_params.yaml" />
+
+</launch>
