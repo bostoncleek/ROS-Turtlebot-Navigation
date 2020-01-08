@@ -86,14 +86,13 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   pose_sub_ = node_handle_.subscribe(pose_topic, 10, &Control::poseCallBack, this);
 
   // publish velocity
-  vel_pub_ = node_handle_.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
+  vel_pub_ = node_handle_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
 
   // publish pose error
   error_pub_ = node_handle_.advertise<tsim::PoseError>("pose_error", 10);
 
   // reset trajectory service
   traj_service_ = node_handle_.advertiseService("traj_reset", &Control::trajCallBack, this);
-
 
   // teleport client
   tele_client_ = node_handle_.serviceClient<turtlesim::TeleportAbsolute>("/turtle1/teleport_absolute");
@@ -118,36 +117,40 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   ROS_INFO("rot_vel: %d", rot_vel_);
   ROS_INFO("frequency: %d", frequency_);
 
+  //ros::Duration(0.5).sleep();
+
+  ros::service::waitForService("/turtle1/set_pen", -1);
+  ros::service::waitForService("/turtle1/teleport_absolute", -1);
+
+
   // place turtle at lower left of rectangle
-  if(ros::service::exists("/turtle1/set_pen", true) and ros::service::exists("/turtle1/teleport_absolute", true))
-  {
+  // if(ros::service::exists("/turtle1/set_pen", true) and ros::service::exists("/turtle1/teleport_absolute", true))
+  // {
     // turn off pen
-    pen_srv_.request.r = 0;
-    pen_srv_.request.g = 0;
-    pen_srv_.request.b = 0;
-    pen_srv_.request.width = 0;
-    pen_srv_.request.off = 1;
+  pen_srv_.request.r = 0;
+  pen_srv_.request.g = 0;
+  pen_srv_.request.b = 0;
+  pen_srv_.request.width = 0;
+  pen_srv_.request.off = 1;
 
-    pen_client_.call(pen_srv_);
+  pen_client_.call(pen_srv_);
 
-    // teleport
-    tele_srv_.request.x = x_;
-    tele_srv_.request.y = y_;
-    tele_srv_.request.theta = 0;
+  // teleport
+  tele_srv_.request.x = x_;
+  tele_srv_.request.y = y_;
+  tele_srv_.request.theta = 0;
 
-    tele_client_.call(tele_srv_);
+  tele_client_.call(tele_srv_);
 
-    // turn pen back on
-    pen_srv_.request.r = 255;
-    pen_srv_.request.g = 255;
-    pen_srv_.request.b = 255;
-    pen_srv_.request.width = 2;
-    pen_srv_.request.off = 0;
+  // turn pen back on
+  pen_srv_.request.r = 255;
+  pen_srv_.request.g = 255;
+  pen_srv_.request.b = 255;
+  pen_srv_.request.width = 2;
+  pen_srv_.request.off = 0;
 
-    pen_client_.call(pen_srv_);
-    //ros::Duration(0.5).sleep();
-
-  }
+  pen_client_.call(pen_srv_);
+  // }
 
 
   ROS_INFO("Successfully launched node.");
@@ -175,7 +178,6 @@ void Control::controlLoop()
   ctr_ = 1;
   while(ros::ok())
   {
-
     // current goal
     int x_pt = waypoints[ctr_][0];
     int y_pt = waypoints[ctr_][1];

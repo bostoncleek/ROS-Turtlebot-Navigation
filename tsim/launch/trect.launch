@@ -3,7 +3,9 @@
   <node name="roaming_turtle" pkg="turtlesim" type="turtlesim_node" />
 
   <!-- turtle_rect -->
-  <!-- <node name="turtle_rect" pkg="tsim" type="tsim_node" /> -->
+  <node name="turtle_rect" pkg="tsim" type="node" output="screen" >
+    <remap from="cmd_vel" to="turtle1/cmd_vel" />
+  </node>
 
   <!-- load trajectory parameters -->
   <rosparam command="load" file="$(find tsim)/config/turtle_params.yaml" />
