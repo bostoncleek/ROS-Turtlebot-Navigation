@@ -134,36 +134,18 @@ void Control::controlLoop()
   int waypoints[4][2] = {{x_, y_}, {x_ + width_, y_},
                          {x_ + width_, y_ + height_}, {x_, y_ + height_}};
 
-  float heading[4] = {0, M_PI/2, -M_PI, -M_PI/2};
-
   int ctr = 1;
   while(ros::ok())
   {
-
     // current goal
     int x_pt = waypoints[ctr][0];
     int y_pt = waypoints[ctr][1];
-    float h_pt;
-
-    if (ctr == 0)
-      h_pt = heading[3];
-    else
-      h_pt = heading[ctr-1];
 
     // bearing towards goal
     float b = atan2(y_pt - pose_.y, x_pt - pose_.x);
 
-    ROS_INFO("counter: %d", ctr);
-    //ROS_INFO("Goal : %d, %d, %f", x_pt, y_pt, h_pt);
-    ROS_INFO("Goal : %d, %d, %f", x_pt, y_pt, b);
-
-
     // heading error
     float h_err = b - pose_.theta;
-    //float h_err = h_pt - pose_.theta;
-
-
-    cout << h_err << endl;
 
     // heading within tol and move toward goal
     if (abs(h_err) < h_tol_)
@@ -176,7 +158,7 @@ void Control::controlLoop()
       twist_msg.angular.z = 0;
     }
 
-    // turn and then drive straight
+    // turn
     else
     {
       twist_msg.linear.x = 0;
@@ -185,27 +167,15 @@ void Control::controlLoop()
       twist_msg.angular.x = 0;
       twist_msg.angular.y = 0;
 
-      //twist_msg.angular.z = 0.5 * h_err;
+      // wrap error to 0 -> 2pi
+      if (h_err < 0)
+        h_err += 2*M_PI;
 
-      if (h_err > 0)
+      if (h_err <= M_PI and h_err >= 0 )
         twist_msg.angular.z = rot_vel_;
       else
         twist_msg.angular.z = -rot_vel_;
     }
-
-    // twist_msg.linear.x = trans_vel_;
-    // twist_msg.linear.y = 0;
-    // twist_msg.linear.z = 0;
-    // twist_msg.angular.x = 0;
-    // twist_msg.angular.y = 0;
-    //
-    // //twist_msg.angular.z = 0.5 * h_err;
-    //
-    // // if (h_err > 0)
-    // //   twist_msg.angular.z = rot_vel_;
-    // // else
-    // //   twist_msg.angular.z = -rot_vel_;
-
 
     // check if goal reached
     float d = sqrt(pow(x_pt - pose_.x, 2) + pow(y_pt - pose_.y, 2));
@@ -216,10 +186,7 @@ void Control::controlLoop()
 
       // start back at first goal
       if (ctr > 3)
-      {
-        cout << "set back to 0" << endl;
         ctr = 0;
-      }
     }
 
     // publish new control
@@ -239,8 +206,6 @@ bool Control::readParameters(string subscriber_topic)
 
 void Control::poseCallBack(const turtlesim::Pose::ConstPtr& pose_msg)
 {
-  // pose_.x = pose_msg->x;
-  // pose_.y = pose_msg->y;
   pose_ = *pose_msg;
 }
 
