@@ -4,6 +4,7 @@
 #include <turtlesim/SetPen.h>
 #include <turtlesim/TeleportAbsolute.h>
 #include <geometry_msgs/Twist.h>
+#include <std_srvs/Empty.h>
 //#include <geometry_msgs/Vector3.h>
 #include <string>
 #include <vector>
@@ -24,9 +25,11 @@ public:
 
 private:
   bool readParameters(string subscriber_topic);
+  bool trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
   void poseCallBack(const turtlesim::Pose::ConstPtr& pose_msg);
 
   int x_, y_, width_, height_, trans_vel_, rot_vel_, frequency_;
+  int ctr_;
   float h_tol_, p_tol_;
 
   turtlesim::Pose pose_;
@@ -34,6 +37,9 @@ private:
   ros::NodeHandle &node_handle_;
   ros::Subscriber pose_sub_;
   ros::Publisher vel_pub_;
+
+  ros::ServiceServer traj_service_;
+
   ros::ServiceClient pen_client_;
   ros::ServiceClient tele_client_;
 
@@ -44,7 +50,6 @@ private:
 
 Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
 {
-
   string pose_topic = "/turtle1/pose";
   h_tol_ = 0.175;
   p_tol_ = 0.1;
@@ -61,6 +66,8 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   // publish velocity
   vel_pub_ = node_handle_.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
 
+  // reset trajectory service
+  traj_service_ = node_handle_.advertiseService("traj_reset", &Control::trajCallBack, this);
 
   // read in parameters from server
   node_handle.getParam("/x", x_);
@@ -81,13 +88,13 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
 
 
   // teleport client
-  ros::ServiceClient tele_client_ = node_handle_.serviceClient<turtlesim::TeleportAbsolute>("/turtle1/teleport_absolute");
+  tele_client_ = node_handle_.serviceClient<turtlesim::TeleportAbsolute>("/turtle1/teleport_absolute");
   tele_srv_.request.x = x_;
   tele_srv_.request.y = y_;
   tele_srv_.request.theta = 0;
 
   // pen client
-  ros::ServiceClient pen_client_ = node_handle_.serviceClient<turtlesim::SetPen>("/turtle1/set_pen");
+  pen_client_ = node_handle_.serviceClient<turtlesim::SetPen>("/turtle1/set_pen");
   pen_srv_.request.r = 0;
   pen_srv_.request.g = 0;
   pen_srv_.request.b = 0;
@@ -134,12 +141,12 @@ void Control::controlLoop()
   int waypoints[4][2] = {{x_, y_}, {x_ + width_, y_},
                          {x_ + width_, y_ + height_}, {x_, y_ + height_}};
 
-  int ctr = 1;
+  ctr_ = 1;
   while(ros::ok())
   {
     // current goal
-    int x_pt = waypoints[ctr][0];
-    int y_pt = waypoints[ctr][1];
+    int x_pt = waypoints[ctr_][0];
+    int y_pt = waypoints[ctr_][1];
 
     // bearing towards goal
     float b = atan2(y_pt - pose_.y, x_pt - pose_.x);
@@ -181,12 +188,12 @@ void Control::controlLoop()
     float d = sqrt(pow(x_pt - pose_.x, 2) + pow(y_pt - pose_.y, 2));
     if (d < p_tol_)
     {
-      ROS_INFO("Goal reached: %d", ctr);
-      ctr++;
+      ROS_INFO("Goal reached: %d", ctr_);
+      ctr_++;
 
       // start back at first goal
-      if (ctr > 3)
-        ctr = 0;
+      if (ctr_ > 3)
+        ctr_ = 0;
     }
 
     // publish new control
@@ -201,6 +208,38 @@ void Control::controlLoop()
 bool Control::readParameters(string subscriber_topic)
 {
   return (!node_handle_.getParam("subscriber_topic", subscriber_topic)) ? true : false;
+}
+
+
+bool Control::trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+{
+  // lift pen
+  pen_srv_.request.r = 0;
+  pen_srv_.request.g = 0;
+  pen_srv_.request.b = 0;
+  pen_srv_.request.width = 0;
+  pen_srv_.request.off = 1;
+
+  // turn off pen
+  pen_client_.call(pen_srv_);
+
+  // teleport
+  tele_client_.call(tele_srv_);
+
+  // turn pen back on
+  pen_srv_.request.r = 255;
+  pen_srv_.request.g = 255;
+  pen_srv_.request.b = 255;
+  pen_srv_.request.width = 2;
+  pen_srv_.request.off = 0;
+
+  pen_client_.call(pen_srv_);
+
+  // set the state back to the forst goal
+  ctr_ = 1;
+
+  return true;
+
 }
 
 
