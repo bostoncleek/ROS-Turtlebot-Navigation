@@ -1,4 +1,8 @@
 <launch>
+
+  <!-- option to use rqt_plot -->
+  <arg name="plot_gui" default="false" doc="option to use rqt_plot to show pose error"/>
+
   <!-- turtlesim -->
   <node name="roaming_turtle" pkg="turtlesim" type="turtlesim_node" />
 
@@ -9,5 +13,10 @@
 
   <!-- load trajectory parameters -->
   <rosparam command="load" file="$(find tsim)/config/turtle_params.yaml" />
+
+
+  <group if="$(arg plot_gui)">
+    <node name="position_plot" pkg="rqt_plot" type="rqt_plot" args="pose_error/x_error pose_error/y_error pose_error/theta_error" />
+  </group>
 
 </launch>
