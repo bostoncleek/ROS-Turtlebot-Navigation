@@ -48,6 +48,9 @@ public:
   /// \returns void
   void controlLoop();
 
+  void FeedForward();
+
+
 private:
 
   /// \brief tests if topics subscribed to are read
@@ -59,7 +62,7 @@ private:
   /// \param request - Empty request
   /// \param response - Empty response
   /// \returns bool
-  bool trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool trajCallBack(std_srvs::Empty::Request&, std_srvs::Empty::Response& );
 
   /// \brief updates the pose
   /// \param pose_msg - constant pointer to turtle Pose
@@ -75,6 +78,7 @@ private:
   int rot_vel_;         // angular velocity
   int frequency_;       // publishing rate of controls
   int ctr_;             // state for which corner the turtle is at
+  int iter_;
 
   float h_tol_;         // heading tolerance of turtle
   float p_tol_;         // poistion tolerance of turtle
@@ -303,13 +307,135 @@ void Control::controlLoop()
 }
 
 
+void Control::FeedForward()
+{
+
+  ros::Rate loop_rate(frequency_);
+
+  geometry_msgs::Twist twist_msg;
+  tsim::PoseError error_msg;
+
+
+  float horiz_time = (float)(width_) / (float)(trans_vel_);
+  float vert_time = (float)(height_) / (float)(trans_vel_);
+  float turn_time = (M_PI/2) / (float)(rot_vel_);
+  float curr_time = 0;
+
+
+  string states[3] = {"Horiz", "Turn", "Vert"};
+  string st = "Horiz";
+  string prev_st = "Turn";
+
+  iter_ = 0;
+  while(ros::ok())
+  {
+    // // current goal
+    // int x_pt = waypoints[ctr_][0];
+    // int y_pt = waypoints[ctr_][1];
+
+    if (st == "Horiz" and curr_time <= horiz_time)
+    {
+      twist_msg.linear.x = trans_vel_;
+      twist_msg.linear.y = 0;
+      twist_msg.linear.z = 0;
+      twist_msg.angular.x = 0;
+      twist_msg.angular.y = 0;
+      twist_msg.angular.z = 0;
+      ROS_INFO("Horiz");
+    }
+
+    else if (st == "Turn" and curr_time <= turn_time)
+    {
+      twist_msg.linear.x = 0;
+      twist_msg.linear.y = 0;
+      twist_msg.linear.z = 0;
+      twist_msg.angular.x = 0;
+      twist_msg.angular.y = 0;
+      twist_msg.angular.z = rot_vel_;
+      ROS_INFO("Turn");
+    }
+
+    else if (st == "Vert" and curr_time <= vert_time)
+    {
+      twist_msg.linear.x = trans_vel_;
+      twist_msg.linear.y = 0;
+      twist_msg.linear.z = 0;
+      twist_msg.angular.x = 0;
+      twist_msg.angular.y = 0;
+      twist_msg.angular.z = 0;
+      ROS_INFO("Vert");
+    }
+
+    if (st == "Horiz" and prev_st == "Turn" and curr_time >= horiz_time)
+    {
+      st = "Turn";
+      prev_st = "Horiz";
+      iter_ = 0;
+    }
+
+    else if (st == "Turn" and prev_st == "Horiz" and curr_time >= turn_time)
+    {
+      st = "Vert";
+      prev_st = "Turn";
+      iter_ = 0;
+    }
+
+
+    else if (st == "Vert" and prev_st == "Turn" and curr_time >= vert_time)
+    {
+      st = "Turn";
+      prev_st = "Vert";
+      iter_ = 0;
+    }
+
+    else if (st == "Turn" and prev_st == "Vert" and curr_time >= turn_time)
+    {
+      st = "Horiz";
+      prev_st = "Turn";
+      iter_ = 0;
+    }
+
+
+    // wait for turtle to be in correct starting position
+    // publish new control
+    if (!init_position_ and pose_.x == x_ and pose_.y == y_ and pose_.theta == 0)
+    {
+      ROS_INFO("At Starting position");
+      init_position_ = true;
+      iter_ = 0;
+      st = "Horiz";
+      prev_st = "Turn";
+      // wait for velocities to publish to 0
+      // else turtle may keep moving once teleported
+      ros::Duration(0.5).sleep();
+    }
+
+    else if (init_position_)
+      vel_pub_.publish(twist_msg);
+
+    // publish the error in pose
+    error_pub_.publish(error_msg);
+
+
+    iter_++;
+    curr_time = (float)(iter_) / (float)(frequency_);
+
+    ros::spinOnce();
+    loop_rate.sleep();
+
+  }
+}
+
+
+
+
 bool Control::readParameters(string subscriber_topic)
 {
   return (!node_handle_.getParam("subscriber_topic", subscriber_topic)) ? true : false;
 }
 
 
-bool Control::trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+bool Control::trajCallBack(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
 
   // publish no controls to make sure turtle does not
@@ -369,7 +495,9 @@ int main(int argc, char** argv)
   ros::NodeHandle node_handle;//("~");
 
   Control control(node_handle);
-  control.controlLoop();
+  //control.controlLoop();
+
+  control.FeedForward();
 
   ros::spin();
   return 0;
