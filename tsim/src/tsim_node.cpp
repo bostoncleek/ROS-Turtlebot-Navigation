@@ -1,14 +1,13 @@
-//  \file
-
-
-
-
-
-
-
-// FILL THS OUT !!!!!!!!!!!!!
-
-
+/// \file   tsim_node.cpp
+/// \brief  Describes a recatngular trajectory for a turtle
+///
+/// PUBLISHES:
+///     cmd_vel (Twist): linear and angular velocity controls
+///     pose_error (PoseError): error in turtles pose
+/// SUBSCRIBES:
+///     turtlesim/Pose (Pose): pose of turtle
+/// SERVICES:
+///     traj_reset (Empty): resets turtle back to start
 
 
 
@@ -19,8 +18,6 @@
 #include <turtlesim/TeleportAbsolute.h>
 #include <geometry_msgs/Twist.h>
 #include <std_srvs/Empty.h>
-//#include <std_msgs/String.h>
-//#include <geometry_msgs/Vector3.h>
 #include "tsim/PoseError.h"
 
 #include <string>
@@ -33,38 +30,88 @@ using std::string;
 using std::vector;
 
 
+/// The Control class provides the control loop that governs the
+/// behavior of the turtle following a rectangular trajectory
+
 class Control
 {
 public:
+
+  /// \brief class constructor
+  /// \param node_handle - the NodeHandle
   Control(ros::NodeHandle &node_handle);
+
+  /// \brief destructor
   ~Control();
+
+  /// \brief control loop
+  /// \returns void
   void controlLoop();
 
 private:
+
+  /// \brief tests if topics subscribed to are read
+  /// \param subscriber_topic - topic subscribed to
+  /// \returns bool
   bool readParameters(string subscriber_topic);
+
+  /// \brief resets turtle to
+  /// \param request - Empty request
+  /// \param response - Empty response
+  /// \returns bool
   bool trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+
+  /// \brief updates the pose
+  /// \param pose_msg - constant pointer to turtle Pose
+  /// \returns void
   void poseCallBack(const turtlesim::Pose::ConstPtr& pose_msg);
 
-  int x_, y_, width_, height_, trans_vel_, rot_vel_, frequency_;
-  int ctr_;
-  float h_tol_, p_tol_;
-  bool init_position_;
 
+  int x_;               // x - lower left corner of rectangle
+  int y_;               // y - lower left corner of rectangle
+  int width_;           // width of rectangle
+  int height_;          // height of rectangle
+  int trans_vel_;       // linear velocity
+  int rot_vel_;         // angular velocity
+  int frequency_;       // publishing rate of controls
+  int ctr_;             // state for which corner the turtle is at
+
+  float h_tol_;         // heading tolerance of turtle
+  float p_tol_;         // poistion tolerance of turtle
+  bool init_position_;  // turtle starts from the beginning
+
+
+  // error in pose
   tsim::PoseError error_msg_;
 
+  // pose of turtle
   turtlesim::Pose pose_;
 
+  // handle to node
   ros::NodeHandle &node_handle_;
+
+  // subscriber to pose topic
   ros::Subscriber pose_sub_;
+
+  // publisher for velocity controls
   ros::Publisher vel_pub_;
+
+  // publisher for error in pose
   ros::Publisher error_pub_;
 
+  // service for starting at the beginning of rectangle
   ros::ServiceServer traj_service_;
 
+  // set turtle's pen turtlesim service
   ros::ServiceClient pen_client_;
+
+  // teleport turtle turtlesim service
   ros::ServiceClient tele_client_;
 
+  // teleport service object
   turtlesim::TeleportAbsolute tele_srv_;
+
+  // set pen service object
   turtlesim::SetPen pen_srv_;
 };
 
@@ -117,16 +164,13 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   ROS_INFO("rot_vel: %d", rot_vel_);
   ROS_INFO("frequency: %d", frequency_);
 
-  //ros::Duration(0.5).sleep();
-
+  // wait for servies to be availible
   ros::service::waitForService("/turtle1/set_pen", -1);
   ros::service::waitForService("/turtle1/teleport_absolute", -1);
 
 
   // place turtle at lower left of rectangle
-  // if(ros::service::exists("/turtle1/set_pen", true) and ros::service::exists("/turtle1/teleport_absolute", true))
-  // {
-    // turn off pen
+  // turn off pen
   pen_srv_.request.r = 0;
   pen_srv_.request.g = 0;
   pen_srv_.request.b = 0;
@@ -150,7 +194,6 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   pen_srv_.request.off = 0;
 
   pen_client_.call(pen_srv_);
-  // }
 
 
   ROS_INFO("Successfully launched node.");
@@ -269,6 +312,8 @@ bool Control::readParameters(string subscriber_topic)
 bool Control::trajCallBack(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
 
+  // publish no controls to make sure turtle does not
+  // start moving when it spawns
   geometry_msgs::Twist twist_msg;
   twist_msg.linear.x = 0;
   twist_msg.linear.y = 0;
@@ -314,9 +359,6 @@ void Control::poseCallBack(const turtlesim::Pose::ConstPtr& pose_msg)
 {
   pose_ = *pose_msg;
 }
-
-
-
 
 
 
