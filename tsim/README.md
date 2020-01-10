@@ -2,7 +2,7 @@
 ## Boston Cleek
 
 # Description
-The tsim packages uses feedforward control to move the turtle in turtlesim gui
+The tsim packages uses feedforward control or bang-bang control to move the turtle in turtlesim gui
 in a rectangular trajectory. The `turtle_rect` node publishes controls on `cmd_vel` and the errors
 in the pose are published on `pose_error`. The service `traj_reset` restarts the
 turtle back at the lower left corner.
@@ -31,16 +31,22 @@ rosservice call /traj_reset
 
 # Results
 
-<!-- <p align="center">
-  <img src= "images/t1.png" width="300" height="300">
-</p> -->
+Here is a [video of the turtle](https://youtu.be/xHwiSVRySiA) completing one cycle around the trajectory and near the end I call the `/traj_reset` service.
 
-Error plot of one full trajectory. The oscillation is due to the turtle overshooting the heading at the top of the rectangle.
+Error plot of one full trajectory using the feedforward controller.
 
 <p align="center">
-  <img src= "images/rqt.png" width="600" height="200">
+  <img src= "images/err.png" width="600" height="200">
 </p>
 
+The turtle completing one trajectory using feedforward control.
+
 <p align="center">
-  <img src= "images/tsim.gif" width="300" height="300">
+  <img src= "images/ff.gif" width="300" height="300">
+</p>
+
+The turtle completing one trajectory using bang-bang control.
+
+<p align="center">
+  <img src= "images/bb.gif" width="300" height="300">
 </p>
