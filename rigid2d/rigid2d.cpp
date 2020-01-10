@@ -29,19 +29,19 @@ std::istream & operator>>(std::istream & is, Vector2D & v)
 
 Transform2D::Transform2D()
 {
-  theta = 0;
-  ctheta = 1;
-  stheta = 0;
-  x = 0;
-  y = 0;
+  theta = 0.0;
+  ctheta = 1.0;
+  stheta = 0.0;
+  x = 0.0;
+  y = 0.0;
 }
 
 
 Transform2D::Transform2D(const Vector2D & trans)
 {
-  theta = 0;
-  ctheta = 0;
-  stheta = 0;
+  theta = 0.0;
+  ctheta = 0.0;
+  stheta = 0.0;
   x = trans.x;
   y = trans.y;
 }
@@ -52,8 +52,8 @@ Transform2D::Transform2D(double radians)
   theta = radians;
   ctheta = std::cos(theta);
   stheta = std::sin(theta);
-  x = 0;
-  y = 0;
+  x = 0.0;
+  y = 0.0;
 }
 
 
@@ -83,11 +83,19 @@ Transform2D Transform2D::inv() const
   Transform2D trans2d(theta, ctheta, stheta, x, y);
 
   // R^T flip sign in sin
-  trans2d.stheta = -stheta;
+  trans2d.stheta = -1.0 * stheta;
+
+  // Vector2D v;
+  // v.x = this->x;
+  // v.y = this->y;
+  //
+  // v = this->operator()(v);
 
   // p' = -R^T * p
-  trans2d.x = -trans2d.ctheta * x - trans2d.stheta * y;
-  trans2d.y =  trans2d.stheta * x - trans2d.ctheta * y;
+  trans2d.x = -(trans2d.ctheta * x - trans2d.stheta * y);
+  trans2d.y = -(trans2d.stheta * x + trans2d.ctheta * y);
+  // trans2d.x = v.x;
+  // trans2d.y = v.y;
 
   return trans2d;
 }
@@ -98,11 +106,11 @@ Transform2D Transform2D::inv() const
 
 Transform2D::Transform2D(double theta, double ctheta, double stheta, double x, double y)
 {
-  theta = theta;
-  ctheta = ctheta;
-  stheta = stheta;
-  x = x;
-  y = y;
+  this->theta = theta;
+  this->ctheta = ctheta;
+  this->stheta = stheta;
+  this->x = x;
+  this->y = y;
 }
 
 
@@ -119,6 +127,7 @@ Transform2D & Transform2D::operator*=(const Transform2D & rhs)
   // set new transform
   ctheta = c_new;
   stheta = s_new;
+  theta = std::acos(ctheta);
 
   x = x_new;
   y = y_new;
@@ -137,9 +146,36 @@ std::ostream & operator<<(std::ostream & os, const Transform2D & tf)
 }
 
 
+std::istream & operator>>(std::istream & is, Transform2D & tf)
+{
+  double deg_angle;
+  Vector2D v;
 
+  std::cout << "Enter anlge in degrees" << std::endl;
+  is >> deg_angle;
 
+  std::cout << "Enter x component" << std::endl;
+  is >> v.x;
+
+  std::cout << "Enter y component" << std::endl;
+  is >> v.y;
+
+  Transform2D tf_temp(v, deg2rad(deg_angle));
+  tf = tf_temp;
+
+  return is;
 }
+
+
+Transform2D operator*(Transform2D lhs, const Transform2D & rhs)
+{
+  // get access to lhs private members
+  return lhs.operator*=(rhs);
+}
+
+
+
+} // end namespace
 
 
 
