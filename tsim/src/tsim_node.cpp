@@ -33,7 +33,7 @@ using std::string;
 using std::vector;
 
 
-/// The Control class provides the control loop that governs the
+/// \brief The Control class provides the control loop that governs the
 /// behavior of the turtle following a rectangular trajectory
 
 class Control
@@ -333,6 +333,7 @@ void Control::FeedForward()
   string st = "Horiz";
   string prev_st = "Turn";
 
+  // pose estimate
   float x = x_;
   float y = y_;
   float theta = 0;
@@ -408,6 +409,7 @@ void Control::FeedForward()
       iter_ = 0;
     }
 
+    // update pose estimate
     x += twist_msg.linear.x * std::cos(theta) * 1.0 / (float) frequency_;
     y += twist_msg.linear.x * std::sin(theta) * 1.0 / (float) frequency_;
     theta += twist_msg.angular.z * 1.0 / (float) frequency_;
@@ -426,7 +428,6 @@ void Control::FeedForward()
 
 
     // wait for turtle to be in correct starting position
-    // publish new control
     if (!init_position_ and pose_.x == x_ and pose_.y == y_ and pose_.theta == 0)
     {
       ROS_INFO("At Starting position");
@@ -441,9 +442,9 @@ void Control::FeedForward()
 
     }
 
+    // publish new control
     else if (init_position_)
       vel_pub_.publish(twist_msg);
-
 
     // publish the error in pose
     error_pub_.publish(error_msg);
@@ -457,8 +458,6 @@ void Control::FeedForward()
 
   }
 }
-
-
 
 
 bool Control::readParameters(string subscriber_topic)
