@@ -1,0 +1,34 @@
+----------------------
+Enter T_ab
+Enter angle in degrees
+Enter x component
+Enter y component
+Enter T_bc
+Enter angle in degrees
+Enter x component
+Enter y component
+----------------------
+----------------------
+T_ab: theta (degrees): 90 x: 1 y: 1
+T_bc: theta (degrees): 0 x: 2 y: 2
+T_ac: theta (degrees): 90 x: -1 y: 3
+T_ca: theta (degrees): 90 x: -3 y: -1
+----------------------
+----------------------
+Enter a vector
+Enter x component
+Enter y component
+Enter the frame: 'a', 'b', 'c'
+Vector in frame a: [0 6]
+Vector in frame b: [6 6]
+Vector in frame c: [3 3]
+----------------------
+----------------------
+Enter a twist
+Enter angular component
+Enter linear velocity x component
+Enter linear velocity y component
+Twist in frame a: [1 1 1]
+Twist in frame b: [1 4 4]
+Twist in frame c: [1 2 2]
+----------------------
