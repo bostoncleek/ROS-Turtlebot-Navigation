@@ -122,17 +122,9 @@ Transform2D Transform2D::inv() const
   // R^T flip sign in sin
   trans2d.stheta = -1.0 * stheta;
 
-  // Vector2D v;
-  // v.x = this->x;
-  // v.y = this->y;
-  //
-  // v = this->operator()(v);
-
   // p' = -R^T * p
   trans2d.x = -(trans2d.ctheta * x - trans2d.stheta * y);
   trans2d.y = -(trans2d.stheta * x + trans2d.ctheta * y);
-  // trans2d.x = v.x;
-  // trans2d.y = v.y;
 
   return trans2d;
 }
