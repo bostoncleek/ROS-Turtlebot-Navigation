@@ -81,6 +81,14 @@ namespace rigid2d
     };
 
 
+    /// \brief A 2-Dimensional normal vector
+    struct NormalVec2D
+    {
+      double nx = 0.0;
+      double ny = 0.0;
+    };
+
+
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
     /// v - the vector to print
@@ -111,6 +119,11 @@ namespace rigid2d
     /// twist [out] - output twist
     std::istream & operator>>(std::istream & is, Twist2D & twist);
 
+
+    /// \brief normalize a Vector2D
+    /// \param v - the vector to normalize
+    /// \return a normalize vector in the same coordinate system
+    NormalVec2D normalize(const Vector2D & v);
 
 
     /// \brief a rigid body transformation in 2 dimensions
