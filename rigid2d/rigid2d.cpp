@@ -49,7 +49,16 @@ std::istream & operator>>(std::istream & is, Twist2D & twist)
 }
 
 
+NormalVec2D normalize(const Vector2D & v)
+{
+  NormalVec2D nv;
 
+  double mag = std::sqrt(std::pow(v.x, 2) + std::pow(v.y, 2));
+  nv.nx = v.x / mag;
+  nv.ny = v.y / mag;
+
+  return nv;
+}
 
 
 // public
@@ -157,21 +166,27 @@ Transform2D::Transform2D(double theta, double ctheta, double stheta, double x, d
 
 Transform2D & Transform2D::operator*=(const Transform2D & rhs)
 {
-  // multiply rotations
-  double c_new = ctheta * rhs.ctheta - stheta * rhs.stheta;
-  double s_new = stheta * rhs.ctheta + ctheta * rhs.stheta;
+  // // multiply rotations
+  // double c_new = ctheta * rhs.ctheta - stheta * rhs.stheta;
+  // double s_new = stheta * rhs.ctheta + ctheta * rhs.stheta;
+  //
+  // // multiply rotation by translation
+  // double x_new = ctheta * rhs.x - stheta * rhs.y + x;
+  // double y_new = stheta * rhs.x + ctheta * rhs.y + y;
+  //
+  // // set new transform
+  // ctheta = c_new;
+  // stheta = s_new;
+  // theta = std::acos(ctheta);
+  //
+  // x = x_new;
+  // y = y_new;
 
-  // multiply rotation by translation
-  double x_new = ctheta * rhs.x - stheta * rhs.y + x;
-  double y_new = stheta * rhs.x + ctheta * rhs.y + y;
-
-  // set new transform
-  ctheta = c_new;
-  stheta = s_new;
-  theta = std::acos(ctheta);
-
-  x = x_new;
-  y = y_new;
+  x = ctheta * rhs.x - stheta * rhs.y + x;
+  y = stheta * rhs.x + ctheta * rhs.y + y;
+  theta = std::acos(ctheta * rhs.ctheta - stheta * rhs.stheta);
+  ctheta = std::cos(theta);
+  stheta = std::sin(theta);
 
   return *this;
 }
