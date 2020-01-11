@@ -1,4 +1,7 @@
 
+
+// Doxygen comments !!!!!!!!!!!!
+
 #include "rigid2d.hpp"
 #include <iostream>
 
@@ -9,6 +12,7 @@ int main()
   rigid2d::Transform2D Tab;
   rigid2d::Transform2D Tbc;
   rigid2d::Vector2D v;
+  rigid2d::Twist2D t;
   char frame;
 
   // compute these outputs
@@ -25,6 +29,8 @@ int main()
   rigid2d::operator>>(std::cin, Tbc);
   std::cout << "----------------------" << std::endl;
 
+
+  std::cout << "----------------------" << std::endl;
   std::cout << "T_ab: ";
   rigid2d::operator<<(std::cout, Tab);
 
@@ -51,52 +57,154 @@ int main()
   std::cout << "T_ca: ";
   rigid2d::operator<<(std::cout, Tca);
   ////////////////////////////////
+  std::cout << "----------------------" << std::endl;
 
 
-  // vector in desired frame
+  std::cout << "----------------------" << std::endl;
+  ////////////////////////////////
+  // vector in frame
   std::cout << "Enter a vector"<< std::endl;
   rigid2d::operator>>(std::cin, v);
 
   std::cout << "Enter a character defining the frame the vector is in: 'a', 'b', 'c'" << std::endl;
   std::cin >> frame;
 
+  if (frame == 'a')
+  {
+    // in frame a
+    std::cout << "Vector in frame a: ";
+    rigid2d::operator<<(std::cout, v);
+
+    // in frame b
+    std::cout << "Vector in frame b: ";
+    // rotate
+    rigid2d::Vector2D vb = Tba.operator()(v);
+    vb.x += v.x;
+    vb.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, vb);
+
+    // in frame c
+    std::cout << "Vector in frame c: ";
+    // rotate
+    rigid2d::Vector2D vc = Tca.operator()(v);
+    vc.x += v.x;
+    vc.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, vc);
+  }
+
+
+  else if (frame == 'b')
+  {
+    // in frame a
+    std::cout << "Vector in frame a: ";
+    // rotate
+    rigid2d::Vector2D va = Tab.operator()(v);
+    va.x += v.x;
+    va.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, va);
+
+    // in frame b
+    std::cout << "Vector in frame b: ";
+    rigid2d::operator<<(std::cout, v);
+
+    // in frame c
+    std::cout << "Vector in frame c: ";
+    // rotate
+    rigid2d::Vector2D vc = Tcb.operator()(v);
+    vc.x += v.x;
+    vc.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, vc);
+  }
+
+
+  else if (frame == 'c')
+  {
+    // in frame a
+    std::cout << "Vector in frame a: ";
+    // rotate
+    rigid2d::Vector2D va = Tac.operator()(v);
+    va.x += v.x;
+    va.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, va);
+
+
+    // in frame b
+    std::cout << "Vector in frame b: ";
+    // rotate
+    rigid2d::Vector2D vb = Tbc.operator()(v);
+    vb.x += v.x;
+    vb.y += v.y;
+    // translate
+    rigid2d::operator<<(std::cout, vb);
+
+
+    // in frame c
+    std::cout << "Vector in frame c: ";
+    rigid2d::operator<<(std::cout, v);
+  }
+  std::cout << "----------------------" << std::endl;
 
 
 
+  std::cout << "----------------------" << std::endl;
+  ////////////////////////////////
+  // twist in frame
+  std::cout << "Enter a twist"<< std::endl;
+  rigid2d::operator>>(std::cin, t);
+
+  std::cout << "Enter a character defining the frame the twist is in: 'a', 'b', 'c'" << std::endl;
+  std::cin >> frame;
 
 
-  // rigid2d::Vector2D v1;
-  // v1.x = 1;
-  // v1.y = 2;
-  //
-  // // rigid2d::Vector2D v2;
-  // // v2.x = 2;
-  // // v2.y = 2;
-  //
-  // double rad1 = rigid2d::PI/2;
-  // // double rad2 = 0.0;//rigid2d::PI;
-  //
-  //
-  // rigid2d::Transform2D tf_1(v1, rad1);
-  // // rigid2d::Transform2D tf_2(v2, rad2);
-  //
-  // rigid2d::Transform2D tf_inv = tf_1.inv();
-  // //
-  // rigid2d::operator<<(std::cout, tf_1);
-  // // rigid2d::operator<<(std::cout, tf_2);
-  //
-  // //
-  // rigid2d::operator<<(std::cout, tf_inv);
+  if (frame == 'a')
+  {
 
-  //rigid2d::operator>>(std::cin, tf_1); //std::istream & is, Transform2D & tf)
 
-  // rigid2d::Transform2D tf_res = rigid2d::operator*(tf_1, tf_2);
-  //
-  // rigid2d::operator<<(std::cout, tf_res);
 
-  // rigid2d::operator>>(std::cin, v);
-  //
-  // rigid2d::operator<<(std::cout, v);
+  }
+
+  else if (frame == 'b')
+  {
+
+
+  }
+
+  else if (frame == 'b')
+  {
+
+
+  }
+
+
+
+  std::cout << "----------------------" << std::endl;
+
 
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// edn file

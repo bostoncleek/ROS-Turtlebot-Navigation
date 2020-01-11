@@ -71,6 +71,16 @@ namespace rigid2d
         double y = 0.0;
     };
 
+
+    /// \brief A 2-Dimensional twist
+    struct Twist2D
+    {
+        double w = 0.0;       // rotation about z-axis
+        double vx = 0.0;      // linear x velocity
+        double vy = 0.0;      // linear y velocity
+    };
+
+
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
     /// v - the vector to print
@@ -85,6 +95,22 @@ namespace rigid2d
     /// https://en.cppreference.com/w/cpp/io/basic_istream/peek
     /// https://en.cppreference.com/w/cpp/io/basic_istream/get
     std::istream & operator>>(std::istream & is, Vector2D & v);
+
+
+
+    /// \brief output a 2 dimensional twisy as [angular velxcomponent velycomponent]
+    /// os - stream to output to
+    /// twist - the twist to print
+    std::ostream & operator<<(std::ostream & os, const Twist2D & twist);
+
+
+    /// \brief input a 2 dimensional twist
+    ///   You should be able to read vectors entered as two numbers
+    ///   separated by a newline or a space, or entered as [angular velxcomponent velycomponent]
+    /// is - stream from which to read
+    /// twist [out] - output twist
+    std::istream & operator>>(std::istream & is, Twist2D & twist);
+
 
 
     /// \brief a rigid body transformation in 2 dimensions
@@ -116,6 +142,11 @@ namespace rigid2d
         /// \brief invert the transformation
         /// \return the inverse transformation.
         Transform2D inv() const;
+
+        /// \brief apply adjunct to determine twist in new frame
+        /// \param twist - the twist to transform
+        /// \return the twist in the new coordinate system
+        Twist2D operator()(Twist2D twist) const;
 
         /// \brief compose this transform with another and store the result
         /// in this object

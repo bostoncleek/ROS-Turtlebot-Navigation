@@ -5,11 +5,11 @@
 namespace rigid2d
 {
 
-// public
 
 std::ostream & operator<<(std::ostream & os, const Vector2D & v)
 {
-  os << "x component: " <<  v.x << " y component: " << v.y << '\n';
+  // os << "x component: " <<  v.x << " y component: " << v.y << '\n';
+  os << "[" <<  v.x << " " << v.y <<"]\n";
   return os;
 }
 
@@ -25,6 +25,34 @@ std::istream & operator>>(std::istream & is, Vector2D & v)
   return is;
 }
 
+
+std::ostream & operator<<(std::ostream & os, const Twist2D & twist)
+{
+  // os << "angular: " << twist.w << " x component: " <<  twist.vx << " y component: " << twist.vy << '\n';
+  os << "[" << twist.w << " " <<  twist.vx << " " << twist.vy << "]\n";
+  return os;
+}
+
+
+std::istream & operator>>(std::istream & is, Twist2D & twist)
+{
+  std::cout << "Enter angular component" << std::endl;
+  is >> twist.w;
+
+  std::cout << "Enter linear velocity x component" << std::endl;
+  is >> twist.vx;
+
+  std::cout << "Enter linear velocity y component" << std::endl;
+  is >> twist.vy;
+
+  return is;
+}
+
+
+
+
+
+// public
 
 
 Transform2D::Transform2D()
@@ -101,6 +129,19 @@ Transform2D Transform2D::inv() const
 }
 
 
+Twist2D Transform2D::operator()(Twist2D twist) const
+{
+  Twist2D twist_new;
+  twist_new.w = twist.w;
+
+  twist_new.vx = twist.vx * ctheta - twist.vy * stheta + twist.w * y;
+
+  twist_new.vy = twist.vy * ctheta + twist.vx * stheta + twist.w * x;
+
+  return twist_new;
+}
+
+
 
 // private
 
@@ -141,7 +182,7 @@ Transform2D & Transform2D::operator*=(const Transform2D & rhs)
 
 std::ostream & operator<<(std::ostream & os, const Transform2D & tf)
 {
-  os << "degrees: " << rad2deg(tf.theta) << " x: " << tf.x << " y: " << tf.y << "\n";
+  os << "theta (degrees): " << rad2deg(tf.theta) << " x: " << tf.x << " y: " << tf.y << "\n";
   return os;
 }
 

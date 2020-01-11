@@ -4,6 +4,8 @@ bin/
 lib/
 msg_gen/
 srv_gen/
-*
+*.o
+*.so
+*.a
 !*.c
 !Makefile
