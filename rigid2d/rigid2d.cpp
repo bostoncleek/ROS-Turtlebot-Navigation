@@ -192,7 +192,7 @@ std::istream & operator>>(std::istream & is, Transform2D & tf)
   double deg_angle;
   Vector2D v;
 
-  std::cout << "Enter anlge in degrees" << std::endl;
+  std::cout << "Enter angle in degrees" << std::endl;
   is >> deg_angle;
 
   std::cout << "Enter x component" << std::endl;

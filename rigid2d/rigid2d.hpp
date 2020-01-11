@@ -49,7 +49,7 @@ namespace rigid2d
     /// You should also purposely (and temporarily) make one of these tests fail
     /// just to see what happens
     static_assert(almost_equal(0, 0), "is_zero failed");
-    static_assert(almost_equal(5.0, 5.0), "is_zero failed");
+    static_assert(almost_equal(5.0, 5.0 + 1e-13), "is_zero failed");
 
     static_assert(almost_equal(0.001, 0.005, 1.0e-2), "is_zero failed");
     static_assert(almost_equal(0.001, 0.005, 1.0e-1), "is_zero failed");
