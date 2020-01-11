@@ -1,9 +1,21 @@
 
 
+
+
 // Doxygen comments !!!!!!!!!!!!
 
 #include "rigid2d.hpp"
 #include <iostream>
+
+
+
+// Doxygen comments !!!!!!!!!!!!
+
+
+
+
+
+
 
 int main()
 {
@@ -18,7 +30,6 @@ int main()
   // compute these outputs
   rigid2d::Transform2D Tac;
   rigid2d::Transform2D Tca;
-
 
 
   std::cout << "----------------------" << std::endl;
@@ -57,16 +68,18 @@ int main()
   std::cout << "T_ca: ";
   rigid2d::operator<<(std::cout, Tca);
   ////////////////////////////////
-  std::cout << "----------------------" << std::endl;
 
 
   std::cout << "----------------------" << std::endl;
+  std::cout << "----------------------" << std::endl;
+
+
   ////////////////////////////////
   // vector in frame
   std::cout << "Enter a vector"<< std::endl;
   rigid2d::operator>>(std::cin, v);
 
-  std::cout << "Enter a character defining the frame the vector is in: 'a', 'b', 'c'" << std::endl;
+  std::cout << "Enter the frame: 'a', 'b', 'c'" << std::endl;
   std::cin >> frame;
 
   if (frame == 'a')
@@ -94,7 +107,6 @@ int main()
     rigid2d::operator<<(std::cout, vc);
   }
 
-
   else if (frame == 'b')
   {
     // in frame a
@@ -119,7 +131,6 @@ int main()
     // translate
     rigid2d::operator<<(std::cout, vc);
   }
-
 
   else if (frame == 'c')
   {
@@ -147,64 +158,79 @@ int main()
     std::cout << "Vector in frame c: ";
     rigid2d::operator<<(std::cout, v);
   }
-  std::cout << "----------------------" << std::endl;
-
 
 
   std::cout << "----------------------" << std::endl;
+  std::cout << "----------------------" << std::endl;
+
+
   ////////////////////////////////
   // twist in frame
   std::cout << "Enter a twist"<< std::endl;
   rigid2d::operator>>(std::cin, t);
 
-  std::cout << "Enter a character defining the frame the twist is in: 'a', 'b', 'c'" << std::endl;
-  std::cin >> frame;
-
 
   if (frame == 'a')
   {
+    // in frame a
+    std::cout << "Twist in frame a: ";
+    rigid2d::operator<<(std::cout, t);
 
 
+    // in frame b
+    std::cout << "Twist in frame b: ";
+    rigid2d::Twist2D tb = Tba.operator()(t);
+    rigid2d::operator<<(std::cout, tb);
 
+
+    // in frame c
+    std::cout << "Twist in frame c: ";
+    rigid2d::Twist2D tc = Tca.operator()(t);
+    rigid2d::operator<<(std::cout, tc);
   }
+
 
   else if (frame == 'b')
   {
+    // in frame a
+    std::cout << "Twist in frame a: ";
+    rigid2d::Twist2D ta = Tab.operator()(t);
+    rigid2d::operator<<(std::cout, ta);
 
 
+    // in frame b
+    std::cout << "Twist in frame b: ";
+    rigid2d::operator<<(std::cout, t);
+
+
+    // in frame c
+    std::cout << "Twist in frame c: ";
+    rigid2d::Twist2D tc = Tcb.operator()(t);
+    rigid2d::operator<<(std::cout, tc);
   }
 
-  else if (frame == 'b')
+  else if (frame == 'c')
   {
+    // in frame a
+    std::cout << "Twist in frame a: ";
+    rigid2d::Twist2D ta = Tac.operator()(t);
+    rigid2d::operator<<(std::cout, ta);
 
 
+    // in frame b
+    std::cout << "Twist in frame b: ";
+    rigid2d::Twist2D tb = Tbc.operator()(t);
+    rigid2d::operator<<(std::cout, tb);
+
+
+    // in frame c
+    std::cout << "Twist in frame c: ";
+    rigid2d::operator<<(std::cout, t);
   }
-
-
-
   std::cout << "----------------------" << std::endl;
-
 
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // edn file
