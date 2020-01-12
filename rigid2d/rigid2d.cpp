@@ -1,3 +1,5 @@
+/// \file
+/// \brief implementation of methods in rigid2d namespace
 
 #include "rigid2d.hpp"
 #include <iostream>
