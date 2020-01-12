@@ -1,0 +1,24 @@
+<launch>
+
+  <!-- visualize differential drive robot in rviz -->
+
+  <!-- arg to use gui -->
+  <arg name="use_jsp_gui" default="true" doc="Launch the joint_state_publisher gui to publish joint angles"/>
+
+  <!-- load model into parameter server -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
+
+  <!-- load physical parameters in to parameter server -->
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="$(eval use_jsp_gui)" />
+  </node>
+
+  <!-- rviz is a required package -->
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find nuturtle_description)/config/diff_drive.rviz"/>
+
+</launch>

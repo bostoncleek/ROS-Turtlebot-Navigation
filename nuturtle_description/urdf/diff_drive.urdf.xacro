@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<robot name="diff_drive" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:property name="props" value="${load_yaml('$(find nuturtle_description)/config/diff_params.yaml')}" />
+
+<xacro:property name="wheel_base" value="${props['wheel_base']}" />
+<xacro:property name="chassis_length" value="${props['chassis_length']}" />
+<xacro:property name="chassis_thickness" value="${props['chassis_thickness']}" />
+
+<xacro:property name="wheel_radius" value="${props['wheel_radius']}" />
+<xacro:property name="wheel_width" value="${props['wheel_width']}" />
+
+<xacro:property name="caster_radius" value="${(wheel_radius - chassis_thickness/2)/2}" />
+
+
+<!-- BASE-FOOTPRINT -->
+<link name="base_footprint"/>
+
+
+<!-- chassis -->
+<link name="base_link" >
+
+  <visual>
+    <origin xyz="${chassis_length/2 - wheel_radius} 0 0" rpy="0 0 0" />
+    <geometry>
+      <box size="${chassis_length} ${wheel_base - wheel_width} ${chassis_thickness}" />
+    </geometry>
+    <material name="Blue">
+      <color rgba="0 0 1 0.6"/>
+    </material>
+  </visual>
+
+</link>
+
+
+<!-- left wheel -->
+
+<link name="left_wheel">
+  <visual>
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 0" />
+    <geometry>
+      <cylinder radius="${wheel_radius}" length="${wheel_width}" />
+    </geometry>
+    <material name="red">
+      <color rgba="1 0 0 0.8"/>
+    </material>
+  </visual>
+</link>
+
+
+<!-- right wheel -->
+
+<link name="right_wheel">
+  <visual>
+    <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+    <geometry>
+      <cylinder radius="${wheel_radius}" length="${wheel_width}" />
+    </geometry>
+    <material name="red">
+      <color rgba="1 0 0 0.8"/>
+    </material>
+  </visual>
+</link>
+
+
+
+<!-- caster wheel -->
+
+<link name="caster">
+
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <geometry>
+      <sphere radius="${caster_radius}" />
+    </geometry>
+    <material name="Black" />
+  </visual>
+
+</link>
+
+
+
+
+<!-- joints -->
+
+<joint name="base" type="fixed">
+  <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0" />
+  <parent link="base_footprint"/>
+  <child link="base_link" />
+</joint>
+
+
+<joint name="left_wheel_axle" type="continuous">
+  <origin xyz="0 ${wheel_base/2} 0" rpy="0 0 0" />
+  <axis xyz="0 1 0"/>
+  <parent link="base_link" />
+  <child link="left_wheel" />
+</joint>
+
+
+<joint name="right_wheel_axle" type="continuous">
+  <origin xyz="0 ${-wheel_base/2} 0" rpy="0 0 0" />
+  <axis xyz="0 1 0"/>
+  <parent link="base_link" />
+  <child link="right_wheel" />
+</joint>
+
+
+<joint name="caster_joint" type="fixed">
+  <origin xyz="${chassis_length-wheel_radius-caster_radius} 0 ${-chassis_thickness/2-caster_radius}" rpy="0 0 0" />
+  <parent link="base_link" />
+  <child link="caster" />
+</joint>
+
+
+
+
+
+
+
+
+
+
+
+</robot>

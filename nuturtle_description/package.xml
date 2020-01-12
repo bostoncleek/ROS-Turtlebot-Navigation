@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nuturtle_description</name>
+  <version>0.0.1</version>
+  <description>Differential Drive Robot in rviz </description>
+
+  <maintainer email="bostoncleek2020@u.northwestern.edu">bostoncleek</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>
