@@ -1,17 +1,9 @@
+/// \file
+/// \brief driver file for rigid2d
 
-
-
-
-// Doxygen comments !!!!!!!!!!!!
 
 #include "rigid2d.hpp"
 #include <iostream>
-
-
-
-// Doxygen comments !!!!!!!!!!!!
-
-
 
 
 
