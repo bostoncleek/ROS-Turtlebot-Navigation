@@ -109,8 +109,8 @@ Transform2D::Transform2D(const Vector2D & trans, double radians)
 Vector2D Transform2D::operator()(Vector2D v) const
 {
   Vector2D v_new;
-  v_new.x = ctheta * v.x - stheta * v.y;
-  v_new.y = stheta * v.x + ctheta * v.y;
+  v_new.x = ctheta * v.x - stheta * v.y + x;
+  v_new.y = stheta * v.x + ctheta * v.y + y;
 
   return v_new;
 }

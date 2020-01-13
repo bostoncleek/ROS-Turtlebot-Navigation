@@ -21,8 +21,8 @@ Enter a vector
 Enter x component
 Enter y component
 Enter the frame: 'a', 'b', 'c'
-Vector in frame a: [-3 3]
-Vector in frame b: [3 3]
+Vector in frame a: [-4 6]
+Vector in frame b: [5 5]
 Vector in frame c: [3 3]
 ----------------------
 ----------------------
