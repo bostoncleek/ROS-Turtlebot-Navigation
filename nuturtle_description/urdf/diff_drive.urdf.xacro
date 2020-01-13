@@ -80,7 +80,6 @@
 
 
 
-
 <!-- joints -->
 
 <joint name="base" type="fixed">
