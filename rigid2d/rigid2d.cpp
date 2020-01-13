@@ -124,6 +124,9 @@ Transform2D Transform2D::inv() const
   // R^T flip sign in sin
   trans2d.stheta = -1.0 * stheta;
 
+  trans2d.theta = std::atan2(trans2d.stheta, trans2d.ctheta);
+  // trans2d.ctheta = std::cos(trans2d.theta);
+
   // p' = -R^T * p
   trans2d.x = -(trans2d.ctheta * x - trans2d.stheta * y);
   trans2d.y = -(trans2d.stheta * x + trans2d.ctheta * y);
@@ -160,25 +163,9 @@ Transform2D::Transform2D(double theta, double ctheta, double stheta, double x, d
 
 Transform2D & Transform2D::operator*=(const Transform2D & rhs)
 {
-  // // multiply rotations
-  // double c_new = ctheta * rhs.ctheta - stheta * rhs.stheta;
-  // double s_new = stheta * rhs.ctheta + ctheta * rhs.stheta;
-  //
-  // // multiply rotation by translation
-  // double x_new = ctheta * rhs.x - stheta * rhs.y + x;
-  // double y_new = stheta * rhs.x + ctheta * rhs.y + y;
-  //
-  // // set new transform
-  // ctheta = c_new;
-  // stheta = s_new;
-  // theta = std::acos(ctheta);
-  //
-  // x = x_new;
-  // y = y_new;
-
   x = ctheta * rhs.x - stheta * rhs.y + x;
   y = stheta * rhs.x + ctheta * rhs.y + y;
-  theta = std::acos(ctheta * rhs.ctheta - stheta * rhs.stheta);
+  theta += rhs.theta;
   ctheta = std::cos(theta);
   stheta = std::sin(theta);
 
@@ -220,7 +207,7 @@ std::istream & operator>>(std::istream & is, Transform2D & tf)
 Transform2D operator*(Transform2D lhs, const Transform2D & rhs)
 {
   // get access to lhs private members
-  return lhs.operator*=(rhs);
+  return lhs *= rhs;
 }
 
 
