@@ -10,17 +10,19 @@ Enter y component
 ----------------------
 ----------------------
 T_ab: theta (degrees): 90 x: 1 y: 1
+T_ba: theta (degrees): -90 x: -1 y: 1
 T_bc: theta (degrees): 0 x: 2 y: 2
+T_cb: theta (degrees): -0 x: -2 y: -2
 T_ac: theta (degrees): 90 x: -1 y: 3
-T_ca: theta (degrees): 90 x: -3 y: -1
+T_ca: theta (degrees): -90 x: -3 y: -1
 ----------------------
 ----------------------
 Enter a vector
 Enter x component
 Enter y component
 Enter the frame: 'a', 'b', 'c'
-Vector in frame a: [0 6]
-Vector in frame b: [6 6]
+Vector in frame a: [-3 3]
+Vector in frame b: [3 3]
 Vector in frame c: [3 3]
 ----------------------
 ----------------------
