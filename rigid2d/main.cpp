@@ -13,52 +13,65 @@ int main()
 {
 
   // inputs
-  rigid2d::Transform2D Tab;
-  rigid2d::Transform2D Tbc;
+  rigid2d::Transform2D Tab, Tbc;
   rigid2d::Vector2D v;
   rigid2d::Twist2D t;
   char frame;
 
   // compute these outputs
-  rigid2d::Transform2D Tac;
-  rigid2d::Transform2D Tca;
+  rigid2d::Transform2D Tba, Tcb, Tac, Tca;
 
 
   std::cout << "----------------------" << std::endl;
   std::cout << "Enter T_ab" << std::endl;
-  rigid2d::operator>>(std::cin, Tab);
+  std::cin >> Tab;
 
   std::cout << "Enter T_bc" << std::endl;
-  rigid2d::operator>>(std::cin, Tbc);
+  std::cin >> Tbc;
   std::cout << "----------------------" << std::endl;
+
+  // compose some inverses
+  Tcb = Tbc.inv();
+  Tba = Tab.inv();
 
 
   std::cout << "----------------------" << std::endl;
+  ////////////////////////////////
+  // Tab
   std::cout << "T_ab: ";
-  rigid2d::operator<<(std::cout, Tab);
+  std::cout << Tab;
+  ////////////////////////////////
 
+  ////////////////////////////////
+  // Tba
+  std::cout << "T_ba: ";
+  std::cout << Tba;
+  ////////////////////////////////
+
+  ////////////////////////////////
+  // Tbc
   std::cout << "T_bc: ";
-  rigid2d::operator<<(std::cout, Tbc);
+  std::cout << Tbc;
+  ////////////////////////////////
 
+  ////////////////////////////////
+  // Tcb
+  std::cout << "T_cb: ";
+  std::cout << Tcb;
+  ////////////////////////////////
 
   ////////////////////////////////
   // Tac
-  Tac = rigid2d::operator*(Tab, Tbc);
-
+  Tac = Tab * Tbc;
   std::cout << "T_ac: ";
-  rigid2d::operator<<(std::cout, Tac);
+  std::cout << Tac;
   ////////////////////////////////
-
 
   ////////////////////////////////
   // Tca
-  rigid2d::Transform2D Tcb = Tbc.inv();
-  rigid2d::Transform2D Tba = Tab.inv();
-
-  Tca = rigid2d::operator*(Tcb, Tba);
-
+  Tca = Tcb * Tba;
   std::cout << "T_ca: ";
-  rigid2d::operator<<(std::cout, Tca);
+  std::cout << Tca;
   ////////////////////////////////
 
 
@@ -69,7 +82,7 @@ int main()
   ////////////////////////////////
   // vector in frame
   std::cout << "Enter a vector"<< std::endl;
-  rigid2d::operator>>(std::cin, v);
+  std::cin >> v;
 
   std::cout << "Enter the frame: 'a', 'b', 'c'" << std::endl;
   std::cin >> frame;
@@ -78,25 +91,19 @@ int main()
   {
     // in frame a
     std::cout << "Vector in frame a: ";
-    rigid2d::operator<<(std::cout, v);
+    std::cout << v;
 
     // in frame b
     std::cout << "Vector in frame b: ";
     // rotate
-    rigid2d::Vector2D vb = Tba.operator()(v);
-    vb.x += v.x;
-    vb.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, vb);
+    rigid2d::Vector2D vb = Tba(v);
+    std::cout << vb;
 
     // in frame c
     std::cout << "Vector in frame c: ";
     // rotate
-    rigid2d::Vector2D vc = Tca.operator()(v);
-    vc.x += v.x;
-    vc.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, vc);
+    rigid2d::Vector2D vc = Tca(v);
+    std::cout << vc;
   }
 
   else if (frame == 'b')
@@ -104,24 +111,18 @@ int main()
     // in frame a
     std::cout << "Vector in frame a: ";
     // rotate
-    rigid2d::Vector2D va = Tab.operator()(v);
-    va.x += v.x;
-    va.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, va);
+    rigid2d::Vector2D va = Tab(v);
+    std::cout << va;
 
     // in frame b
     std::cout << "Vector in frame b: ";
-    rigid2d::operator<<(std::cout, v);
+    std::cout << v;
 
     // in frame c
     std::cout << "Vector in frame c: ";
     // rotate
-    rigid2d::Vector2D vc = Tcb.operator()(v);
-    vc.x += v.x;
-    vc.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, vc);
+    rigid2d::Vector2D vc = Tcb(v);
+    std::cout << vc;
   }
 
   else if (frame == 'c')
@@ -129,26 +130,19 @@ int main()
     // in frame a
     std::cout << "Vector in frame a: ";
     // rotate
-    rigid2d::Vector2D va = Tac.operator()(v);
-    va.x += v.x;
-    va.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, va);
-
+    rigid2d::Vector2D va = Tac(v);
+    std::cout << va;
 
     // in frame b
     std::cout << "Vector in frame b: ";
     // rotate
-    rigid2d::Vector2D vb = Tbc.operator()(v);
-    vb.x += v.x;
-    vb.y += v.y;
-    // translate
-    rigid2d::operator<<(std::cout, vb);
-
+    rigid2d::Vector2D vb = Tbc(v);
+    std::cout << vb;
 
     // in frame c
     std::cout << "Vector in frame c: ";
-    rigid2d::operator<<(std::cout, v);
+    std::cout << v;
+
   }
 
 
@@ -159,26 +153,24 @@ int main()
   ////////////////////////////////
   // twist in frame
   std::cout << "Enter a twist"<< std::endl;
-  rigid2d::operator>>(std::cin, t);
+  std::cin >> t;
 
 
   if (frame == 'a')
   {
     // in frame a
     std::cout << "Twist in frame a: ";
-    rigid2d::operator<<(std::cout, t);
-
+    std::cout << t;
 
     // in frame b
     std::cout << "Twist in frame b: ";
-    rigid2d::Twist2D tb = Tba.operator()(t);
-    rigid2d::operator<<(std::cout, tb);
-
+    rigid2d::Twist2D tb = Tba(t);
+    std::cout << tb;
 
     // in frame c
     std::cout << "Twist in frame c: ";
-    rigid2d::Twist2D tc = Tca.operator()(t);
-    rigid2d::operator<<(std::cout, tc);
+    rigid2d::Twist2D tc = Tca(t);
+    std::cout << tc;
   }
 
 
@@ -186,38 +178,38 @@ int main()
   {
     // in frame a
     std::cout << "Twist in frame a: ";
-    rigid2d::Twist2D ta = Tab.operator()(t);
-    rigid2d::operator<<(std::cout, ta);
+    rigid2d::Twist2D ta = Tab(t);
+    std::cout << ta;
 
 
     // in frame b
     std::cout << "Twist in frame b: ";
-    rigid2d::operator<<(std::cout, t);
+    std::cout << t;
 
 
     // in frame c
     std::cout << "Twist in frame c: ";
-    rigid2d::Twist2D tc = Tcb.operator()(t);
-    rigid2d::operator<<(std::cout, tc);
+    rigid2d::Twist2D tc = Tcb(t);
+    std::cout << tc;
   }
 
   else if (frame == 'c')
   {
     // in frame a
     std::cout << "Twist in frame a: ";
-    rigid2d::Twist2D ta = Tac.operator()(t);
-    rigid2d::operator<<(std::cout, ta);
+    rigid2d::Twist2D ta = Tac(t);
+    std::cout << ta;
 
 
     // in frame b
     std::cout << "Twist in frame b: ";
-    rigid2d::Twist2D tb = Tbc.operator()(t);
-    rigid2d::operator<<(std::cout, tb);
+    rigid2d::Twist2D tb = Tbc(t);
+    std::cout << tb;
 
 
     // in frame c
     std::cout << "Twist in frame c: ";
-    rigid2d::operator<<(std::cout, t);
+    std::cout << t;
   }
   std::cout << "----------------------" << std::endl;
 
