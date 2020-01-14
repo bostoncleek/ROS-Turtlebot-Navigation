@@ -30,7 +30,7 @@ Enter a twist
 Enter angular component
 Enter linear velocity x component
 Enter linear velocity y component
-Twist in frame a: [1 1 1]
-Twist in frame b: [1 4 4]
+Twist in frame a: [1 1 3]
+Twist in frame b: [1 4 0]
 Twist in frame c: [1 2 2]
 ----------------------

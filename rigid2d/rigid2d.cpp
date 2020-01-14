@@ -141,8 +141,8 @@ Twist2D Transform2D::operator()(Twist2D twist) const
   twist_new.w = twist.w;
 
   twist_new.vx = twist.vx * ctheta - twist.vy * stheta + twist.w * y;
+  twist_new.vy = twist.vy * ctheta + twist.vx * stheta - twist.w * x;
 
-  twist_new.vy = twist.vy * ctheta + twist.vx * stheta + twist.w * x;
 
   return twist_new;
 }
