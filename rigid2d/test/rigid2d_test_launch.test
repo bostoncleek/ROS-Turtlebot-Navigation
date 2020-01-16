@@ -1,0 +1,5 @@
+<launch>
+
+  <test test-name="rigid2d_library_test" pkg="rigid2d" type="rigid2d_test" />
+
+</launch>
