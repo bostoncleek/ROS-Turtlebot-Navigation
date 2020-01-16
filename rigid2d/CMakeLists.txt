@@ -4,7 +4,7 @@ project(rigid2d)
 # add compile options
 add_compile_options(-Wall -Wextra -pipe)
 
-# Compile as C++117
+# Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
 # don't use gnu extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -16,6 +16,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+
+if(CATKIN_ENABLE_TESTING)
+   # find_package(catkin REQUIRED COMPONENTS rostest)
+	 find_package(rostest REQUIRED)
+endif()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -202,6 +207,16 @@ install(DIRECTORY include/${PROJECT_NAME}/
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_rigid2d.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+if(CATKIN_ENABLE_TESTING)
+	add_rostest_gtest(${PROJECT_NAME}_test test/${PROJECT_NAME}_test_launch.test test/test_rigid2d.cpp)
+	target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PROJECT_NAME})
+endif()
+
+
+# if (CATKIN_ENABLE_TESTING)
+#    add_rostest(test/${PROJECT_NAME}_test_launch.test)
 # endif()
 
 ## Add folders to be run by python nosetests
