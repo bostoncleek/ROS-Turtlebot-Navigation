@@ -2,7 +2,6 @@
 /// \brief unit tests for rigid2d library
 
 #include <gtest/gtest.h>
-#include <ros/ros.h>
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -19,9 +18,119 @@ TEST(Rigid2DTest, NormalizeVector2D)
 
   rigid2d::NormalVec2D nv = rigid2d::normalize(v);
 
-  ASSERT_FLOAT_EQ(nv.nx, 1 / std::sqrt(10));
-  ASSERT_FLOAT_EQ(nv.ny, 3 /std::sqrt(10));
+  ASSERT_FLOAT_EQ(nv.nx, 1.0/std::sqrt(10));
+  ASSERT_FLOAT_EQ(nv.ny, 3.0/std::sqrt(10));
 }
+
+
+/// \brief Test vector addition
+TEST(Rigid2DTest, AddVectors)
+{
+  rigid2d::Vector2D v1;
+  v1.x = 1;
+  v1.y = 2;
+
+  rigid2d::Vector2D v2;
+  v2.x = 2;
+  v2.y = 3;
+
+  rigid2d::Vector2D v = v1 + v2;
+
+
+  ASSERT_EQ(v.x, 3);
+  ASSERT_EQ(v.y, 5);
+}
+
+
+/// \brief Test vector subtraction
+TEST(Rigid2DTest, SubtractVectors)
+{
+  rigid2d::Vector2D v1;
+  v1.x = 1;
+  v1.y = 2;
+
+  rigid2d::Vector2D v2;
+  v2.x = 2;
+  v2.y = 3;
+
+  rigid2d::Vector2D v = v1 - v2;
+
+
+  ASSERT_EQ(v.x, -1);
+  ASSERT_EQ(v.y, -1);
+}
+
+
+/// \brief Test vector scalar multiplication
+TEST(Rigid2DTest, VectorScalarMultiplication)
+{
+  rigid2d::Vector2D v;
+  v.x = 1;
+  v.y = 2;
+
+  double scalar = 5;
+
+  // test from the left and right side
+  rigid2d::Vector2D v_left = scalar * v;
+
+  rigid2d::Vector2D v_right =  v * scalar;
+
+  ASSERT_EQ(v_left.x, 5);
+  ASSERT_EQ(v_left.y, 10);
+  ASSERT_EQ(v_right.x, 5);
+  ASSERT_EQ(v_right.y, 10);
+}
+
+
+/// \brief Test the length calculation of a vector
+TEST(Rigid2DTest, VectorLength)
+{
+  rigid2d::Vector2D v;
+  v.x = 1;
+  v.y = 2;
+
+  double len = rigid2d::length(v);
+
+  ASSERT_FLOAT_EQ(len, 2.236068);
+}
+
+
+/// \brief Test distance between two vectors
+TEST(Rigid2DTest, DistanceBetweenVectors)
+{
+  rigid2d::Vector2D v1;
+  v1.x = 1;
+  v1.y = 2;
+
+  rigid2d::Vector2D v2;
+  v2.x = 2;
+  v2.y = 3;
+
+  double dist = rigid2d::distance(v1, v2);
+
+  ASSERT_FLOAT_EQ(dist, 1.4142135);
+}
+
+
+/// \brief Test angle between two vector
+TEST(Rigid2DTest, AngleBetweenVectors)
+{
+  rigid2d::Vector2D v1;
+  v1.x = 1;
+  v1.y = 2;
+
+  rigid2d::Vector2D v2;
+  v2.x = 2;
+  v2.y = 3;
+
+  //radians
+  double angle = rigid2d::angle(v1, v2);
+
+  ASSERT_FLOAT_EQ(angle, 0.124355);
+
+}
+
+
 
 
 /// \brief Test transforming a Vector2D to new frame
@@ -52,10 +161,99 @@ TEST(Rigid2DTest, TransformVector2DFrame)
 TEST(Rigid2DTest, InvertTransform2D)
 {
 
+  // declare desire output
+  std::string output = "theta (degrees): -90 x: -1 y: 1\n";
+  std::stringstream ss_out;
+
+  // define transfor2D in invert
+  double angle = rigid2d::PI/2.0; // radians
+  rigid2d::Vector2D v;
+  v.x = 1;
+  v.y = 1;
+  rigid2d::Transform2D T(v, angle);
+
+  // inverse
+  rigid2d::Transform2D Tinv = T.inv();
+
+  // read inverse
+  ss_out << Tinv;
+
+  ASSERT_EQ(ss_out.str(), output);
 }
 
 
+/// \brief Test transforming a Twist2D to new frame
+TEST(Rigid2DTest, TransformTwistFrame)
+{
+  // define twist in c
+  rigid2d::Twist2D tc;
+  tc.w = 1;
+  tc.vx = 2;
+  tc.vy = 2;
 
+  // define transfor2D Tac
+  double angle = rigid2d::PI/2.0; // radians
+  rigid2d::Vector2D v;
+  v.x = -1;
+  v.y = 3;
+  rigid2d::Transform2D Tac(v, angle);
+
+  // transform to frame a
+  rigid2d::Twist2D ta = Tac(tc);
+
+  ASSERT_FLOAT_EQ(ta.w, 1.0);
+  ASSERT_FLOAT_EQ(ta.vx, 1.0);
+  ASSERT_FLOAT_EQ(ta.vy, 3.0);
+}
+
+
+/// \brief Test transform multiplicaton
+TEST(Rigid2DTest, TransformMultiplication)
+{
+
+  // desired output
+  std::string output = "theta (degrees): 90 x: -1 y: 3\n";
+
+  // Tab
+  rigid2d::Vector2D v1;
+  v1.x = 1;
+  v1.y = 1;
+
+  rigid2d::Transform2D Tab(v1, rigid2d::PI/2.0); // radians
+
+  // Tbc
+  rigid2d::Vector2D v2;
+  v2.x = 2;
+  v2.y = 2;
+  rigid2d::Transform2D Tbc(v2, 0.0); // radians
+
+  // multiply
+  rigid2d::Transform2D Tac = Tab * Tbc;
+
+  // read output
+  std::stringstream ss_out;
+  ss_out << Tac;
+
+  ASSERT_EQ(ss_out.str(), output);
+}
+
+
+/// \brief Test returning the displacement of a transform
+TEST(Rigid2DTest, ReturnsTransformDisplacement)
+{
+  // T
+  rigid2d::Vector2D v;
+  v.x = 1;
+  v.y = 3;
+
+  rigid2d::Transform2D T(v, rigid2d::PI/2.0); // radians
+
+  rigid2d::TransformData2D t2d = T.displacement();
+
+  ASSERT_FLOAT_EQ(t2d.theta, rigid2d::PI/2.0);
+  ASSERT_FLOAT_EQ(t2d.x, 1.0);
+  ASSERT_FLOAT_EQ(t2d.y, 3.0);
+}
 
 
 
@@ -196,8 +394,6 @@ TEST(Rigid2DTest, HandlesTransformOutput)
 int main(int argc, char * argv[])
 {
     testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "test_rigid2d_node");
-    ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }
 

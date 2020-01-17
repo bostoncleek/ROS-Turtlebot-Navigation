@@ -63,6 +63,56 @@ NormalVec2D normalize(const Vector2D & v)
 }
 
 
+Vector2D operator+(Vector2D v1, const Vector2D & v2)
+{
+  return v1 += v2;
+}
+
+
+Vector2D operator-(Vector2D v1, const Vector2D &v2)
+{
+  return v1 -= v2;
+}
+
+
+Vector2D operator*(Vector2D v, const double scalar)
+{
+  return v *= scalar;
+}
+
+
+Vector2D operator*(const double scalar, Vector2D v)
+{
+  return v *= scalar;
+}
+
+
+double length(const Vector2D &v)
+{
+  return std::sqrt(std::pow(v.x, 2) + std::pow(v.y, 2));
+}
+
+
+double distance(const Vector2D &v1, const Vector2D &v2)
+{
+  return std::sqrt(std::pow(v1.x - v2.x, 2) + std::pow(v1.y - v2.y, 2));
+}
+
+
+double angle(const Vector2D &v1, const Vector2D &v2)
+{
+  // dot product
+  double dot = v1.x * v2.x + v1.y * v2.y;
+
+  return std::acos(dot / (length(v1) * length(v2)));
+}
+
+
+
+
+
+
+
 // public
 
 
@@ -171,6 +221,18 @@ Transform2D & Transform2D::operator*=(const Transform2D & rhs)
 
   return *this;
 }
+
+
+TransformData2D Transform2D::displacement() const
+{
+  TransformData2D t2d;
+  t2d.theta = this->theta;
+  t2d.x = this->x;
+  t2d.y = this->y;
+
+  return t2d;
+}
+
 
 
 // end class

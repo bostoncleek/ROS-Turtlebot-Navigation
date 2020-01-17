@@ -7,6 +7,7 @@
 #include <iosfwd> // contains forward definitions for iostream objects
 
 
+
 namespace rigid2d
 {
     /// \brief PI.  Not in C++ standard until C++20.
@@ -44,6 +45,22 @@ namespace rigid2d
       return rad*(180 / PI);
     }
 
+
+    /// \brief wraps angle between -pi and pi
+    /// \param rad - angle in radians
+    /// \returns the wrapped angle in radians
+    constexpr double normalize_angle(double rad)
+    {
+      // floating point remainder essentially this is fmod
+      double q  = std::floor((rad + PI) / (2*PI));
+      rad = (rad + PI) - q * 2*PI;
+
+      if (rad < 0)
+        rad += 2*PI;
+
+      return rad - PI;
+    }
+
     /// static_assertions test compile time assumptions.
     /// You should write at least one more test for each function
     /// You should also purposely (and temporarily) make one of these tests fail
@@ -64,11 +81,59 @@ namespace rigid2d
     static_assert(almost_equal(deg2rad(rad2deg(4.5)), 4.5), "deg2rad failed");
 
 
+    static_assert(almost_equal(normalize_angle(3.0/2.0*PI), -PI/2.0), "normalize_angle failed");
+    static_assert(almost_equal(normalize_angle(7.0/6.0*PI), -5.0/6.0*PI), "normalize_angle failed");
+    static_assert(almost_equal(normalize_angle(8.0/3.0*PI), 2.0/3.0*PI), "normalize_angle failed");
+
+
+
     /// \brief A 2-Dimensional Vector
     struct Vector2D
     {
-        double x = 0.0;
-        double y = 0.0;
+        double x;
+        double y;
+
+        /// \brief default constructor
+        Vector2D() : x(0.0), y(0.0) {};
+
+
+        /// \brief set elements of vector
+        /// \param vec_x - x component
+        /// \param vec_y - y component
+        Vector2D(double vec_x, double vec_y) : x(vec_x), y(vec_y) {};
+
+
+        /// \brief add vector components
+        /// \param v - components to add
+        /// \returns a reference to the newly transformed vector
+        Vector2D & operator+=(const Vector2D &v)
+        {
+          x += v.x;
+          y += v.y;
+          return *this;
+        }
+
+
+        /// \brief subtract vector components
+        /// \param v - components to subtract
+        /// \returns a reference to the newly transformed vector
+        Vector2D & operator-=(const Vector2D &v)
+        {
+          x -= v.x;
+          y -= v.y;
+          return *this;
+        }
+
+
+        /// \brief scalar multiplicaton of vector
+        /// \param scalar - to multiply vector by
+        /// \returns a reference to the newly transformed vector
+        Vector2D & operator*=(const double scalar)
+        {
+          x *= scalar;
+          y *= scalar;
+          return *this;
+        }
     };
 
 
@@ -86,6 +151,15 @@ namespace rigid2d
     {
       double nx = 0.0;
       double ny = 0.0;
+    };
+
+
+    /// \brief A 2-Dimensional transform
+    struct TransformData2D
+    {
+      double theta = 0.0;
+      double x = 0.0;
+      double y = 0.0;
     };
 
 
@@ -124,6 +198,56 @@ namespace rigid2d
     /// \param v - the vector to normalize
     /// \return a normalize vector in the same coordinate system
     NormalVec2D normalize(const Vector2D & v);
+
+
+    /// \brief add vector components
+    /// \ param v1 - first vector to add components
+    /// \ param v2 - first vector to add components
+    /// \ return composition of two vectors
+    Vector2D operator+(Vector2D v1, const Vector2D & v2);
+
+
+    /// \brief subtract vector components
+    /// \ param v1 - first vector to subtract components
+    /// \ param v2 - first vector to subtract components
+    /// \ return composition of two vectors
+    Vector2D operator-(Vector2D v1, const Vector2D & v2);
+
+
+    /// \brief scalar multiplicaton of vector
+    /// \param v - vector to scale
+    /// \param scalar to multiply vector by
+    /// \ return scaled vector
+    Vector2D operator*(Vector2D v, const double scalar);
+
+
+    /// \brief scalar multiplicaton of vector
+    /// \param scalar to multiply vector by
+    /// \param v - vector to scale
+    /// \ return scaled vector
+    Vector2D operator*(const double scalar, Vector2D v);
+
+
+    /// \brief length of vector
+    /// \param v - find length of
+    /// \return length
+    double length(const Vector2D &v);
+
+
+    /// \brief distance between two vectors
+    /// \param v1 - first vector
+    /// \param v2 - second vector
+    /// \return distance between two vectors
+    double distance(const Vector2D &v1, const Vector2D &v2);
+
+
+    /// \brief angle between two vectors
+    /// \param v1 - first vector
+    /// \param v2 - second vector
+    /// \return angle between two vectors in radians
+    double angle(const Vector2D &v1, const Vector2D &v2);
+
+
 
 
     /// \brief a rigid body transformation in 2 dimensions
@@ -170,6 +294,20 @@ namespace rigid2d
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
+
+
+        /// \brief composes displacement of transform
+        /// \return displacement data of the transform
+        TransformData2D displacement() const;
+
+
+        /// \brief integrates a twist
+        /// \return transformation correspond to a twist for one time step
+        // Transform2D integrateTwist() const;
+
+
+
+
     private:
         /// directly initialize, useful for forming the inverse
         Transform2D(double theta, double ctheta, double stheta, double x, double y);
