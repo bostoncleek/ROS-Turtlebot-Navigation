@@ -235,6 +235,68 @@ TransformData2D Transform2D::displacement() const
 
 
 
+Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
+{
+  // define a screw
+  Screw2D S;
+
+  // in Modern Robotics this is theta
+  // for 1 unit of time beta = beta_dot
+  double beta = 0.0;
+
+
+  // compose strew
+  if (almost_equal(twist.w, 0.0))
+  {
+    // beta is the magnitude of the angular twist velocity
+    beta = std::abs(twist.w);
+
+    S.w = twist.w / beta;
+    S.vx = twist.vx / beta;
+    S.vy = twist.vy / beta;
+  }
+
+  else
+  {
+    // beta is the magnitude of the linear twist velocity
+    beta = std::sqrt(std::pow(twist.vx, 2) + std::pow(twist.vy, 2));
+
+    // the screw angular component is alread 0
+    S.vx = twist.vx / beta;
+    S.vy = twist.vy / beta;
+  }
+
+
+  // trig components of beta
+  double cbeta = std::cos(beta);
+  double sbeta = std::sin(beta);
+
+
+  // compose new transform
+  // rotation component
+  double theta = std::atan2(sbeta * S.w, 1 + (1 - cbeta)*(-1.0 * std::pow(S.w,2)));
+  double ctheta = std::cos(theta);
+  double stheta = std::sin(theta);
+
+  // translation component
+  double x = S.vx*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2))) + \
+                S.vy*((1 - cbeta)*(-1.0 * S.w));
+
+
+  double y = S.vx*((1 - cbeta) * S.w) + \
+                    S.vy*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2)));
+
+
+
+  Transform2D T(theta, ctheta, stheta, x, y);
+
+  return T;
+}
+
+
+
+
+
 // end class
 
 

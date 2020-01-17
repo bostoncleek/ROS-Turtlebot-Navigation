@@ -13,9 +13,6 @@
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
 
-  <!-- <build_depend>rostest</build_depend> -->
-  <test_depend>rostest</test_depend>
-
   <test_depend>rosunit</test_depend>
 
 

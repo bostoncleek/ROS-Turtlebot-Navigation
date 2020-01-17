@@ -84,6 +84,7 @@ namespace rigid2d
     static_assert(almost_equal(normalize_angle(3.0/2.0*PI), -PI/2.0), "normalize_angle failed");
     static_assert(almost_equal(normalize_angle(7.0/6.0*PI), -5.0/6.0*PI), "normalize_angle failed");
     static_assert(almost_equal(normalize_angle(8.0/3.0*PI), 2.0/3.0*PI), "normalize_angle failed");
+    static_assert(almost_equal(normalize_angle(deg2rad(350)), normalize_angle(deg2rad(-10))), "normalize_angle failed");
 
 
 
@@ -160,6 +161,14 @@ namespace rigid2d
       double theta = 0.0;
       double x = 0.0;
       double y = 0.0;
+    };
+
+    /// \brief A 2-Dimensional screw
+    struct Screw2D
+    {
+      double w = 0.0;
+      double vx = 0.0;
+      double vy = 0.0;
     };
 
 
@@ -301,11 +310,10 @@ namespace rigid2d
         TransformData2D displacement() const;
 
 
+        // TODO: WRITE A TEST FOR THIS
         /// \brief integrates a twist
         /// \return transformation correspond to a twist for one time step
-        // Transform2D integrateTwist() const;
-
-
+        Transform2D integrateTwist(const Twist2D &twist) const;
 
 
     private:

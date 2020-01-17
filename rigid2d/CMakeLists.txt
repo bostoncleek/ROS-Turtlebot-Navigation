@@ -17,10 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
-if(CATKIN_ENABLE_TESTING)
-   # find_package(catkin REQUIRED COMPONENTS rostest)
-	 find_package(rostest REQUIRED)
-endif()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -132,6 +128,7 @@ include_directories(
 # Declare a C++ library
 add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/${PROJECT_NAME}.cpp
+	src/${PROJECT_NAME}/diff_drive.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -209,15 +206,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-if(CATKIN_ENABLE_TESTING)
-	add_rostest_gtest(${PROJECT_NAME}_test test/${PROJECT_NAME}_test_launch.test test/test_rigid2d.cpp)
-	target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PROJECT_NAME})
+
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(${PROJECT_NAME}_test test/test_${PROJECT_NAME}.cpp)
+    target_link_libraries(${PROJECT_NAME}_test ${catkin_Libraries} ${PROJECT_NAME} gtest_main)
 endif()
 
-
-# if (CATKIN_ENABLE_TESTING)
-#    add_rostest(test/${PROJECT_NAME}_test_launch.test)
-# endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
