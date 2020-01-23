@@ -127,8 +127,9 @@ include_directories(
 
 # Declare a C++ library
 add_library(${PROJECT_NAME}
+  src/${PROJECT_NAME}/diff_drive.cpp
   src/${PROJECT_NAME}/${PROJECT_NAME}.cpp
-	src/${PROJECT_NAME}/diff_drive.cpp
+	src/${PROJECT_NAME}/waypoints.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -207,8 +208,8 @@ install(DIRECTORY include/${PROJECT_NAME}/
 # endif()
 
 
-if (CATKIN_ENABLE_TESTING)
-    catkin_add_gtest(${PROJECT_NAME}_test test/test_${PROJECT_NAME}.cpp)
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(${PROJECT_NAME}_test test/test_${PROJECT_NAME}.cpp test/test_diff_drive.cpp)
     target_link_libraries(${PROJECT_NAME}_test ${catkin_Libraries} ${PROJECT_NAME} gtest_main)
 endif()
 
