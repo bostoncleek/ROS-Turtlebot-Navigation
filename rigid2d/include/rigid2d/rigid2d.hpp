@@ -309,8 +309,6 @@ namespace rigid2d
         /// \return displacement data of the transform
         TransformData2D displacement() const;
 
-
-        // TODO: WRITE A TEST FOR THIS
         /// \brief integrates a twist
         /// \return transformation correspond to a twist for one time step
         Transform2D integrateTwist(const Twist2D &twist) const;
