@@ -1,8 +1,9 @@
 /// \file
 /// \brief implementation of methods in rigid2d namespace
 
-#include "rigid2d/rigid2d.hpp"
 #include <iostream>
+#include "rigid2d/diff_drive.hpp"
+
 
 namespace rigid2d
 {
@@ -244,9 +245,8 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
   // for 1 unit of time beta = beta_dot
   double beta = 0.0;
 
-
   // compose strew
-  if (almost_equal(twist.w, 0.0))
+  if (!almost_equal(twist.w, 0.0))
   {
     // beta is the magnitude of the angular twist velocity
     beta = std::abs(twist.w);
@@ -274,23 +274,25 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
 
   // compose new transform
   // rotation component
-  double theta = std::atan2(sbeta * S.w, 1 + (1 - cbeta)*(-1.0 * std::pow(S.w,2)));
-  double ctheta = std::cos(theta);
-  double stheta = std::sin(theta);
+  double theta_new = std::atan2(sbeta * S.w, 1 + (1 - cbeta)*(-1.0 * std::pow(S.w,2)));
+
+  double ctheta_new = std::cos(theta);
+  double stheta_new = std::sin(theta);
 
   // translation component
-  double x = S.vx*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2))) + \
+  double x_new = S.vx*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2))) + \
                 S.vy*((1 - cbeta)*(-1.0 * S.w));
 
 
-  double y = S.vx*((1 - cbeta) * S.w) + \
+  double y_new = S.vx*((1 - cbeta) * S.w) + \
                     S.vy*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2)));
 
 
 
+  Transform2D T_new(theta_new, ctheta_new, stheta_new, x_new, y_new);
   Transform2D T(theta, ctheta, stheta, x, y);
 
-  return T;
+  return T*T_new;
 }
 
 
