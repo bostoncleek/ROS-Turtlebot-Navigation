@@ -6,57 +6,11 @@
 
 #include <sstream>
 
+#include "rigid2d/diff_drive.hpp"
 
 
-int main()
+int main(int argc, char *argv[])
 {
-
-
-  // rigid2d::Transform2D T;
-  //
-  // // declare desired input
-  // std::string input = "90\n 1\n 1\n'";
-  // std::stringstream ss_in(input);
-  //
-  // // read in tf
-  // ss_in >>  T;
-  // std::cout << T;
-  //
-  //
-  // rigid2d::Twist2D twist;
-  // twist.w = 1;
-  // twist.vx = 2;
-  // twist.vy = 3;
-  //
-  // rigid2d::Transform2D Tnew = T.integrateTwist(twist);
-  //
-  // std::cout << Tnew;
-
-
-
-  // ss_in >> input;
-  // std::cout << T;
-
-  // // define transform Tbc
-  // double angle = 90;
-  // rigid2d::Vector2D v;
-  // v.x = 1;
-  // v.y = 1;
-  // rigid2d::Transform2D T(v, angle);
-  //
-  // // transform vc into frame b
-  // rigid2d::Transform2D Tinv = T.inv();
-
-  // printf("%f\n", vb.x);
-  // printf("%f\n", vb.y);
-
-
-
-  /////////////////////////////////////////////////////////////////////
-
-
-
-
   // inputs
   rigid2d::Transform2D Tab, Tbc;
   rigid2d::Vector2D v;
