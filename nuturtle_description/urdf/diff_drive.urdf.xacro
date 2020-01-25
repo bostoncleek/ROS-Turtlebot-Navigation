@@ -14,7 +14,7 @@
 
 
 <!-- BASE-FOOTPRINT -->
-<link name="base_footprint"/>
+<!-- <link name="base_footprint"/> -->
 
 
 <!-- chassis -->
@@ -82,11 +82,11 @@
 
 <!-- joints -->
 
-<joint name="base" type="fixed">
+<!-- <joint name="base" type="fixed">
   <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0" />
   <parent link="base_footprint"/>
   <child link="base_link" />
-</joint>
+</joint> -->
 
 
 <joint name="left_wheel_axle" type="continuous">
