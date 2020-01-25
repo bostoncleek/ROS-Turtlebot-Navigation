@@ -14,7 +14,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	geometry_msgs
+	nav_msgs
   roscpp
+	sensor_msgs
+	tf
 )
 
 
@@ -110,7 +114,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS roscpp
+ CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -141,6 +145,10 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
+add_executable(odometry_node src/odometry_node.cpp)
+add_executable(fake_diff_encoders_node src/fake_diff_encoders_name.cpp)
+
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -154,10 +162,19 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
-  ${PROJECT_NAME}
   ${catkin_LIBRARIES}
+	${PROJECT_NAME}
 )
 
+target_link_libraries(odometry_node
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+)
+
+target_link_libraries(fake_diff_encoders_node
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+)
 #############
 ## Install ##
 #############
@@ -174,7 +191,7 @@ target_link_libraries(${PROJECT_NAME}_node
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS ${PROJECT_NAME}_node
+install(TARGETS fake_diff_encoders_node odometry_node ${PROJECT_NAME}_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
