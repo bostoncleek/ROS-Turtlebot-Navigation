@@ -27,6 +27,12 @@ namespace rigid2d
     double ur = 0.0;
   };
 
+  struct WheelEncoders
+  {
+    double left = 0.0;
+    double right = 0.0;
+  };
+
 
   class DiffDrive
   {
@@ -48,7 +54,7 @@ namespace rigid2d
       /// \param twist - the desired twist in the body frame of the robot
       /// \returns - the wheel velocities to use
       /// \throws std::exception
-      WheelVelocities twistToWheels(const Twist2D &twist);
+      WheelVelocities twistToWheels(Twist2D twist);
 
       /// \brief determine the body twist of the robot from its wheel velocities
       /// \param vel - the velocities of the wheels, assumed to be held constant
@@ -68,7 +74,6 @@ namespace rigid2d
       /// \brief update the odometry of the diff drive robot, assuming that
       /// it follows the given body twist for one time  unit
       /// \param cmd - the twist command to send to the robot
-      // TODO: update wheel encoder angles
       void feedforward(const Twist2D &cmd);
 
 
@@ -80,6 +85,10 @@ namespace rigid2d
 
       /// \brief reset the robot to the given position/orientation
       void reset(Pose ps);
+
+      /// \brief get the current wheel encoder readings
+      /// \return the angular position of wheels
+      WheelEncoders getEncoders();
 
 
     private:

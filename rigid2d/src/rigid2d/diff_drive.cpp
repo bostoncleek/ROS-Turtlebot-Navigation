@@ -2,6 +2,7 @@
 /// \brief implementation of diff_drive methods in rigid2d namespace
 
 #include <iostream>
+#include <stdexcept>
 #include "rigid2d/diff_drive.hpp"
 
 
@@ -46,13 +47,26 @@ DiffDrive::DiffDrive(const Pose &pose, double wheel_base, double wheel_radius)
 }
 
 
-WheelVelocities DiffDrive::twistToWheels(const Twist2D &twist)
+WheelVelocities DiffDrive::twistToWheels(Twist2D twist)
 {
   double d = wheel_base / 2.0;
 
   WheelVelocities vel;
+
   vel.ul = (1.0 / wheel_radius)*(-d * twist.w + twist.vx);
   vel.ur = (1.0 / wheel_radius)*(d * twist.w + twist.vx);
+
+
+
+  // std::cout << "------------------" << std::endl;
+  // std::cout << twist.w << " " << twist.vx << " " << twist.vy << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // //
+  // std::cout << vel.ul << " " << vel.ur << std::endl;
+
+
+  if (twist.vy != 0)
+    throw std::invalid_argument("Twist cannot have y velocity component");
 
   return vel;
 }
@@ -80,11 +94,17 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
   vel.ul = left - left_curr;
   vel.ur = right - right_curr;
 
+  // update wheel velocities
   this->ul = vel.ul;
   this->ur = vel.ur;
 
+  // update wheel angles
+  left_curr = normalize_angle_2PI(left);
+  right_curr = normalize_angle_2PI(right);
+
+
   // body frame twist given wheel velocities
-  Twist2D Vb = wheelsToTwist(vel);
+  Twist2D Vb = this->wheelsToTwist(vel);
 
   // itegrate twist
   Transform2D Tb_bprime;
@@ -104,14 +124,9 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
   TransformData2D Twr = Tw_bprime.displacement();
 
   // update pose
-  this->theta = Twr.theta;
+  this->theta = normalize_angle_PI(Twr.theta);
   this->x = Twr.x;
   this->y = Twr.y;
-
-
-  // update wheel angles
-  left_curr = left;
-  right_curr = right;
 
   return vel;
 }
@@ -120,30 +135,20 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
 void DiffDrive::feedforward(const Twist2D &cmd)
 {
   // wheel velocities to achieve the cmd
-  WheelVelocities vel = twistToWheels(cmd);
+  WheelVelocities vel = this->twistToWheels(cmd);
 
-  // BUG: Should I update these ????
   // update encoder readings
-  left_curr += vel.ul;
-  right_curr += vel.ur;
+  left_curr = normalize_angle_2PI(left_curr + vel.ul);
+  right_curr = normalize_angle_2PI(right_curr + vel.ur);
 
-  // BUG: update these ???
+
+  // update wheel velocities
   ul = vel.ul;
   ur = vel.ur;
-
-  // body frame twist given wheel velocities
-  // Twist2D Vb = wheelsToTwist(vel);
 
   // itegrate twist
   Transform2D Tb_bprime;
   Tb_bprime = Tb_bprime.integrateTwist(cmd);
-
-
-
-  // std::cout << "------------------" << std::endl;
-  // std::cout << "Tbb'" << std::endl;
-  // std::cout << Tb_bprime;
-  // std::cout << "------------------" << std::endl;
 
 
   // pose is transform form world to b prime
@@ -159,7 +164,7 @@ void DiffDrive::feedforward(const Twist2D &cmd)
   TransformData2D Twr = Tw_bprime.displacement();
 
   // update pose
-  this->theta = Twr.theta;
+  this->theta = normalize_angle_PI(Twr.theta);
   this->x = Twr.x;
   this->y = Twr.y;
 }
@@ -167,8 +172,6 @@ void DiffDrive::feedforward(const Twist2D &cmd)
 
 Pose DiffDrive::pose()
 {
-  // BUG: reset wheel encoders and speeds ???
-
   Pose pose;
   pose.theta = this->theta;
   pose.x = this->x;
@@ -193,6 +196,24 @@ void DiffDrive::reset(Pose ps)
   theta = ps.theta;
   x = ps.x;
   y = ps.y;
+
+  // set wheel encoder angles
+  left_curr = 0.0;
+  right_curr = 0.0;
+
+  // assume robot starts still
+  ul = 0.0;
+  ur = 0.0;
+}
+
+
+WheelEncoders DiffDrive::getEncoders()
+{
+  WheelEncoders encoder;
+  encoder.left = this->left_curr;
+  encoder.right = this->right_curr;
+
+  return encoder;
 }
 
 
