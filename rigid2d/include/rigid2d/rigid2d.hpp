@@ -49,7 +49,7 @@ namespace rigid2d
     /// \brief wraps angle between -pi and pi
     /// \param rad - angle in radians
     /// \returns the wrapped angle in radians
-    constexpr double normalize_angle(double rad)
+    constexpr double normalize_angle_PI(double rad)
     {
       // floating point remainder essentially this is fmod
       double q  = std::floor((rad + PI) / (2*PI));
@@ -60,6 +60,38 @@ namespace rigid2d
 
       return rad - PI;
     }
+
+
+    /// \brief wraps angle between 0 and 2pi
+    /// \param rad - angle in radians
+    /// \returns the wrapped angle in radians
+    constexpr double normalize_angle_2PI(double rad)
+    {
+      if (rad >= 0)
+      {
+        // floating point remainder essentially this is fmod
+        double q  = std::floor(rad / (2*PI));
+        rad = (rad) - q * 2*PI;
+
+        if (rad < 0)
+          rad += 2*PI;
+
+        return rad;
+      }
+
+      else
+      {
+        // floating point remainder essentially this is fmod
+        double q  = std::floor(rad / (2*PI));
+        rad = (rad) - q * 2*PI;
+
+        if (rad > 0)
+          rad -= 2*PI;
+
+        return rad;
+      }
+    }
+
 
     /// static_assertions test compile time assumptions.
     /// You should write at least one more test for each function
@@ -81,10 +113,18 @@ namespace rigid2d
     static_assert(almost_equal(deg2rad(rad2deg(4.5)), 4.5), "deg2rad failed");
 
 
-    static_assert(almost_equal(normalize_angle(3.0/2.0*PI), -PI/2.0), "normalize_angle failed");
-    static_assert(almost_equal(normalize_angle(7.0/6.0*PI), -5.0/6.0*PI), "normalize_angle failed");
-    static_assert(almost_equal(normalize_angle(8.0/3.0*PI), 2.0/3.0*PI), "normalize_angle failed");
-    static_assert(almost_equal(normalize_angle(deg2rad(350)), normalize_angle(deg2rad(-10))), "normalize_angle failed");
+    static_assert(almost_equal(normalize_angle_PI(3.0/2.0*PI), -PI/2.0), "normalize_angle_PI failed");
+    static_assert(almost_equal(normalize_angle_PI(7.0/6.0*PI), -5.0/6.0*PI), "normalize_angle_PI failed");
+    static_assert(almost_equal(normalize_angle_PI(8.0/3.0*PI), 2.0/3.0*PI), "normalize_angle_PI failed");
+    static_assert(almost_equal(normalize_angle_PI(deg2rad(350)), normalize_angle_PI(deg2rad(-10))), "normalize_angle_PI failed");
+
+    static_assert(almost_equal(normalize_angle_2PI(2*PI+PI/6), PI/6), "normalize_angle_2PI failed");
+    static_assert(almost_equal(normalize_angle_2PI(-2*PI-PI/4), -PI/4), "normalize_angle_2PI failed");
+    static_assert(almost_equal(normalize_angle_2PI(-PI/4), -PI/4), "normalize_angle_2PI failed");
+    static_assert(almost_equal(normalize_angle_2PI(PI/6), PI/6), "normalize_angle_2PI failed");
+
+
+    static_assert(almost_equal(normalize_angle_2PI(0.5), 0.5), "normalize_angle_2PI failed");
 
 
 
