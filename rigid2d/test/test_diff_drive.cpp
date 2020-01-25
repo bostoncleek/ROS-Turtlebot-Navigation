@@ -156,6 +156,44 @@ TEST(DiffDriveTest, PureTranslationOdom)
 }
 
 
+/// brief Test odometry in a straight line
+TEST(DiffDriveTest, NoMovementOdom)
+{
+  rigid2d::WheelVelocities vel;
+
+  rigid2d::Pose pose;
+  pose.theta = 0.0;
+  pose.x = 0.0;
+  pose.y = 0.0;
+
+  double wheel_radius = 0.02;
+  double wheel_base = 1.0;
+
+  rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
+
+  // both wheels rotate 2pi
+  double wheel_angle = 0;
+  vel = drive.updateOdometry(wheel_angle, wheel_angle);
+
+  pose = drive.pose();
+
+
+  ASSERT_NEAR(vel.ul, 0.0, 1e-3);
+  ASSERT_NEAR(vel.ur, 0.0, 1e-3);
+
+  ASSERT_NEAR(pose.theta, 0.0, 1e-3);
+  ASSERT_NEAR(pose.x, 0.0, 1e-3);
+  ASSERT_NEAR(pose.y, 0.0, 1e-3);
+
+  // std::cout << "------------------" << std::endl;
+  // std::cout << vel.ul << " " << vel.ur << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << pose.theta << " " << pose.x << " " << pose.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+}
+
+
 /// \brief Test odometry in a pure rotation
 TEST(DiffDriveTest, PureRotationOdom)
 {
@@ -243,6 +281,7 @@ TEST(DiffDriveTest, TransRotOdom)
 TEST(DiffDriveTest, StraightLineFeedForward)
 {
   rigid2d::Twist2D cmd;
+  rigid2d::WheelEncoders encoder;
 
   rigid2d::Pose pose;
   pose.theta = 0.0;
@@ -263,12 +302,15 @@ TEST(DiffDriveTest, StraightLineFeedForward)
 
   pose = drive.pose();
 
+  encoder = drive.getEncoders();
 
   ASSERT_NEAR(pose.theta, 0, 1e-3);
   ASSERT_NEAR(pose.x, 1, 1e-3);
   ASSERT_NEAR(pose.y, 0, 1e-3);
 
-
+  // std::cout << "------------------" << std::endl;
+  // std::cout << encoder.left << " " << encoder.right << std::endl;
+  // std::cout << "------------------" << std::endl;
   // std::cout << "------------------" << std::endl;
   // std::cout << pose.theta << " " << pose.x << " " << pose.y << std::endl;
   // std::cout << "------------------" << std::endl;
