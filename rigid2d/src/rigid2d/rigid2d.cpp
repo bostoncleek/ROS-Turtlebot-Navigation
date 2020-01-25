@@ -2,7 +2,7 @@
 /// \brief implementation of methods in rigid2d namespace
 
 #include <iostream>
-#include "rigid2d/diff_drive.hpp"
+#include "rigid2d/rigid2d.hpp"
 
 
 namespace rigid2d
@@ -245,7 +245,7 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
   // for 1 unit of time beta = beta_dot
   double beta = 0.0;
 
-  // compose strew
+  // compose screw
   if (!almost_equal(twist.w, 0.0))
   {
     // beta is the magnitude of the angular twist velocity
@@ -254,6 +254,13 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
     S.w = twist.w / beta;
     S.vx = twist.vx / beta;
     S.vy = twist.vy / beta;
+  }
+
+  // all elements of twist are zero
+  else if (almost_equal(twist.w, 0.0) and almost_equal(twist.vx, 0.0)
+              and almost_equal(twist.vy, 0.0))
+  {
+    return *this;
   }
 
   else
