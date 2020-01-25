@@ -259,7 +259,10 @@ TEST(Rigid2DTest, ReturnsTransformDisplacement)
 /// \brief Tests integrating a twist
 TEST(Rigid2DTest, IntegrateTwist)
 {
-  rigid2d::Transform2D T;
+  rigid2d::Transform2D T, Tnew;
+  rigid2d::TransformData2D Tdata;
+  rigid2d::Twist2D twist;
+
 
   // declare desired input
   std::string input = "90\n -1\n 3\n'";
@@ -270,21 +273,68 @@ TEST(Rigid2DTest, IntegrateTwist)
   // std::cout << T;
 
 
-  rigid2d::Twist2D twist;
+  // translation
+  twist.w = 0;
+  twist.vx = 1;
+  twist.vy = 1;
+
+  Tnew = T.integrateTwist(twist);
+  Tdata = Tnew.displacement();
+
+  ASSERT_NEAR(rigid2d::rad2deg(Tdata.theta), 90.0, 1e-3);
+  ASSERT_NEAR(Tdata.x, -2.0, 1e-3);
+  ASSERT_NEAR(Tdata.y, 4.0, 1e-3);
+
+
+  // rotation and translation
   twist.w = 1;
   twist.vx = 1;
   twist.vy = 1;
 
-  rigid2d::Transform2D Tnew = T.integrateTwist(twist);
-
-  std::cout << Tnew;
-
-  rigid2d::TransformData2D Tdata = Tnew.displacement();
+  Tnew = T.integrateTwist(twist);
+  Tdata = Tnew.displacement();
 
   ASSERT_NEAR(rigid2d::rad2deg(Tdata.theta), 147.296, 1e-3);
   ASSERT_NEAR(Tdata.x, -2.30117, 1e-3);
   ASSERT_NEAR(Tdata.y, 3.38177, 1e-3);
 }
+
+
+/// \brief Tests integrating a twist
+TEST(Rigid2DTest, IntegrateZeroTwist)
+{
+  rigid2d::Transform2D T, Tnew;
+  rigid2d::TransformData2D Tdata;
+  rigid2d::Twist2D twist;
+
+
+  // declare desired input
+  std::string input = "90\n -1\n 3\n'";
+  std::stringstream ss_in(input);
+
+  // read in tf
+  ss_in >>  T;
+  // std::cout << T;
+
+
+  // translation
+  twist.w = 0;
+  twist.vx = 0;
+  twist.vy = 0;
+
+  Tnew = T.integrateTwist(twist);
+  Tdata = Tnew.displacement();
+
+  ASSERT_NEAR(rigid2d::rad2deg(Tdata.theta), 90.0, 1e-3);
+  ASSERT_NEAR(Tdata.x, -1.0, 1e-3);
+  ASSERT_NEAR(Tdata.y, 3.0, 1e-3);
+
+  // std::cout << "------------------" << std::endl;
+  // std::cout << Tdata.theta << " " << Tdata.x << " " << Tdata.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+}
+
+
 
 
 
