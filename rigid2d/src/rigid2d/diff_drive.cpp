@@ -26,6 +26,9 @@ DiffDrive::DiffDrive()
   // assume robot starts still
   ul = 0.0;
   ur = 0.0;
+
+  // assume dt = 1
+  dt = 1;
 }
 
 
@@ -44,18 +47,20 @@ DiffDrive::DiffDrive(const Pose &pose, double wheel_base, double wheel_radius)
   // assume robot starts still
   ul = 0.0;
   ur = 0.0;
+
+  // assume dt = 1
+  dt = 1;
 }
 
 
-WheelVelocities DiffDrive::twistToWheels(Twist2D twist)
+WheelVelocities DiffDrive::twistToWheels(const Twist2D &twist) const
 {
-  double d = wheel_base / 2.0;
+  double d = wheel_base / 2;
 
   WheelVelocities vel;
 
-  vel.ul = (1.0 / wheel_radius)*(-d * twist.w + twist.vx);
-  vel.ur = (1.0 / wheel_radius)*(d * twist.w + twist.vx);
-
+  vel.ul = (1 / wheel_radius) * (-d*twist.w + twist.vx);
+  vel.ur = (1 / wheel_radius) * (d*twist.w + twist.vx);
 
 
   // std::cout << "------------------" << std::endl;
@@ -72,13 +77,13 @@ WheelVelocities DiffDrive::twistToWheels(Twist2D twist)
 }
 
 
-Twist2D DiffDrive::wheelsToTwist(const WheelVelocities &vel)
+Twist2D DiffDrive::wheelsToTwist(const WheelVelocities &vel) const
 {
-  double d = wheel_base / 2.0;
+  double d = 1 / wheel_base;
 
   Twist2D twist;
-  twist.w = (vel.ur - vel.ul) / (2*d);
-  twist.vx = (vel.ul + vel.ur) / 2.0;
+  twist.w = wheel_radius * d * (vel.ur - vel.ul);
+  twist.vx = wheel_radius * 0.5 * (vel.ul + vel.ur);
   twist.vy = 0.0;
 
   return twist;
@@ -91,20 +96,29 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
   WheelVelocities vel;
 
   // wheel velocities are changes in wheel angles
-  vel.ul = left - left_curr;
-  vel.ur = right - right_curr;
+  vel.ul = normalize_angle_PI(left - left_curr);
+  vel.ur = normalize_angle_PI(right - right_curr);
+
+  // vel.ul = left - left_curr;
+  // vel.ur = right - right_curr;
 
   // update wheel velocities
   this->ul = vel.ul;
   this->ur = vel.ur;
 
   // update wheel angles
-  left_curr = normalize_angle_2PI(left);
-  right_curr = normalize_angle_2PI(right);
+  left_curr = normalize_angle_PI(left);
+  right_curr = normalize_angle_PI(right);
+
+  // left_curr = left;
+  // right_curr = right;
+
 
 
   // body frame twist given wheel velocities
-  Twist2D Vb = this->wheelsToTwist(vel);
+  Twist2D Vb = wheelsToTwist(vel);
+
+  // std::cout << Vb.w << " " << Vb.vx << "\n";
 
   // itegrate twist
   Transform2D Tb_bprime;
@@ -125,6 +139,7 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
 
   // update pose
   this->theta = normalize_angle_PI(Twr.theta);
+  // this->theta = Twr.theta;
   this->x = Twr.x;
   this->y = Twr.y;
 
@@ -135,16 +150,20 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
 void DiffDrive::feedforward(const Twist2D &cmd)
 {
   // wheel velocities to achieve the cmd
-  WheelVelocities vel = this->twistToWheels(cmd);
-
-  // update encoder readings
-  left_curr = normalize_angle_2PI(left_curr + vel.ul);
-  right_curr = normalize_angle_2PI(right_curr + vel.ur);
+  WheelVelocities vel = twistToWheels(cmd);
 
 
   // update wheel velocities
-  ul = vel.ul;
-  ur = vel.ur;
+  ul = normalize_angle_PI(vel.ul);
+  ur = normalize_angle_PI(vel.ur);
+
+  // update encoder readings
+  left_curr = normalize_angle_PI(left_curr + vel.ul);
+  right_curr = normalize_angle_PI(right_curr + vel.ur);
+
+  // left_curr = left_curr + vel.ul;
+  // right_curr = right_curr + vel.ur;
+
 
   // itegrate twist
   Transform2D Tb_bprime;
@@ -165,15 +184,17 @@ void DiffDrive::feedforward(const Twist2D &cmd)
 
   // update pose
   this->theta = normalize_angle_PI(Twr.theta);
+  // this->theta = Twr.theta;
+
   this->x = Twr.x;
   this->y = Twr.y;
 }
 
 
-Pose DiffDrive::pose()
+Pose DiffDrive::pose() const
 {
   Pose pose;
-  pose.theta = this->theta;
+  pose.theta = normalize_angle_PI(this->theta);
   pose.x = this->x;
   pose.y = this->y;
 
@@ -207,7 +228,7 @@ void DiffDrive::reset(Pose ps)
 }
 
 
-WheelEncoders DiffDrive::getEncoders()
+WheelEncoders DiffDrive::getEncoders() const
 {
   WheelEncoders encoder;
   encoder.left = this->left_curr;
@@ -215,6 +236,12 @@ WheelEncoders DiffDrive::getEncoders()
 
   return encoder;
 }
+
+// void DiffDrive::scaleTwist(double dt)
+// {
+//   this->dt = dt;
+// }
+
 
 
 

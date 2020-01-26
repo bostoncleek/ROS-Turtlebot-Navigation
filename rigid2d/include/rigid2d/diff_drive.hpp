@@ -54,13 +54,13 @@ namespace rigid2d
       /// \param twist - the desired twist in the body frame of the robot
       /// \returns - the wheel velocities to use
       /// \throws std::exception
-      WheelVelocities twistToWheels(Twist2D twist);
+      WheelVelocities twistToWheels(const Twist2D &twist) const;
 
       /// \brief determine the body twist of the robot from its wheel velocities
       /// \param vel - the velocities of the wheels, assumed to be held constant
       ///  for one time unit
       /// \returns twist in the original body frame of the
-      Twist2D wheelsToTwist(const WheelVelocities &vel);
+      Twist2D wheelsToTwist(const WheelVelocities &vel) const;
 
 
       /// \brief Update the robot's odometry based on the current encoder readings
@@ -78,7 +78,7 @@ namespace rigid2d
 
 
       /// \brief get the current pose of the robot
-      Pose pose();
+      Pose pose() const;
 
       /// \brief get the wheel speeds, based on the last encoder update
       WheelVelocities wheelVelocities() const;
@@ -88,13 +88,19 @@ namespace rigid2d
 
       /// \brief get the current wheel encoder readings
       /// \return the angular position of wheels
-      WheelEncoders getEncoders();
+      WheelEncoders getEncoders() const;
+
+      /// \brief scales the twist based on a loop rate
+      /// \param dt - time difference during update
+      // void scaleTwist(double dt);
+
 
 
     private:
       double theta, x, y, wheel_base, wheel_radius; // theta, x, y of pose and geometry
       double left_curr, right_curr; // left and right current encoder readings
       double ul, ur; // the current wheel velocities
+      double dt;
     };
 }
 
