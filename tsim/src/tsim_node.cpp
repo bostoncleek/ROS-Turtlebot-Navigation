@@ -205,7 +205,7 @@ Control::Control(ros::NodeHandle &node_handle): node_handle_(node_handle)
   pen_client_.call(pen_srv_);
 
 
-  ROS_INFO("Successfully launched node.");
+  ROS_INFO("Successfully launched tsim node.");
 }
 
 
