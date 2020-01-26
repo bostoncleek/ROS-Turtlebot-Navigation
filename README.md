@@ -3,6 +3,21 @@ Author: Boston Cleek
 # Tasks Submitted
 (List the tasks that you worked on and completed here)
 C.005
+C.006
+C.007
+C.008
+C.009
+C.010
+E.000
+E.001
+E.002
+E.003
+E.004
+E.005
+B.005
+B.006
+
+
 
 # Tasks Completed
 (List the tasks that you finished in previous assignments here)
