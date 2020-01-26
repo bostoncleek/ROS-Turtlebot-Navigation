@@ -9,25 +9,17 @@
 namespace rigid2d
 {
 
-Waypoints::Waypoints(std::vector<Vector2D>  way_pts, double rot_vel, double trans_vel)
-                      : drive()
+Waypoints::Waypoints(std::vector<Vector2D> way_pts, double rot_vel, double trans_vel)
 {
   // store waypoints
   this->pts = way_pts;
 
-  // headed towards 1
-  idx = 1;
-
-  // robot placed at 0
-  Pose ps;
-  ps.theta = 0;
-  ps.x = pts.at(0).x;
-  ps.y = pts.at(0).y;
-
-  drive.reset(ps);
+  // assume NOT starting at 0
+  // head to 0
+  idx = 0;
 
   // tolerances
-  htol = 0.175;
+  htol = 0.005;
   ptol = 0.1;
 
   // velocities
@@ -40,26 +32,31 @@ Twist2D Waypoints::nextWaypoint(Pose pose)
 {
   Twist2D cmd;
 
+  // current goal reached
+  waypointReached(pose);
+
+
   double h_err = waypointHeading(pose);
-  h_err = normalize_angle_2PI(h_err);
+  h_err = normalize_angle_PI(h_err);
 
-  // turn
-  if (std::fabs(h_err) > htol)
+
+  // go straight
+  if (std::fabs(h_err) < htol)
   {
-    if (h_err <= PI and h_err >= 0)
-      cmd.w = rot_vel;
-    else
-      cmd.w = -rot_vel;
-
-    cmd.vx = 0;
+    cmd.w = 0;
+    cmd.vx = trans_vel;
     cmd.vy = 0;
 
     return cmd;
   }
 
-  // go straight
-  cmd.w = 0;
-  cmd.vx = trans_vel;
+  // turn 
+  if (h_err > 0)
+    cmd.w = rot_vel;
+  else
+    cmd.w = -rot_vel;
+
+  cmd.vx = 0;
   cmd.vy = 0;
 
   return cmd;
@@ -79,13 +76,17 @@ void Waypoints::waypointReached(Pose pose)
 void Waypoints::incrementWaypoint()
 {
   idx++;
+
   // last waypoint reached head back to start
   if (idx % pts.size() == 0)
     idx = 0;
+
+  std::cout << "Headed to waypoint: " << idx << " at ["
+  << pts.at(idx).x << " " << pts.at(idx).y << "]" << std::endl;
 }
 
 
-double Waypoints::waypointDistance(Pose pose)
+double Waypoints::waypointDistance(Pose pose) const
 {
   double xpt = pts.at(idx).x;
   double ypt = pts.at(idx).y;
@@ -94,29 +95,13 @@ double Waypoints::waypointDistance(Pose pose)
 }
 
 
-double Waypoints::waypointHeading(Pose pose)
+double Waypoints::waypointHeading(Pose pose) const
 {
   double xpt = pts.at(idx).x;
   double ypt = pts.at(idx).y;
   double bearing = std::atan2(ypt - pose.y, xpt - pose.x);
 
   return bearing - pose.theta;
-}
-
-
-void Waypoints::trajectory()
-{
-  // current pose
-  Pose pose = drive.pose();
-
-  // current goal reached
-  waypointReached(pose);
-
-  // twist to follow
-  Twist2D cmd = nextWaypoint(pose);
-
-  // propogate kinematics
-  drive.feedforward(cmd);
 }
 
 
