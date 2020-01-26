@@ -1,0 +1,27 @@
+<launch>
+
+  <!-- turtle_way -->
+  <include file = "$(find tsim)/launch/turtle_pent.launch" />
+
+  <!-- odometer   -->
+  <node name="odometer" pkg="rigid2d" type="odometry_node" output="screen" />
+
+  <!-- fake encoders -->
+  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders_node" output="screen" >
+    <remap from="cmd_vel" to="turtle1/cmd_vel" />
+  </node>
+
+
+  <!-- load model into parameter server -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
+
+  <!-- load physical parameters in to parameter server -->
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- rviz is a required package -->
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find tsim)/config/diff_drive_odom.rviz"/>
+
+
+</launch>
