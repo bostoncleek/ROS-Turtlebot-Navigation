@@ -1,5 +1,5 @@
-# store x and y components of waypoints
-# x_component: [3, 3, 7, 7, 5]
-# y_component: [7, 2, 2, 7, 10]
-x_component: [1, 1, 2, 2, 1.5]
-y_component: [2, 1, 1, 2, 3]
+# store x and y components of waypoints for a pentagon
+# x component for each waypoint
+x_component: [3, 3, 7, 7, 5]
+# y component for each waypoint 
+y_component: [7, 2, 2, 7, 10]
