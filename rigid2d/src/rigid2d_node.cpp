@@ -8,8 +8,9 @@
 #include "rigid2d/diff_drive.hpp"
 
 
-int main(int argc, char *argv[])
+int main()
 {
+
 
   // inputs
   rigid2d::Transform2D Tab, Tbc;
