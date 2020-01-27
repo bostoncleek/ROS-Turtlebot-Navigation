@@ -8,13 +8,13 @@
 
   <!-- odometer   -->
   <!-- load params in these are private to the node  -->
-  <node name="odometer" pkg="rigid2d" type="odometry_node" output="screen" >
+  <node name="odometer" pkg="rigid2d" type="odometer" output="screen" >
     <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
   </node>
 
 
   <!-- fake encoders -->
-  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders_node" output="screen" >
+  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders" output="screen" >
     <remap from="cmd_vel" to="turtle1/cmd_vel" />
   </node>
 

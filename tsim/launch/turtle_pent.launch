@@ -8,7 +8,7 @@
 
 
   <!-- turtle_way -->
-  <node name="turtle_way" pkg="tsim" type="turtle_way_node" output="screen" >
+  <node name="turtle_way" pkg="tsim" type="turtle_way" output="screen" >
     <remap from="pose" to="turtle1/pose" />
     <remap from="cmd_vel" to="turtle1/cmd_vel" />
   </node>
