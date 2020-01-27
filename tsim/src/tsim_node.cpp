@@ -241,9 +241,9 @@ void Control::bangBang()
     float h_err = b - pose_.theta;
 
     // abs error in pose
-    error_msg.x_error = abs(pose_.x - x_pt);
-    error_msg.y_error = abs(pose_.y - y_pt);
-    error_msg.theta_error = abs(h_err);
+    error_msg.x_error = fabs(pose_.x - x_pt);
+    error_msg.y_error = fabs(pose_.y - y_pt);
+    error_msg.theta_error = fabs(h_err);
 
 
     // heading within tol and move toward goal
