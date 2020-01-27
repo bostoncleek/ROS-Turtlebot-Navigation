@@ -87,7 +87,7 @@ TEST(DiffDriveTest, WheelsToTwist)
   twist = drive.wheelsToTwist(vel);
 
   ASSERT_NEAR(twist.w, 0, 1e-6);
-  ASSERT_NEAR(twist.vx, 10, 1e-6);
+  ASSERT_NEAR(twist.vx, 0.2, 1e-6);
   ASSERT_NEAR(twist.vy, 0, 1e-6);
 
   // pure rotation
@@ -96,7 +96,7 @@ TEST(DiffDriveTest, WheelsToTwist)
 
   twist = drive.wheelsToTwist(vel);
 
-  ASSERT_NEAR(twist.w, 20, 1e-6);
+  ASSERT_NEAR(twist.w, 0.4, 1e-6);
   ASSERT_NEAR(twist.vx, 0, 1e-6);
   ASSERT_NEAR(twist.vy, 0, 1e-6);
 
@@ -107,8 +107,8 @@ TEST(DiffDriveTest, WheelsToTwist)
 
   twist = drive.wheelsToTwist(vel);
 
-  ASSERT_NEAR(twist.w, 10, 1e-6);
-  ASSERT_NEAR(twist.vx, 5, 1e-6);
+  ASSERT_NEAR(twist.w, 0.2, 1e-6);
+  ASSERT_NEAR(twist.vx, 0.1, 1e-6);
   ASSERT_NEAR(twist.vy, 0, 1e-6);
 
   // std::cout << "------------------" << std::endl;
@@ -133,17 +133,17 @@ TEST(DiffDriveTest, PureTranslationOdom)
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
   // both wheels rotate 2pi
-  double wheel_angle = 2*rigid2d::PI;
+  double wheel_angle = rigid2d::PI/30;
   vel = drive.updateOdometry(wheel_angle, wheel_angle);
 
   pose = drive.pose();
 
 
-  ASSERT_NEAR(vel.ul, 6.28319, 1e-3);
-  ASSERT_NEAR(vel.ur, 6.28319, 1e-3);
+  ASSERT_NEAR(vel.ul, 0.10472 , 1e-3);
+  ASSERT_NEAR(vel.ur, 0.10472 , 1e-3);
 
   ASSERT_NEAR(pose.theta, 0, 1e-3);
-  ASSERT_NEAR(pose.x, 6.28319, 1e-3);
+  ASSERT_NEAR(pose.x, 0.0020944, 1e-3);
   ASSERT_NEAR(pose.y, 0, 1e-3);
 
 
@@ -210,8 +210,8 @@ TEST(DiffDriveTest, PureRotationOdom)
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
   // both wheels rotate 2pi
-  double left_wheel = -rigid2d::PI/4;
-  double right_wheel = rigid2d::PI/4;
+  double left_wheel = -rigid2d::PI/30;
+  double right_wheel = rigid2d::PI/30;
 
 
   vel = drive.updateOdometry(left_wheel, right_wheel);
@@ -219,10 +219,10 @@ TEST(DiffDriveTest, PureRotationOdom)
   pose = drive.pose();
 
 
-  ASSERT_NEAR(vel.ul, -0.785398, 1e-3);
-  ASSERT_NEAR(vel.ur, 0.785398, 1e-3);
+  ASSERT_NEAR(vel.ul, -0.10472, 1e-3);
+  ASSERT_NEAR(vel.ur, 0.10472, 1e-3);
 
-  ASSERT_NEAR(pose.theta, 1.5708, 1e-3);
+  ASSERT_NEAR(pose.theta, 0.00418879, 1e-3);
   ASSERT_NEAR(pose.x, 0, 1e-3);
   ASSERT_NEAR(pose.y, 0, 1e-3);
 
@@ -252,7 +252,7 @@ TEST(DiffDriveTest, TransRotOdom)
 
   // both wheels rotate 2pi
   double left_wheel = 0;
-  double right_wheel = rigid2d::PI/4;
+  double right_wheel = rigid2d::PI/30;
 
 
   vel = drive.updateOdometry(left_wheel, right_wheel);
@@ -261,11 +261,11 @@ TEST(DiffDriveTest, TransRotOdom)
 
 
   ASSERT_NEAR(vel.ul, 0, 1e-3);
-  ASSERT_NEAR(vel.ur, 0.785398, 1e-3);
+  ASSERT_NEAR(vel.ur, 0.10472, 1e-3);
 
-  ASSERT_NEAR(pose.theta, 0.785398, 1e-3);
-  ASSERT_NEAR(pose.x, 0.353553, 1e-3);
-  ASSERT_NEAR(pose.y, 0.146447, 1e-3);
+  ASSERT_NEAR(pose.theta, 0.0020944, 1e-3);
+  ASSERT_NEAR(pose.x, 0.0010472, 1e-3);
+  ASSERT_NEAR(pose.y, 0, 1e-3);
 
   // std::cout << "------------------" << std::endl;
   // std::cout << vel.ul << " " << vel.ur << std::endl;
@@ -294,7 +294,7 @@ TEST(DiffDriveTest, StraightLineFeedForward)
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
   cmd.w = 0.0;
-  cmd.vx = 1.0;
+  cmd.vx = 0.01;
   cmd.vy = 0.0;
 
   // apply forward twist
@@ -305,7 +305,7 @@ TEST(DiffDriveTest, StraightLineFeedForward)
   encoder = drive.getEncoders();
 
   ASSERT_NEAR(pose.theta, 0, 1e-3);
-  ASSERT_NEAR(pose.x, 1, 1e-3);
+  ASSERT_NEAR(pose.x, 0.01, 1e-3);
   ASSERT_NEAR(pose.y, 0, 1e-3);
 
   // std::cout << "------------------" << std::endl;
@@ -332,7 +332,7 @@ TEST(DiffDriveTest, RotationFeedForward)
 
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
-  cmd.w = rigid2d::PI/4;
+  cmd.w = rigid2d::PI/10;
   cmd.vx = 0.0;
   cmd.vy = 0.0;
 
@@ -342,7 +342,7 @@ TEST(DiffDriveTest, RotationFeedForward)
   pose = drive.pose();
 
 
-  ASSERT_NEAR(pose.theta, 0.785398, 1e-3);
+  ASSERT_NEAR(pose.theta, 0.314159, 1e-3);
   ASSERT_NEAR(pose.x, 0, 1e-3);
   ASSERT_NEAR(pose.y, 0, 1e-3);
 
@@ -368,8 +368,8 @@ TEST(DiffDriveTest, TransRotFeedForward)
 
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
-  cmd.w = rigid2d::PI/4;
-  cmd.vx = 1.0;
+  cmd.w = rigid2d::PI/10;
+  cmd.vx = 0.01;
   cmd.vy = 0.0;
 
   // apply forward twist
@@ -378,9 +378,9 @@ TEST(DiffDriveTest, TransRotFeedForward)
   pose = drive.pose();
 
 
-  ASSERT_NEAR(pose.theta, 0.785398, 1e-3);
-  ASSERT_NEAR(pose.x, 0.900316, 1e-3);
-  ASSERT_NEAR(pose.y, 0.372923, 1e-3);
+  ASSERT_NEAR(pose.theta, 0.314159, 1e-3);
+  ASSERT_NEAR(pose.x, 0.00983632, 1e-3);
+  ASSERT_NEAR(pose.y, 0.00155792, 1e-3);
 
   // std::cout << "------------------" << std::endl;
   // std::cout << pose.theta << " " << pose.x << " " << pose.y << std::endl;
@@ -388,7 +388,91 @@ TEST(DiffDriveTest, TransRotFeedForward)
 }
 
 
+TEST(DiffDriveTestm, FeedForwardUpdateOdom)
+{
+  rigid2d::Twist2D cmd;
 
+  rigid2d::Pose pose_1;
+  rigid2d::Pose pose_2;
+
+  rigid2d::WheelEncoders encoder_1;
+  rigid2d::WheelEncoders encoder_2;
+
+  rigid2d::WheelVelocities vel_1;
+  rigid2d::WheelVelocities vel_2;
+
+
+  pose_1.theta = 0.0;
+  pose_1.x = 0.0;
+  pose_1.y = 0.0;
+
+  pose_2 = pose_1;
+
+  double wheel_radius = 0.02;
+  double wheel_base = 1.0;
+
+  rigid2d::DiffDrive drive_1(pose_1, wheel_base, wheel_radius);
+  rigid2d::DiffDrive drive_2(pose_2, wheel_base, wheel_radius);
+
+
+  cmd.w = 0.0;
+  cmd.vx = 0.01;
+  cmd.vy = 0.0;
+
+  // apply forward twist
+  drive_1.feedforward(cmd);
+
+  pose_1 = drive_1.pose();
+
+  encoder_1 = drive_1.getEncoders();
+
+  vel_1 = drive_1.wheelVelocities();
+
+  // std::cout << "feedforward" << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "pose" << std::endl;
+  // std::cout << pose_1.theta << " " << pose_1.x << " " << pose_1.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "encoders" << std::endl;
+  // std::cout << encoder_1.left << " " << encoder_1.right << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "wheel vel" << std::endl;
+  // std::cout << vel_1.ul << " " << vel_1.ur << std::endl;
+  // std::cout << "------------------" << std::endl;
+
+
+  vel_2 = drive_2.updateOdometry(encoder_1.left, encoder_1.right);
+
+  pose_2 = drive_2.pose();
+
+  encoder_2 = drive_2.getEncoders();
+
+  vel_2 = drive_2.wheelVelocities();
+
+
+  // std::cout << "updateOdometry" << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "pose" << std::endl;
+  // std::cout << pose_2.theta << " " << pose_2.x << " " << pose_2.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "encoders" << std::endl;
+  // std::cout << encoder_2.left << " " << encoder_2.right << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "wheel vel" << std::endl;
+  // std::cout << vel_2.ul << " " << vel_2.ur << std::endl;
+  // std::cout << "------------------" << std::endl;
+
+
+  ASSERT_NEAR(pose_1.theta, pose_2.theta, 1e-3);
+  ASSERT_NEAR(pose_1.x, pose_2.x, 1e-3);
+  ASSERT_NEAR(pose_1.y, pose_2.y, 1e-3);
+
+  ASSERT_NEAR(encoder_1.left, encoder_2.left, 1e-3);
+  ASSERT_NEAR(encoder_1.right, encoder_2.right, 1e-3);
+
+  ASSERT_NEAR(vel_1.ul, vel_2.ul, 1e-3);
+  ASSERT_NEAR(vel_1.ur, vel_2.ur, 1e-3);
+}
 
 
 
