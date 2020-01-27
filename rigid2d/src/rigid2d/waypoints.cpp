@@ -1,5 +1,5 @@
 /// \file
-/// \brief implementation of waypoint methods in rigid2d namespace
+/// \brief Library for generating control (body twist) between waypoints
 
 #include <iostream>
 #include "rigid2d/waypoints.hpp"
@@ -19,8 +19,8 @@ Waypoints::Waypoints(std::vector<Vector2D> way_pts, double rot_vel, double trans
   idx = 0;
 
   // tolerances
-  htol = 0.005;
-  ptol = 0.1;
+  htol = 0.005;   // heading tolerance
+  ptol = 0.1;     // distance to goal tolerance 
 
   // velocities
   this->rot_vel = rot_vel;
@@ -50,7 +50,7 @@ Twist2D Waypoints::nextWaypoint(Pose pose)
     return cmd;
   }
 
-  // turn 
+  // turn
   if (h_err > 0)
     cmd.w = rot_vel;
   else
