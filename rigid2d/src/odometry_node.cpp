@@ -1,5 +1,5 @@
 /// \file
-/// \brief  publishes odometry messages
+/// \brief publishes odometry messages and broadcasts a tf from odom to base link frame
 ///
 /// \author Boston Cleek
 /// \date 1/23/20
@@ -15,20 +15,22 @@
 #include <ros/console.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
-
 
 #include "rigid2d/diff_drive.hpp"
 
 
 // global variables
 std::string left_wheel_joint, right_wheel_joint;    // joint names
-double left, right;                                // wheel angular positions
-bool message;
+double left, right;                                 // wheel angular positions
+bool message;                                       // callback flag
+
 
 /// \brief updates the wheel encoder angles
 /// \param msg - contains the encoder readings and joint names
@@ -44,16 +46,11 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   iter = std::find(names.begin(), names.end(), right_wheel_joint);
   right_idx = std::distance(names.begin(), iter);
 
-  // ROS_INFO("Left wheel %f", left);
-  // ROS_INFO("Right wheel %f", right);
-
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
   message = true;
 }
-
-// TODO: change to tf2
 
 
 
@@ -64,25 +61,21 @@ int main(int argc, char** argv)
 
   ros::Subscriber joint_sub = node_handle.subscribe("/joint_states", 1, jointStatesCallback);
   ros::Publisher odom_pub = node_handle.advertise<nav_msgs::Odometry>("odom", 1);
-  tf::TransformBroadcaster odom_broadcaster;
 
+  tf2_ros::TransformBroadcaster odom_broadcaster;
 
   std::string odom_frame_id, body_frame_id;
   double wheel_base, wheel_radius;
 
 
-  node_handle.param<std::string>("odom_frame_id", odom_frame_id, "odom");
-  node_handle.param<std::string>("body_frame_id", body_frame_id, "base_link");
-  node_handle.param<std::string>("left_wheel_joint", left_wheel_joint, "left_wheel_axle");
-  node_handle.param<std::string>("right_wheel_joint", right_wheel_joint, "right_wheel_axle");
+  node_handle.getParam("odom_frame_id", odom_frame_id);
+  node_handle.getParam("body_frame_id", body_frame_id);
+  node_handle.getParam("left_wheel_joint", left_wheel_joint);
+  node_handle.getParam("right_wheel_joint", right_wheel_joint);
 
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
-
-  ROS_INFO("wheel_base: %f", wheel_base);
-  ROS_INFO("wheel_radius: %f", wheel_radius);
-
 
   ROS_INFO("Successfully launched odometer node.");
 
@@ -90,6 +83,7 @@ int main(int argc, char** argv)
   // check if message has been recieved
   message = false;
 
+  // Assume pose starts at (0,0,0)
   rigid2d::Pose pose;
   pose.theta = 0;
   pose.x = 0;
@@ -100,9 +94,6 @@ int main(int argc, char** argv)
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
   // timing
-  // int frequency = 60;
-  // ros::Rate loop_rate(frequency);
-
   ros::Time current_time, last_time;
   current_time = ros::Time::now();
   last_time = ros::Time::now();
@@ -115,11 +106,6 @@ int main(int argc, char** argv)
 
     if (message)
     {
-      ROS_INFO("Left wheel %f", left);
-      ROS_INFO("Right wheel %f", right);
-      // ROS_INFO("Right wheel %f", right);
-
-
       // update odom
       drive.updateOdometry(left, right);
 
@@ -134,9 +120,12 @@ int main(int argc, char** argv)
       rigid2d::WheelVelocities vel = drive.wheelVelocities();
       rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
 
-      // quaternion from yaw
-      geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(pose.theta);
-      // std::cout << odom_quat << "\n";
+
+      // convert yaw to Quaternion
+      tf2::Quaternion q;
+      q.setRPY(0, 0, pose.theta);
+      geometry_msgs::Quaternion odom_quat;
+      odom_quat = tf2::toMsg(q);
 
 
       // broadcast transform between odom and body
@@ -177,9 +166,7 @@ int main(int argc, char** argv)
     }
 
     last_time = current_time;
-    // loop_rate.sleep();
   }
-
   return 0;
 }
 
