@@ -1,7 +1,7 @@
 #ifndef WAYPOINTS_INCLUDE_GUARD_HPP
 #define WAYPOINTS_INCLUDE_GUARD_HPP
 /// \file
-/// \brief Library for two-dimensional rigid body transformations.
+/// \brief Library for generating control (body twist) between waypoints
 
 #include <cmath>
 #include <iosfwd>
