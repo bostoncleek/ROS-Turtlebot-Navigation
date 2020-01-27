@@ -1,5 +1,5 @@
 /// \file
-/// \brief  compose twist to move turtle in pentagon
+/// \brief Composes body twist to move turtle in pentagon
 ///
 /// \author Boston Cleek
 /// \date 1/25/20
@@ -18,7 +18,6 @@
 #include <turtlesim/TeleportAbsolute.h>
 #include <geometry_msgs/Twist.h>
 
-
 #include <string>
 #include <vector>
 #include <iostream>
@@ -31,8 +30,7 @@
 
 
 // global variables
-// turtlesim::Pose tsim_pose;
-rigid2d::Pose tsim_pose;
+rigid2d::Pose tsim_pose; // pose of turtle from turtlesim
 
 
 
@@ -167,7 +165,8 @@ int main(int argc, char** argv)
     rigid2d::Twist2D scaled;
     scaled.vx = cmd.vx* 1 / frequency;
     scaled.w = cmd.w * 1 / frequency;
-    // propogate kinematics
+
+    // propagate kinematics
     drive.feedforward(scaled);
 
 
@@ -182,9 +181,9 @@ int main(int argc, char** argv)
 
     //  error
     tsim::PoseError error_msg;
-    error_msg.x_error = std::abs(dd_pose.x - tsim_pose.x);
-    error_msg.y_error = std::abs(dd_pose.y - tsim_pose.y);
-    error_msg.theta_error = std::abs(std::abs(dd_pose.theta) - std::abs(tsim_pose.theta));
+    error_msg.x_error = std::fabs(dd_pose.x - tsim_pose.x);
+    error_msg.y_error = std::fabs(dd_pose.y - tsim_pose.y);
+    error_msg.theta_error = std::fabs(std::abs(dd_pose.theta) - std::fabs(tsim_pose.theta));
 
 
     vel_pub.publish(twist_msg);
