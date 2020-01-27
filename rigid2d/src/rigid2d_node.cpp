@@ -1,15 +1,130 @@
 /// \file
 /// \brief driver file for rigid2d
 
-#include "rigid2d/rigid2d.hpp"
 #include <iostream>
 #include <sstream>
 
-// #include "rigid2d/diff_drive.hpp"
+#include "rigid2d/rigid2d.hpp"
+#include "rigid2d/diff_drive.hpp"
 
 
 int main(int argc, char *argv[])
 {
+
+  // // rigid2d::Twist2D twist_in;
+  // // rigid2d::Twist2D twist_out;
+  // //
+  // // rigid2d::WheelVelocities vel_in;
+  // // rigid2d::WheelVelocities vel_out;
+  // //
+  // // rigid2d::Pose pose;
+  // //
+  // // twist_in.w = 1;
+  // // twist_in.vx = 1;
+  // // twist_in.vy = 0;
+  // //
+  // // double wheel_radius = 0.02;
+  // // double wheel_base = 1.0;
+  // //
+  // // rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
+  // //
+  // //
+  // //
+  // // vel_out = drive.twistToWheels(twist_in);
+  // //
+  // //
+  // // std::cout << "wheel vel" << std::endl;
+  // // std::cout << vel_out.ul << " " << vel_out.ur << std::endl;
+  // // std::cout << "------------------" << std::endl;
+  // //
+  // // vel_in = vel_out;
+  // // twist_out = drive.wheelsToTwist(vel_in);
+  // //
+  // // std::cout << "twist" << std::endl;
+  // // std::cout << twist_out.w << " " << twist_out.vx << " " << twist_out.vy << std::endl;
+  // // std::cout << "------------------" << std::endl;
+  //
+  //
+  //
+  //
+  // rigid2d::Twist2D cmd;
+  //
+  // rigid2d::Pose pose_1;
+  // rigid2d::Pose pose_2;
+  //
+  // rigid2d::WheelEncoders encoder_1;
+  // rigid2d::WheelEncoders encoder_2;
+  //
+  // rigid2d::WheelVelocities vel_1;
+  // rigid2d::WheelVelocities vel_2;
+  //
+  //
+  // pose_1.theta = 0.0;
+  // pose_1.x = 0.0;
+  // pose_1.y = 0.0;
+  //
+  // pose_2 = pose_1;
+  //
+  // double wheel_radius = 0.02;
+  // double wheel_base = 1.0;
+  //
+  // rigid2d::DiffDrive drive_1(pose_1, wheel_base, wheel_radius);
+  // rigid2d::DiffDrive drive_2(pose_2, wheel_base, wheel_radius);
+  //
+  //
+  // cmd.w = 0.0;
+  // cmd.vx = 0.05;
+  // cmd.vy = 0.0;
+  //
+  // // apply forward twist
+  // drive_1.feedforward(cmd);
+  //
+  // pose_1 = drive_1.pose();
+  //
+  // encoder_1 = drive_1.getEncoders();
+  //
+  // vel_1 = drive_1.wheelVelocities();
+  //
+  // std::cout << "feedforward" << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "pose" << std::endl;
+  // std::cout << pose_1.theta << " " << pose_1.x << " " << pose_1.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "encoders" << std::endl;
+  // std::cout << encoder_1.left << " " << encoder_1.right << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "wheel vel" << std::endl;
+  // std::cout << vel_1.ul << " " << vel_1.ur << std::endl;
+  // std::cout << "------------------" << std::endl;
+  //
+  //
+  // vel_2 = drive_2.updateOdometry(encoder_1.left, encoder_1.right);
+  //
+  // pose_2 = drive_2.pose();
+  //
+  // encoder_2 = drive_2.getEncoders();
+  //
+  // vel_2 = drive_2.wheelVelocities();
+  //
+  //
+  // std::cout << "updateOdometry" << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "pose" << std::endl;
+  // std::cout << pose_2.theta << " " << pose_2.x << " " << pose_2.y << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "encoders" << std::endl;
+  // std::cout << encoder_2.left << " " << encoder_2.right << std::endl;
+  // std::cout << "------------------" << std::endl;
+  // std::cout << "wheel vel" << std::endl;
+  // std::cout << vel_2.ul << " " << vel_2.ur << std::endl;
+  // std::cout << "------------------" << std::endl;
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
   // inputs
   rigid2d::Transform2D Tab, Tbc;
   rigid2d::Vector2D v;
