@@ -55,20 +55,17 @@ DiffDrive::DiffDrive(const Pose &pose, double wheel_base, double wheel_radius)
 
 WheelVelocities DiffDrive::twistToWheels(const Twist2D &twist) const
 {
+
+  // Using Eq. 1 multiply H by the twist.
+  // See /doc for more details.
+
+
   double d = wheel_base / 2;
 
   WheelVelocities vel;
 
   vel.ul = (1 / wheel_radius) * (-d*twist.w + twist.vx);
   vel.ur = (1 / wheel_radius) * (d*twist.w + twist.vx);
-
-
-  // std::cout << "------------------" << std::endl;
-  // std::cout << twist.w << " " << twist.vx << " " << twist.vy << std::endl;
-  // std::cout << "------------------" << std::endl;
-  // //
-  // std::cout << vel.ul << " " << vel.ur << std::endl;
-
 
   if (twist.vy != 0)
     throw std::invalid_argument("Twist cannot have y velocity component");
@@ -79,6 +76,10 @@ WheelVelocities DiffDrive::twistToWheels(const Twist2D &twist) const
 
 Twist2D DiffDrive::wheelsToTwist(const WheelVelocities &vel) const
 {
+
+  // Using Eq. 2 multiply the pseudo inverse of H by the wheel velocities.
+  // See /doc for more details.
+
   double d = 1 / wheel_base;
 
   Twist2D twist;
@@ -149,6 +150,7 @@ WheelVelocities DiffDrive::updateOdometry(double left, double right)
 
 void DiffDrive::feedforward(const Twist2D &cmd)
 {
+
   // wheel velocities to achieve the cmd
   WheelVelocities vel = twistToWheels(cmd);
 
