@@ -1,0 +1,9 @@
+# sets params used by odometer node
+# odometry frame id
+odom_frame_id: "odom"
+# body frame if
+body_frame_id: "base_link"
+# left wheel joint name
+left_wheel_joint: "left_wheel_axle"
+# right wheel joint name 
+right_wheel_joint: "right_wheel_axle"
