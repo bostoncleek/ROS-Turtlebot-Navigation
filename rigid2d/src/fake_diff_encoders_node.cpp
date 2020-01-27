@@ -1,5 +1,5 @@
 /// \file
-/// \brief  publishes odometry messages
+/// \brief  publishes a body twist at a fixed frequency
 ///
 /// \author Boston Cleek
 /// \date 1/24/20
@@ -27,8 +27,9 @@
 
 // global variables
 std::string left_wheel_joint, right_wheel_joint;     // joint names
-rigid2d::Twist2D cmd;
-bool message;
+rigid2d::Twist2D cmd;                                // body cmd_vel
+bool message;                                        // callback flag
+
 
 /// \brief updates the body twist of the robot
 /// \param msg - contains the encoder readings and joint names
@@ -49,21 +50,19 @@ void twistCallback(const geometry_msgs::Twist::ConstPtr &msg)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "fake_diff_encoders");
-  ros::NodeHandle node_handle("~");
+  ros::NodeHandle node_handle("~odometer");
 
   ros::Subscriber twist_sub = node_handle.subscribe("/cmd_vel", 1, twistCallback);
   ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_states", 1);
 
   double wheel_base, wheel_radius;
 
-  node_handle.param<std::string>("left_wheel_joint", left_wheel_joint, "left_wheel_axle");
-  node_handle.param<std::string>("right_wheel_joint", right_wheel_joint, "right_wheel_axle");
+  node_handle.getParam("/odometer/left_wheel_joint", left_wheel_joint);
+  node_handle.getParam("/odometer/right_wheel_joint", right_wheel_joint);
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
 
-  ROS_INFO("wheel_base: %f", wheel_base);
-  ROS_INFO("wheel_radius: %f", wheel_radius);
 
   ROS_INFO("Successfully launched fake_diff_encoders node.");
 
@@ -107,7 +106,7 @@ int main(int argc, char** argv)
       drive.feedforward(scaled);
 
 
-      pose = drive.pose();
+      // pose = drive.pose();
       // std::cout << "------------------" << std::endl;
       // std::cout << "fake_diff_encoders" << std::endl;
       // std::cout << pose.theta << " " << pose.x << " " << pose.y << std::endl;
@@ -124,13 +123,6 @@ int main(int argc, char** argv)
 
       joint_state.position.push_back(encoders.left);
       joint_state.position.push_back(encoders.right);
-
-      // ROS_INFO("left %f", encoders.left);
-      // ROS_INFO("right %f", encoders.right);
-
-      // cmd.w = 0.0;
-      // cmd.vx = 0.0;
-      // cmd.vy = 0.0;
 
       message = false;
 
