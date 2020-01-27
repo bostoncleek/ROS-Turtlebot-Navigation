@@ -146,8 +146,8 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}_node.cpp)
-add_executable(odometry_node src/odometry_node.cpp)
-add_executable(fake_diff_encoders_node src/fake_diff_encoders_node.cpp)
+add_executable(odometer src/odometry_node.cpp)
+add_executable(fake_diff_encoders src/fake_diff_encoders_node.cpp)
 
 
 
@@ -160,8 +160,8 @@ add_executable(fake_diff_encoders_node src/fake_diff_encoders_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(odometry_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(fake_diff_encoders_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(odometer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(fake_diff_encoders ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
@@ -170,12 +170,12 @@ target_link_libraries(${PROJECT_NAME}_node
 	${PROJECT_NAME}
 )
 
-target_link_libraries(odometry_node
+target_link_libraries(odometer
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 )
 
-target_link_libraries(fake_diff_encoders_node
+target_link_libraries(fake_diff_encoders
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 )
@@ -195,7 +195,7 @@ target_link_libraries(fake_diff_encoders_node
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS fake_diff_encoders_node odometry_node ${PROJECT_NAME}_node
+install(TARGETS fake_diff_encoders odometer ${PROJECT_NAME}_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
