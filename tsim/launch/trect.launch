@@ -7,7 +7,7 @@
   <node name="roaming_turtle" pkg="turtlesim" type="turtlesim_node" />
 
   <!-- turtle_rect -->
-  <node name="turtle_rect" pkg="tsim" type="tsim_node" output="screen" >
+  <node name="turtle_rect" pkg="tsim" type="turtle_rect" output="screen" >
     <remap from="cmd_vel" to="turtle1/cmd_vel" />
   </node>
 
