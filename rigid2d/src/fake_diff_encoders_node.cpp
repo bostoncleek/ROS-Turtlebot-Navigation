@@ -26,9 +26,9 @@
 
 
 // global variables
-std::string left_wheel_joint, right_wheel_joint;     // joint names
-rigid2d::Twist2D cmd;                                // body cmd_vel
-bool message;                                        // callback flag
+static std::string left_wheel_joint, right_wheel_joint;     // joint names
+static rigid2d::Twist2D cmd;                                // body cmd_vel
+static bool message;                                        // callback flag
 
 
 /// \brief updates the body twist of the robot

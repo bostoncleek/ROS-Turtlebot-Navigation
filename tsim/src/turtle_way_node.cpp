@@ -30,7 +30,7 @@
 
 
 // global variables
-rigid2d::Pose tsim_pose; // pose of turtle from turtlesim
+static rigid2d::Pose tsim_pose; // pose of turtle from turtlesim
 
 
 

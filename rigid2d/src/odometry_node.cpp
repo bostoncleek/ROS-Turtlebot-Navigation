@@ -27,9 +27,9 @@
 
 
 // global variables
-std::string left_wheel_joint, right_wheel_joint;    // joint names
-double left, right;                                 // wheel angular positions
-bool message;                                       // callback flag
+static std::string left_wheel_joint, right_wheel_joint;    // joint names
+static double left, right;                                 // wheel angular positions
+static bool message;                                       // callback flag
 
 
 /// \brief updates the wheel encoder angles
