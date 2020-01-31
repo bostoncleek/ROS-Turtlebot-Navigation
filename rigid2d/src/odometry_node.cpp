@@ -24,12 +24,37 @@
 #include <iostream>
 
 #include "rigid2d/diff_drive.hpp"
-
+#include "rigid2d/set_pose.h"
 
 // global variables
 static std::string left_wheel_joint, right_wheel_joint;    // joint names
 static double left, right;                                 // wheel angular positions
 static bool message;                                       // callback flag
+
+static rigid2d::Pose pose_srv;                             // pose set by srv
+static bool srv_active;                                    // set pose srv activated
+
+
+
+/// \brief service sets the pose of the robot
+bool setPoseService(rigid2d::set_pose::Request &req,
+                    rigid2d::set_pose::Response &res)
+{
+  // the requested pose
+  pose_srv.theta = req.theta;
+  pose_srv.x = req.x;
+  pose_srv.y = req.y;
+
+  // set response
+  res.set_pose_state = true;
+
+  // service flag has been activated
+  srv_active = true;
+
+  ROS_INFO("Set Pose service activated");
+
+  return true;
+}
 
 
 /// \brief updates the wheel encoder angles
@@ -62,6 +87,9 @@ int main(int argc, char** argv)
   ros::Subscriber joint_sub = node_handle.subscribe("/joint_states", 1, jointStatesCallback);
   ros::Publisher odom_pub = node_handle.advertise<nav_msgs::Odometry>("odom", 1);
 
+  ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
+
+
   tf2_ros::TransformBroadcaster odom_broadcaster;
 
   std::string odom_frame_id, body_frame_id;
@@ -83,6 +111,9 @@ int main(int argc, char** argv)
   // check if message has been recieved
   message = false;
 
+  // service has been requested
+  srv_active = false;
+
   // Assume pose starts at (0,0,0)
   rigid2d::Pose pose;
   pose.theta = 0;
@@ -98,12 +129,12 @@ int main(int argc, char** argv)
   current_time = ros::Time::now();
   last_time = ros::Time::now();
 
-
   while(node_handle.ok())
   {
     ros::spinOnce();
     current_time = ros::Time::now();
 
+    // joint states call back flag
     if (message)
     {
       // update odom
@@ -164,6 +195,21 @@ int main(int argc, char** argv)
 
       message = false;
     }
+
+
+    // set pose service flag
+    if (srv_active)
+    {
+      drive.reset(pose_srv);
+      
+      srv_active = false;
+    }
+
+
+
+
+
+
 
     last_time = current_time;
   }
