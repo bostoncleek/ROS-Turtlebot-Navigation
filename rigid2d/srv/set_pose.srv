@@ -1,0 +1,8 @@
+# sets pose of robot
+# theta (angular position) x/y (position)
+# set is true if the new pose service has been activated
+float32 theta
+float32 x
+float32 y
+---
+bool set_pose_state
