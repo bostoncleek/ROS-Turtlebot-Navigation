@@ -1,10 +1,23 @@
+# Dimensions of turtlebot burger (dumb name)
+# All length units in meters
 # The width of the wheels
-wheel_width: 0.2
+wheel_width: 0.018
 # The radius of the wheels
-wheel_radius: 0.35
+wheel_radius: 0.033
 #  The distance between the centers wheels
-wheel_base: 1
+wheel_base: 0.160
 # The length of the main chassis link
-chassis_length: 1
+chassis_length: 0.138
 # The thickness of the plate that forms the chassis
-chassis_thickness: 0.5
+chassis_thickness: 0.01
+# Number of ticks per revolution per wheel (DYNAMIXEL XL430-W250-T)
+encoder_ticks_per_rev: 4096
+# Max translational velocity of robot (m/2)
+max_trans: 0.22
+# Max rotational velocity of robot (rad/s)
+max_rot: 2.84
+# Max rotational velocity of the motor (rad/s)
+max_rot_motor: 6.35495
+# Max motor power between [-265 265]
+# this is the absolute value
+max_motor_power: 265
