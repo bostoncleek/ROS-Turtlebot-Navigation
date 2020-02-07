@@ -1,3 +1,6 @@
 - git:
     local-name: turtle-nav-stack
     uri: https://github.com/ME495-Navigation/main-assignment-bostoncleek.git
+- git:
+    local-name: nuturtlebot
+    uri: https://github.com/ME495-Navigation/nuturtlebot.git
