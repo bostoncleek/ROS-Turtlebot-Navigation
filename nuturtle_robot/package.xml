@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nuturtle_robot</name>
+  <version>0.0.1</version>
+  <description>Control the turtlebot3</description>
+
+
+  <maintainer email="bostoncleek2020@u.northwestern.edu">bostoncleek</maintainer>
+
+
+  <license>MIT</license>
+
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nuturtlebot</build_depend>
+  <build_depend>rigid2d</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <build_depend>roscpp</build_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+
+  <exec_depend>roscpp</exec_depend>
+
+  <test_depend>rostest</test_depend>
+  
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

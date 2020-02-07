@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- turtle interface node  -->
+  <node name="turtle_interface" pkg="nuturtle_robot" type="turtle_interface" output="screen" >
+  </node>
+
+  <!-- turtlebot3 parameters -->
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+  <!-- joint names -->
+  <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
+
+
+  <!-- turtle interface test node  -->
+  <test test-name="turtle_interface_test" pkg="nuturtle_robot" type="turtle_interface_test" />
+
+
+
+</launch>
