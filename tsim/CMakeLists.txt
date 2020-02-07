@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(tsim)
 
 # add compile options
-add_compile_options(-Wall -Werror)
+add_compile_options(-Wall -Werror -Wno-psabi)
 
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -172,6 +172,8 @@ target_link_libraries(turtle_way
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
