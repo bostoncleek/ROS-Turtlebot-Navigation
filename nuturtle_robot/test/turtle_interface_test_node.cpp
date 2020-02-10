@@ -1,14 +1,15 @@
 /// \file
-/// \brief
+/// \brief Tests low level interface for driving turtlebot
 ///
 /// \author Boston Cleek
-/// \date 2/5/20
+/// \date 2/6/20
 ///
 /// PUBLISHES:
-///
-///
+///   cmd_vel (geometry_msgs/Twist): Commanded body twist
+///   sensor_data (nuturtlebot/SensorData): wheel encoder sesnor data
 /// SUBSCRIBES:
-///
+///   wheel_cmd (nuturtlebot/WheelCommands): commanded wheel speed -44 to 44
+///   joint_states (sensor_msgs/JointState): position and velocity of each wheel
 
 
 #include <gtest/gtest.h>
@@ -78,16 +79,12 @@ struct TurtlebotHelper
 
 
 
-
 /// \brief Tests the wheel speed drive robot translation
 TEST(TurtleInterface, TwistNoRotation)
 {
   ros::NodeHandle node_handle;
 
   TurtlebotHelper turthelper;
-
-
-  ROS_INFO("work?");
 
 
   // latched publisher
@@ -204,11 +201,11 @@ TEST(TurtleInterface, Sensort2JointState)
     sensor_pub.publish(sensor_data);
   }
 
-  ASSERT_NEAR(turthelper.left_joint.position, 0.076699, 1e-3);
-  ASSERT_NEAR(turthelper.right_joint.position, 0.076699,1e-3);
+  ASSERT_NEAR(turthelper.left_joint.position, 0.15339807878856412, 1e-3);
+  ASSERT_NEAR(turthelper.right_joint.position, 0.15339807878856412,1e-3);
 
-  ASSERT_NEAR(turthelper.left_joint.velocity, 0.076699, 1e-3);
-  ASSERT_NEAR(turthelper.right_joint.velocity, 0.076699,1e-3);
+  ASSERT_NEAR(turthelper.left_joint.velocity, 0.15339807878856412, 1e-3);
+  ASSERT_NEAR(turthelper.right_joint.velocity, 0.15339807878856412,1e-3);
 }
 
 
@@ -220,9 +217,10 @@ int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "turtle_interface_test");
-  return RUN_ALL_TESTS();
 
-  return 0;
+  ROS_INFO("Successfully launched turtle_interface_test node");
+
+  return RUN_ALL_TESTS();
 }
 
 
