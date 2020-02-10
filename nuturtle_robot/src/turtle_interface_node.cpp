@@ -1,14 +1,15 @@
 /// \file
-/// \brief
+/// \brief Low level interface for commanding turtlebot manevuers
 ///
 /// \author Boston Cleek
 /// \date 2/5/20
 ///
 /// PUBLISHES:
-///
-///
+///   wheel_cmd (nuturtlebot/WheelCommands): commanded wheel speed -44 to 44
+///   joint_states (sensor_msgs/JointState): position and velocity of each wheel
 /// SUBSCRIBES:
-///
+///   cmd_vel (geometry_msgs/Twist): Commanded body twist
+///   sensor_data (nuturtlebot/SensorData): wheel encoder sesnor data
 
 
 
@@ -20,6 +21,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 
 #include <rigid2d/rigid2d.hpp>
@@ -71,11 +73,11 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "turtle_interface");
   ros::NodeHandle node_handle;
 
-  ros::Subscriber vel_sub = node_handle.subscribe("/cmd_vel", 1, twistCallBack);
+  ros::Subscriber vel_sub = node_handle.subscribe("cmd_vel", 1, twistCallBack);
   ros::Subscriber sensor_sub = node_handle.subscribe("/sensor_data", 1, sensorCallBack);
 
   ros::Publisher wheel_pub = node_handle.advertise<nuturtlebot::WheelCommands>("/wheel_cmd", 1);
-  ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_states", 1);
+  ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("joint_states", 1);
 
 
   double max_rot = 0.0, max_trans = 0.0;
@@ -84,10 +86,10 @@ int main(int argc, char** argv)
 
   std::string left_wheel_joint, right_wheel_joint;
 
-  node_handle.getParam("max_rot", max_rot);
-  node_handle.getParam("max_trans", max_trans);
-  node_handle.getParam("max_rot_motor", max_rot_motor);
-  node_handle.getParam("encoder_ticks_per_rev", encoder_ticks_per_rev);
+  node_handle.getParam("/max_rot", max_rot);
+  node_handle.getParam("/max_trans", max_trans);
+  node_handle.getParam("/max_rot_motor", max_rot_motor);
+  node_handle.getParam("/encoder_ticks_per_rev", encoder_ticks_per_rev);
 
 
   node_handle.getParam("/wheel_base", wheel_base);
@@ -98,6 +100,10 @@ int main(int argc, char** argv)
   node_handle.getParam("/right_wheel_joint", right_wheel_joint);
 
 
+  ROS_INFO("Successfully launched turtle_interface node");
+
+
+
   // init pose of robot (0,0,0)
   rigid2d::Pose ps;
 
@@ -106,51 +112,33 @@ int main(int argc, char** argv)
 
 
   // timing
-   int frequency = 60;
-   ros::Rate loop_rate(frequency);
-
    ros::Time current_time, last_time;
    current_time = ros::Time::now();
    last_time = ros::Time::now();
 
-
-   // TODO: math_utils::clamp
 
 
   while(node_handle.ok())
   {
     ros::spinOnce();
     current_time = ros::Time::now();
+    last_time = current_time;
 
 
     if (twist_message)
     {
       // cap velocities
-      if (cmd.w > max_rot)
-      {
-        cmd.w = max_rot;
-      }
-
-      if (cmd.vx > max_trans)
-      {
-        cmd.vx = max_trans;
-      }
+      cmd.w = std::clamp(cmd.w, -max_rot, max_rot);
+      cmd.vx = std::clamp(cmd.vx, -max_trans, max_trans);
 
 
       // compose wheel velocities from twist
       rigid2d::WheelVelocities wheel_vel = drive.twistToWheels(cmd);
 
-      // cap wheel velocities
-      if (wheel_vel.ul > max_rot_motor)
-      {
-        wheel_vel.ul = max_rot_motor;
-      }
 
       // cap wheel velocities
-      if (wheel_vel.ur > max_rot_motor)
-      {
-        wheel_vel.ur = max_rot_motor;
-      }
+      wheel_vel.ul = std::clamp(wheel_vel.ul, -max_rot_motor, max_rot_motor);
+      wheel_vel.ur = std::clamp(wheel_vel.ur, -max_rot_motor, max_rot_motor);
 
 
       // scale wheel velocities -44 -> 44
@@ -161,7 +149,7 @@ int main(int argc, char** argv)
 
       // ROS_INFO("left wheel cmd %f", wheel_vel.ul);
       // ROS_INFO("right wheel cmd %f", wheel_vel.ur);
-
+      //
       // ROS_INFO("left wheel cmd %d", wheel_command.left_velocity);
       // ROS_INFO("right wheel cmd %d", wheel_command.right_velocity);
 
@@ -175,13 +163,12 @@ int main(int argc, char** argv)
     {
 
       // convert endcoder ticks to wheel angles
-      double left_angle = (rigid2d::PI / encoder_ticks_per_rev) * left;
-      double right_angle = (rigid2d::PI / encoder_ticks_per_rev) * right;
+      double left_angle = (2*rigid2d::PI / encoder_ticks_per_rev) * left;
+      double right_angle = (2*rigid2d::PI / encoder_ticks_per_rev) * right;
 
 
       // update odometry to get wheel velocities
       rigid2d::WheelVelocities wheel_vel =  drive.updateOdometry(left_angle, right_angle);
-
 
       sensor_msgs::JointState joint_state;
       joint_state.header.stamp = current_time;
@@ -196,11 +183,11 @@ int main(int argc, char** argv)
       joint_state.velocity.push_back(wheel_vel.ur);
 
 
-      ROS_INFO("left wheel pos %f", left_angle);
-      ROS_INFO("right wheel pos %f", right_angle);
-
-      ROS_INFO("left wheel vel %f", wheel_vel.ul);
-      ROS_INFO("right wheel vel %f", wheel_vel.ur);
+      // ROS_INFO("left wheel pos %f", left_angle);
+      // ROS_INFO("right wheel pos %f", right_angle);
+      //
+      // ROS_INFO("left wheel vel %f", wheel_vel.ul);
+      // ROS_INFO("right wheel vel %f", wheel_vel.ur);
 
 
       sensor_message = false;
@@ -208,12 +195,7 @@ int main(int argc, char** argv)
       joint_pub.publish(joint_state);
     }
 
-
-    last_time = current_time;
-    loop_rate.sleep();
   }
-
-
 
   return 0;
 }
