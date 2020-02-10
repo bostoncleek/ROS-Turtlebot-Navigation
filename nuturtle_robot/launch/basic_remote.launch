@@ -9,7 +9,7 @@
 
   <!-- launchfile is being run directly on a turtlebot -->
   <group if="$(eval arg('robot') == 0)">
-    <machine name="turtlebot" address="localhost" if="$(eval arg('robot') == 0)"/>
+    <machine name="turtlebot" address="localhost" />
   </group>
 
   <!-- launchfile is being run directly on my machine -->
