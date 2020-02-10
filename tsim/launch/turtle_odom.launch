@@ -6,15 +6,18 @@
   <!-- turtle_way -->
   <include file = "$(find tsim)/launch/turtle_pent.launch" pass_all_args="true"/>
 
+
+
   <!-- odometer   -->
   <!-- load params in these are private to the node  -->
   <node name="odometer" pkg="rigid2d" type="odometer" output="screen" >
     <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
+    <remap from="/odometer/joint_states" to="/joint_states" />
   </node>
 
 
   <!-- fake encoders -->
-  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders" output="screen" >
+  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders" output="screen">
     <remap from="cmd_vel" to="turtle1/cmd_vel" />
   </node>
 
