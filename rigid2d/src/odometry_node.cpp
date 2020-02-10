@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <exception>
 
 #include "rigid2d/diff_drive.hpp"
 #include "rigid2d/set_pose.h"
@@ -37,6 +38,8 @@ static bool srv_active;                                    // set pose srv activ
 
 
 /// \brief service sets the pose of the robot
+/// \param req - service request pose
+/// \param res - service pose result
 bool setPoseService(rigid2d::set_pose::Request &req,
                     rigid2d::set_pose::Response &res)
 {
@@ -45,6 +48,7 @@ bool setPoseService(rigid2d::set_pose::Request &req,
   pose_srv.x = req.x;
   pose_srv.y = req.y;
 
+  ROS_INFO("pose %f", pose_srv.theta);
   // set response
   res.set_pose_state = true;
 
@@ -71,6 +75,21 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   iter = std::find(names.begin(), names.end(), right_wheel_joint);
   right_idx = std::distance(names.begin(), iter);
 
+  if (left_idx > 1)
+  {
+    throw std::invalid_argument("Left wheel index not found in Odometer.");
+  }
+
+  if (right_idx > 1)
+  {
+    throw std::invalid_argument("Right wheel index not found in Odometer.");
+  }
+
+
+  // ROS_INFO("left index: %d", left_idx);
+  // ROS_INFO("right index: %d", right_idx);
+
+
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
@@ -82,9 +101,9 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "odometer");
-  ros::NodeHandle node_handle("~");
+  ros::NodeHandle node_handle;//("~");
 
-  ros::Subscriber joint_sub = node_handle.subscribe("/joint_states", 1, jointStatesCallback);
+  ros::Subscriber joint_sub = node_handle.subscribe("joint_states", 1, jointStatesCallback);
   ros::Publisher odom_pub = node_handle.advertise<nav_msgs::Odometry>("odom", 1);
 
   ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
@@ -96,10 +115,16 @@ int main(int argc, char** argv)
   double wheel_base, wheel_radius;
 
 
-  node_handle.getParam("odom_frame_id", odom_frame_id);
-  node_handle.getParam("body_frame_id", body_frame_id);
-  node_handle.getParam("left_wheel_joint", left_wheel_joint);
-  node_handle.getParam("right_wheel_joint", right_wheel_joint);
+  // node_handle.getParam("odom_frame_id", odom_frame_id);
+  // node_handle.getParam("body_frame_id", body_frame_id);
+
+  node_handle.getParam("/left_wheel_joint", left_wheel_joint);
+  node_handle.getParam("/right_wheel_joint", right_wheel_joint);
+
+
+  ROS_INFO("odom_frame_id %s", odom_frame_id.c_str());
+  ROS_INFO("body_frame_id %s", body_frame_id.c_str());
+
 
 
   node_handle.getParam("/wheel_base", wheel_base);
@@ -146,6 +171,9 @@ int main(int argc, char** argv)
       // std::cout << "odometer" << std::endl;
       // std::cout << pose.theta << " " << pose.x << " " << pose.y << std::endl;
       // std::cout << "------------------" << std::endl;
+
+      // ROS_INFO("pose %f", pose.theta);
+
 
       // body twist
       rigid2d::WheelVelocities vel = drive.wheelVelocities();
@@ -201,7 +229,7 @@ int main(int argc, char** argv)
     if (srv_active)
     {
       drive.reset(pose_srv);
-      
+
       srv_active = false;
     }
 

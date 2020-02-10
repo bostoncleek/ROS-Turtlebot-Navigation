@@ -50,15 +50,15 @@ void twistCallback(const geometry_msgs::Twist::ConstPtr &msg)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "fake_diff_encoders");
-  ros::NodeHandle node_handle("~odometer");
+  ros::NodeHandle node_handle;//("~odometer");
 
-  ros::Subscriber twist_sub = node_handle.subscribe("/cmd_vel", 1, twistCallback);
-  ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_states", 1);
+  ros::Subscriber twist_sub = node_handle.subscribe("cmd_vel", 1, twistCallback);
+  ros::Publisher joint_pub = node_handle.advertise<sensor_msgs::JointState>("joint_states", 1);
 
   double wheel_base, wheel_radius;
 
-  node_handle.getParam("/odometer/left_wheel_joint", left_wheel_joint);
-  node_handle.getParam("/odometer/right_wheel_joint", right_wheel_joint);
+  node_handle.getParam("/left_wheel_joint", left_wheel_joint);
+  node_handle.getParam("/right_wheel_joint", right_wheel_joint);
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
