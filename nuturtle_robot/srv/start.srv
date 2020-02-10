@@ -1,0 +1,6 @@
+# set the direction of the rotation
+# direction is either clockwise or counter-clockwise
+# set_pose_state is true when the direction is established 
+string direction
+---
+bool direction_set
