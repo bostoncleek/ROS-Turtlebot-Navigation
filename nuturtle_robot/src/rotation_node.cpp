@@ -22,7 +22,7 @@
 
 #include "nuturtle_robot/start.h"
 #include "rigid2d/set_pose.h"
-
+#include "rigid2d/rigid2d.hpp"
 
 
 // global variable
@@ -30,29 +30,28 @@ static std::string direction;                          // direction of rotation
 static bool rotation_srv_flag;                         // start srv flag
 static int ctr;
 static double rot;                                       // rotation speed
+static double lin;                                       // translation speed
+
+static bool doing_circles;                              // rotating
+static bool doing_trans;                                // translating
+
+static bool twenty_rotations;                           // 20 circles
+static bool ten_translations;                           // 10 trans steps
+
+static int total_rotations;                            // total number of rotations
+static int total_trans;                                  // total number of translation step
 
 
 
-/// \brief service sets the rotation direction of the robot
-/// \param req - service request direction
-/// \param res - service direction result
-bool setDirectionService(nuturtle_robot::start::Request &req,
-                         nuturtle_robot::start::Response &res,
-                         ros::ServiceClient &set_pose_client)
+
+/// \brief - Sets pose to (0,0,0)
+/// \param set_pose_client - set pose client
+/// \param set_fake_pose_client - set pose fake client
+void initPose(ros::ServiceClient &set_pose_client,
+              ros::ServiceClient &set_fake_pose_client)
 {
-
-  // issue request and set response
-  direction = req.direction;
-  res.direction_set = true;
-
-  // set flag
-  rotation_srv_flag = true;
-
-  ROS_INFO("start service activated");
-
-
   // reset pose to (0,0,0)
-  if (ros::service::exists("/set_pose", true))
+  if (ros::service::exists("set_pose", true) and ros::service::exists("fake/set_pose", true))
   {
     rigid2d::set_pose pose_srv;
     pose_srv.request.theta = 0.0;
@@ -60,11 +59,59 @@ bool setDirectionService(nuturtle_robot::start::Request &req,
     pose_srv.request.y = 0.0;
 
     set_pose_client.call(pose_srv);
+    set_fake_pose_client.call(pose_srv);
   }
+}
+
+
+/// \brief service sets the rotation direction of the robot
+/// \param req - service request direction
+/// \param res - service direction result
+/// \param set_pose_client - set pose client
+/// \param set_fake_pose_client - set pose fake client
+bool setDirectionService(nuturtle_robot::start::Request &req,
+                         nuturtle_robot::start::Response &res,
+                         ros::ServiceClient &set_pose_client,
+                         ros::ServiceClient &set_fake_pose_client)
+{
+
+  // issue request and set response
+  direction = req.direction;
+  res.direction_set = true;
+
+  // set flags
+  rotation_srv_flag = true;
+  twenty_rotations = false;
+  ten_translations = false;
+
+
+  // reset counters
+  ctr = 0;
+  total_rotations = 0;
+  total_trans = 0;
+
+
+  if (direction == "clockwise" or  direction == "counter-clockwise")
+  {
+   doing_circles = true;
+  }
+
+  if (direction == "forward" or  direction == "backward")
+  {
+   doing_trans = true;
+  }
+
+  // reset pose
+  initPose(set_pose_client, set_fake_pose_client);
+
+
+  ROS_INFO("start service activated");
+
 
 
   return true;
 }
+
 
 
 /// \breif Publishes a twist using a time
@@ -72,7 +119,7 @@ bool setDirectionService(nuturtle_robot::start::Request &req,
 void cmdCallback(const ros::TimerEvent& event, ros::Publisher &cmd_pub)
 {
   geometry_msgs::Twist cmd;
-  cmd.linear.x = 0;
+  cmd.linear.x = lin;
   cmd.linear.y = 0;
   cmd.linear.z = 0;
   cmd.angular.x = 0;
@@ -81,8 +128,13 @@ void cmdCallback(const ros::TimerEvent& event, ros::Publisher &cmd_pub)
 
   cmd_pub.publish(cmd);
 
-  ctr++;
+  // make sure service has been called before counting
+  if (rotation_srv_flag)
+  {
+    ctr++;
+  }
 }
+
 
 
 
@@ -93,50 +145,95 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "rotation");
   ros::NodeHandle node_handle;
 
-  ros::ServiceClient set_pose_client = node_handle.serviceClient<rigid2d::set_pose>("/set_pose");
+  ros::ServiceClient set_pose_client = node_handle.serviceClient<rigid2d::set_pose>("set_pose");
+  ros::ServiceClient set_fake_pose_client = node_handle.serviceClient<rigid2d::set_pose>("fake/set_pose");
 
 
   ros::Publisher cmd_pub = node_handle.advertise<geometry_msgs::Twist>("cmd_vel", 1);
   ros::ServiceServer dir_server = node_handle.advertiseService<nuturtle_robot::start::Request,
-                                    nuturtle_robot::start::Response>("/start",
+                                    nuturtle_robot::start::Response>("start",
                                     std::bind(&setDirectionService, std::placeholders::_1,
-                                              std::placeholders::_2, set_pose_client));
+                                              std::placeholders::_2, set_pose_client, set_fake_pose_client));
+
+  // ROS_WARN("start wait");
+  // ros::service::waitForService("set_pen", -1);
+  // ros::service::waitForService("fake/set_pen", -1);
+  // ROS_WARN("wait");
+  // initPose(set_pose_client, set_fake_pose_client);
 
 
 
-
-  double max_rot = 0.0, frac_vel = 0.0;
+  double max_rot = 0.0, frac_vel = 0.0, max_trans = 0.0;
 
   node_handle.getParam("/max_rot", max_rot);
-  node_handle.getParam("/rotation/frac_vel", frac_vel);
+  node_handle.getParam("/max_trans", max_trans);
+  node_handle.getParam("rotation/frac_vel", frac_vel);
+
 
   ROS_INFO("max_rot %f\n", max_rot);
+  ROS_INFO("max_trans %f\n", max_trans);
   ROS_INFO("frac_vel %f\n", frac_vel);
 
 
   ROS_INFO("Successfully launched rotation node.");
 
-  double frequency = 10;
 
+  // timer frequency
+  double frequency = 110;
 
   ros::Timer timer = node_handle.createTimer(ros::Duration(1 / frequency),
                        std::bind(&cmdCallback, std::placeholders::_1, cmd_pub));
 
 
+  rotation_srv_flag = false;
+  doing_circles = false;
+  doing_trans = false;
+
+
+  // rotation
+  /////////////////////////////////////////////////////////////////////////////
+  // when 20 rotations have been achieved
+  twenty_rotations = false;
+
+  // one circle
+  bool circle_achieved = false;
+
+  // number of timer calls for 1 revolution
+  int one_circle = 2*rigid2d::PI / (max_rot * frac_vel * (1.0 / frequency));
+
+  // counts to pause for 1/20th of a circle
+  int one_twenty_circle = (1.0 / 20.0) * one_circle;
+
+  /////////////////////////////////////////////////////////////////////////////
+
+
+  // translation
+  /////////////////////////////////////////////////////////////////////////////
+  // when 10 trans steps of 0.2m done
+  ten_translations = false;
+
+    // one translation step achieved
+  bool trans_achieved = false;
+
+  // forward or backward for 0.2 m
+  int one_trans = 0.2 / (max_trans * frac_vel * (1.0 / frequency));
+
+  // pause for 1/10 of the time to go 0.2 m
+  int one_ten_trans = (1.0 / 10.0) * one_trans;
+  /////////////////////////////////////////////////////////////////////////////
+
+
+  ROS_INFO("Timer calls per circle %d\n", one_circle);
+  ROS_INFO("Timer calls per 1/20 circle %d\n", one_twenty_circle);
+
+
+  ROS_INFO("Timer calls per translate %d\n", one_trans);
+  ROS_INFO("Timer calls per 1/10 translate %d\n", one_ten_trans);
 
   while(node_handle.ok())
   {
     ros::spinOnce();
 
-    // ROS_INFO("counter %d", ctr);
-
-    // full rotation
-    if (ctr == 487)
-    {
-      ctr = 0;
-    }
-
-    // ROS_INFO("rot %f", rot);
 
     // start service as set direction
     if (rotation_srv_flag)
@@ -151,11 +248,116 @@ int main(int argc, char** argv)
         rot = -(max_rot * frac_vel);
       }
 
+      else if (direction == "forward")
+      {
+        lin = (max_trans * frac_vel);
+      }
+
+      else if (direction == "backward")
+      {
+        lin = -(max_trans * frac_vel);
+      }
+
       else
       {
         throw std::invalid_argument("Not a valid direction");
       }
     }
+
+    // circles
+    ///////////////////////////////////////////////////////////////////////////
+    if (doing_circles)
+    {
+
+      // full rotation
+      if (ctr == one_circle)
+      {
+        ctr = 0;
+        circle_achieved = true;
+        total_rotations++;
+      }
+
+      // pause for 1/20 rotation
+      if (ctr <= one_twenty_circle and circle_achieved)
+      {
+        // pausing
+        if (ctr != one_twenty_circle)
+        {
+          rot = 0.0;
+        }
+
+        // stop pausing
+        else
+        {
+          ctr = 0;
+          circle_achieved = false;
+        }
+      }
+
+
+      // 20 rotations
+      if (total_rotations == 20)
+      {
+        twenty_rotations = true;
+      }
+
+
+      if (twenty_rotations)
+      {
+        rot = 0.0;
+      }
+    }
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    // translation
+    ///////////////////////////////////////////////////////////////////////////
+    if (doing_trans)
+    {
+
+      // full rotation
+      if (ctr == one_trans)
+      {
+        ctr = 0;
+        trans_achieved = true;
+        total_trans++;
+      }
+
+      // pause for 1/10 the translation distance
+      if (ctr <= one_ten_trans and trans_achieved)
+      {
+        // pausing
+        if (ctr != one_ten_trans)
+        {
+          lin = 0.0;
+        }
+
+        // stop pausing
+        else
+        {
+          ctr = 0;
+          trans_achieved = false;
+        }
+      }
+
+
+      // 10 translation
+      if (total_trans == 10)
+      {
+        ten_translations = true;
+      }
+
+
+      if (ten_translations)
+      {
+        lin = 0.0;
+      }
+
+    }
+
+
+    // ROS_INFO("counter %d", ctr);
+    // ROS_INFO("rot %f", rot);
 
 
   }
