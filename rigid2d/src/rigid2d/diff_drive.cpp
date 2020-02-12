@@ -221,12 +221,12 @@ void DiffDrive::reset(Pose ps)
   y = ps.y;
 
   // set wheel encoder angles
-  left_curr = 0.0;
-  right_curr = 0.0;
-
-  // assume robot starts still
-  ul = 0.0;
-  ur = 0.0;
+  // left_curr = 0.0;
+  // right_curr = 0.0;
+  //
+  // // assume robot starts still
+  // ul = 0.0;
+  // ur = 0.0;
 }
 
 
