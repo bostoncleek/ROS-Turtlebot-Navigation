@@ -106,8 +106,8 @@ TEST(TurtleInterface, TwistNoRotation)
     cmd_pub.publish(cmd);
   }
 
-  ASSERT_EQ(turthelper.left_vel, 21);
-  ASSERT_EQ(turthelper.right_vel, 21);
+  ASSERT_EQ(turthelper.left_vel, 126);
+  ASSERT_EQ(turthelper.right_vel, 126);
 }
 
 
@@ -139,8 +139,8 @@ TEST(TurtleInterface, TwistNoTranslation)
     cmd_pub.publish(cmd);
   }
 
-  ASSERT_EQ(turthelper.left_vel, -17);
-  ASSERT_EQ(turthelper.right_vel, 17);
+  ASSERT_EQ(turthelper.left_vel, -101);
+  ASSERT_EQ(turthelper.right_vel, 101);
 }
 
 
@@ -171,8 +171,8 @@ TEST(TurtleInterface, TwistTransRot)
     cmd_pub.publish(cmd);
   }
 
-  ASSERT_EQ(turthelper.left_vel, -15);
-  ASSERT_EQ(turthelper.right_vel, 19);
+  ASSERT_EQ(turthelper.left_vel, -88);
+  ASSERT_EQ(turthelper.right_vel, 114);
 }
 
 
