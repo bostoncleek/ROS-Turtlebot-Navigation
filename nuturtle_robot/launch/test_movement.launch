@@ -4,12 +4,12 @@
   <arg name="robot" default="0" doc="sets address for machine tag"/>
 
   <!-- rotation speed -->
-  <!-- <arg name="frac_vel" default="0" doc="fraction of max rotation velocity"/> -->
-
+  <arg name="frac_vel" default="0.1" doc="fraction of max rotation velocity"/>
 
   <!-- turtlebot3 diff drive params -->
   <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
-  <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
+
+
 
 
 
@@ -19,42 +19,57 @@
   </include>
 
 
-  <node name="turtle_interface" pkg="nuturtle_robot" type="turtle_interface" output="screen" />
+  <!-- odometer 1 -->
+  <!-- load params in these are private to the node  -->
+  <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
+    <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
+    <param name="odom_frame_id" value="odom" />
+    <param name="body_frame_id" value="base_link" />
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
+
+
+  <!-- Interface with turtlebot3 -->
+  <node machine="turtlebot" name="turtle_interface" pkg="nuturtle_robot" type="turtle_interface" output="screen" >
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
 
 
   <!-- rotation node  -->
-  <node name="rotation" pkg="nuturtle_robot" type="rotation" output="screen" >
-    <param name="frac_vel" type="double" value="$(eval 0.5)" />
+  <node machine="turtlebot" name="rotation" pkg="nuturtle_robot" type="rotation" output="screen" >
+    <param name="frac_vel" type="double" value="$(eval arg('frac_vel'))" />
   </node>
 
 
-  <!-- odometer 1 -->
-  <!-- load params in these are private to the node  -->
-  <node name="odometer_1" pkg="rigid2d" type="odometer" output="screen" >
-  </node>
 
 
-  <!-- odometer 2 -->
-  <!-- load params in these are private to the node  -->
-  <node name="odometer_2" pkg="rigid2d" type="odometer" output="screen" >
-    <param name="fake" type="bool" value="$(eval 0.5)" />
-    <!-- <remap from="odom" to="fake_odom" />
-    <remap from="base_link" to="fake_base_link" /> -->
-    <!-- <param name="odometer_2/odom_frame_id" value="fake_odom" />
-    <param name="odometer_2/body_frame_id" value="fake_base_link" /> -->
-    <remap from="joint_states" to="fake/joint_states"/>
-    <remap from="odom" to="fake/odom"/>
-  </node>
+
+  <group ns="fake">
+
+    <!-- fake encoders -->
+    <node machine="turtlebot" name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders" output="screen" >
+      <param name="left_wheel_joint" value="left_wheel_axle" />
+      <param name="right_wheel_joint" value="right_wheel_axle" />
+      <remap from="/fake/cmd_vel" to="/cmd_vel"/>
+    </node>
 
 
-  <!-- fake encoders -->
-  <node name="fake_diff_encoders" pkg="rigid2d" type="fake_diff_encoders" output="screen" >
-    <remap from="joint_states" to="fake/joint_states"/>
-  </node>
+    <!-- odometer 2 -->
+    <!-- load params in these are private to the node  -->
+    <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
+      <param name="odom_frame_id" value="fake_odom" />
+      <param name="body_frame_id" value="fake_base_link" />
+      <param name="left_wheel_joint" value="left_wheel_axle" />
+      <param name="right_wheel_joint" value="right_wheel_axle" />
+    </node>
+
+  </group>
 
 
   <!-- tf btw odom and fake_odom -->
-  <node pkg="tf" type="static_transform_publisher" name="odom2fakeodom" args="0 0 0 0 0 0 1 odom fake_odom "/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="odom2fakeodom" args="0 0 0 0 0 0 1 odom fake_odom"/>
 
 
   <!-- rviz -->
@@ -62,11 +77,12 @@
   <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find tsim)/config/diff_drive_odom.rviz"/>
   </group>
 
+
   <!-- load model into parameter server -->
   <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
 
   <!-- robot state publisher -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node machine="turtlebot" name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
 
 </launch>
