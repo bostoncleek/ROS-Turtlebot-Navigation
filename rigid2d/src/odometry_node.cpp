@@ -11,7 +11,7 @@
 ///   joint_states (sensor_msgs/JointState): angular wheel positions
 ///
 /// SERVICES:
-/// set_pose (set_pose) - sets the pose of the robot 
+///   set_pose (set_pose) - sets the pose of the robot
 
 
 #include <ros/ros.h>
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
   tf2_ros::TransformBroadcaster odom_broadcaster;
 
   std::string odom_frame_id, body_frame_id;
-  double wheel_base = 0.0, wheel_radius = 0.0;
+  auto wheel_base = 0.0, wheel_radius = 0.0;
 
 
   // node_handle.getParam("odom_frame_id", odom_frame_id);
@@ -198,6 +198,7 @@ int main(int argc, char** argv)
     // ROS_INFO("Pose %s %f %f %f", odom_frame_id.c_str(), pose.theta, pose.x, pose.y);
 
 
+
     // body twist
     rigid2d::WheelVelocities vel = drive.wheelVelocities();
     rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
@@ -239,11 +240,10 @@ int main(int argc, char** argv)
 
     // velocity in body frame
     odom.twist.twist.linear.x = vb.vx;
-    odom.twist.twist.linear.y = vb.vy; // should always be 0
+    odom.twist.twist.linear.y = 0.0;
     odom.twist.twist.angular.z = vb.w;
 
     odom_pub.publish(odom);
-
     //   message = false;
     // }
 
