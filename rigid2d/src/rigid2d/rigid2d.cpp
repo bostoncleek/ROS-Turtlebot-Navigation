@@ -243,7 +243,7 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
 
   // in Modern Robotics this is theta
   // for 1 unit of time beta = beta_dot
-  double beta = 0.0;
+  auto beta = 0.0;
 
   // compose screw
   if (!almost_equal(twist.w, 0.0))
@@ -275,23 +275,23 @@ Transform2D Transform2D::integrateTwist(const Twist2D &twist) const
 
 
   // trig components of beta
-  double cbeta = std::cos(beta);
-  double sbeta = std::sin(beta);
+  const auto cbeta = std::cos(beta);
+  const auto sbeta = std::sin(beta);
 
 
   // compose new transform
   // rotation component
-  double theta_new = std::atan2(sbeta * S.w, 1 + (1 - cbeta)*(-1.0 * std::pow(S.w,2)));
+  const auto theta_new = std::atan2(sbeta * S.w, 1 + (1 - cbeta)*(-1.0 * std::pow(S.w,2)));
 
-  double ctheta_new = std::cos(theta);
-  double stheta_new = std::sin(theta);
+  const auto ctheta_new = std::cos(theta);
+  const auto stheta_new = std::sin(theta);
 
   // translation component
-  double x_new = S.vx*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2))) + \
+  const auto x_new = S.vx*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2))) + \
                 S.vy*((1 - cbeta)*(-1.0 * S.w));
 
 
-  double y_new = S.vx*((1 - cbeta) * S.w) + \
+  const auto y_new = S.vx*((1 - cbeta) * S.w) + \
                     S.vy*(beta + (beta - sbeta)*(-1.0 * std::pow(S.w,2)));
 
 
