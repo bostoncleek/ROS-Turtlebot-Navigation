@@ -10,9 +10,6 @@
   <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
 
-
-
-
   <!-- basic remote -->
   <include file = "$(find nuturtle_robot)/launch/basic_remote.launch" >
     <arg name="robot" value="$(arg robot)" />
@@ -22,7 +19,6 @@
   <!-- odometer 1 -->
   <!-- load params in these are private to the node  -->
   <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
-    <rosparam command="load" file="$(find rigid2d)/config/odometer_params.yaml" />
     <param name="odom_frame_id" value="odom" />
     <param name="body_frame_id" value="base_link" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
