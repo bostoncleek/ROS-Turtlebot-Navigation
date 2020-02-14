@@ -5,10 +5,10 @@
 /// \date 2/7/20
 ///
 /// PUBLISHES:
+/// cmd_vel (geometry_msgs/Twist): Commanded body twist
 ///
-///
-/// SUBSCRIBES:
-///
+/// SERVICES:
+/// start (start) - intiates the movement of the turtlebot and call set_pose service
 
 
 
@@ -29,39 +29,19 @@
 static std::string direction;                          // direction of rotation
 static bool rotation_srv_flag;                         // start srv flag
 static int ctr;
-static double rot;                                       // rotation speed
-static double lin;                                       // translation speed
+static double rot;                                     // rotation speed
+static double lin;                                     // translation speed
 
-static bool doing_circles;                              // rotating
-static bool doing_trans;                                // translating
+static bool doing_circles;                             // rotating
+static bool doing_trans;                               // translating
 
-static bool twenty_rotations;                           // 20 circles
-static bool ten_translations;                           // 10 trans steps
+static bool twenty_rotations;                          // 20 circles
+static bool ten_translations;                          // 10 trans steps
 
 static int total_rotations;                            // total number of rotations
-static int total_trans;                                  // total number of translation step
+static int total_trans;                                // total number of translation step
 
 
-
-
-/// \brief - Sets pose to (0,0,0)
-/// \param set_pose_client - set pose client
-/// \param set_fake_pose_client - set pose fake client
-void initPose(ros::ServiceClient &set_pose_client,
-              ros::ServiceClient &set_fake_pose_client)
-{
-  // reset pose to (0,0,0)
-  if (ros::service::exists("set_pose", true) and ros::service::exists("fake/set_pose", true))
-  {
-    rigid2d::set_pose pose_srv;
-    pose_srv.request.theta = 0.0;
-    pose_srv.request.x = 0.0;
-    pose_srv.request.y = 0.0;
-
-    set_pose_client.call(pose_srv);
-    set_fake_pose_client.call(pose_srv);
-  }
-}
 
 
 /// \brief service sets the rotation direction of the robot
@@ -102,7 +82,17 @@ bool setDirectionService(nuturtle_robot::start::Request &req,
   }
 
   // reset pose
-  initPose(set_pose_client, set_fake_pose_client);
+  // reset pose to (0,0,0)
+  if (ros::service::exists("set_pose", true) and ros::service::exists("fake/set_pose", true))
+  {
+    rigid2d::set_pose pose_srv;
+    pose_srv.request.theta = 0.0;
+    pose_srv.request.x = 0.0;
+    pose_srv.request.y = 0.0;
+
+    set_pose_client.call(pose_srv);
+    set_fake_pose_client.call(pose_srv);
+  }
 
 
   ROS_INFO("start service activated");
@@ -116,7 +106,8 @@ bool setDirectionService(nuturtle_robot::start::Request &req,
 
 /// \breif Publishes a twist using a time
 /// \param event - provides timing information
-void cmdCallback(const ros::TimerEvent& event, ros::Publisher &cmd_pub)
+/// \param cmd_pub - ros publisher
+void cmdCallback(const ros::TimerEvent&, ros::Publisher &cmd_pub)
 {
   geometry_msgs::Twist cmd;
   cmd.linear.x = lin;
@@ -155,13 +146,6 @@ int main(int argc, char** argv)
                                     std::bind(&setDirectionService, std::placeholders::_1,
                                               std::placeholders::_2, set_pose_client, set_fake_pose_client));
 
-  // ROS_WARN("start wait");
-  // ros::service::waitForService("set_pen", -1);
-  // ros::service::waitForService("fake/set_pen", -1);
-  // ROS_WARN("wait");
-  // initPose(set_pose_client, set_fake_pose_client);
-
-
 
   double max_rot = 0.0, frac_vel = 0.0, max_trans = 0.0;
 
@@ -199,10 +183,10 @@ int main(int argc, char** argv)
   bool circle_achieved = false;
 
   // number of timer calls for 1 revolution
-  int one_circle = 2*rigid2d::PI / (max_rot * frac_vel * (1.0 / frequency));
+  const auto one_circle = static_cast<int> (2.0*rigid2d::PI / (max_rot * frac_vel * (1.0 / frequency)));
 
   // counts to pause for 1/20th of a circle
-  int one_twenty_circle = (1.0 / 20.0) * one_circle;
+  const auto one_twenty_circle = static_cast<int> ((1.0 / 20.0) * (2.0*rigid2d::PI / (max_rot * frac_vel * (1.0 / frequency))));
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -216,10 +200,10 @@ int main(int argc, char** argv)
   bool trans_achieved = false;
 
   // forward or backward for 0.2 m
-  int one_trans = 0.2 / (max_trans * frac_vel * (1.0 / frequency));
+  const auto one_trans =static_cast<int> (0.2 / (max_trans * frac_vel * (1.0 / frequency)));
 
   // pause for 1/10 of the time to go 0.2 m
-  int one_ten_trans = (1.0 / 10.0) * one_trans;
+  const auto one_ten_trans = static_cast<int> ((1.0 / 10.0) * (0.2 / (max_trans * frac_vel * (1.0 / frequency))));
   /////////////////////////////////////////////////////////////////////////////
 
 
