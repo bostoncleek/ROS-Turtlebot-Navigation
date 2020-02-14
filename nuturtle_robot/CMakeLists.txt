@@ -16,8 +16,14 @@ find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
 	message_generation
 	message_runtime
+	nav_msgs
 	roscpp
-	sensor_msgs)
+	sensor_msgs
+	std_srvs
+	tf2
+	tf2_ros
+	visualization_msgs
+	)
 
 
 find_package(nuturtlebot REQUIRED)
@@ -116,8 +122,13 @@ catkin_package(
 	CATKIN_DEPENDS
 		geometry_msgs
 		message_runtime
+		nav_msgs
 		roscpp
 		sensor_msgs
+		std_srvs
+		tf2
+		tf2_ros
+		visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -149,6 +160,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(turtle_interface src/turtle_interface_node.cpp)
 add_executable(rotation src/rotation_node.cpp)
+add_executable(real_waypoint src/real_waypoint_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,6 +172,7 @@ add_executable(rotation src/rotation_node.cpp)
 ## same as for the library above
 add_dependencies(turtle_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rotation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(real_waypoint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
@@ -177,12 +190,18 @@ target_link_libraries(rotation
 )
 
 
+target_link_libraries(real_waypoint
+  ${catkin_LIBRARIES}
+	${nuturtlebot_LIBRARIES}
+	${rigid2d_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
 
 install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
-# install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
@@ -196,7 +215,7 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS rotation turtle_interface
+install(TARGETS real_waypoint rotation turtle_interface
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
