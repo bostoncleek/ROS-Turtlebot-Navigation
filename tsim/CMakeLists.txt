@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(tsim)
 
 # add compile options
-add_compile_options(-Wall -Werror -Wno-psabi)
+add_compile_options(-Wall -Wextra -Wno-psabi)
 
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -169,6 +169,9 @@ target_link_libraries(turtle_way
 #############
 ## Install ##
 #############
+
+install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
