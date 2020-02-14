@@ -4,9 +4,6 @@
   <arg name="robot" default="0" doc="sets address for machine tag"/>
 
 
-  <!-- <arg name="X" default="1" doc="turtlebot number"/> -->
-
-
   <!-- launchfile is being run directly on a turtlebot -->
   <group if="$(eval arg('robot') == 0)">
     <machine name="turtlebot" address="localhost" />
