@@ -119,7 +119,8 @@ catkin_package(
  CATKIN_DEPENDS
 	 geometry_msgs
 	 message_runtime
-	 nav_msgs roscpp
+	 nav_msgs
+	 roscpp
 	 sensor_msgs
 	 tf2
 	 tf2_ros
