@@ -34,7 +34,7 @@ namespace rigid2d
     /// if given a compile-time constant as input
     constexpr double deg2rad(double deg)
     {
-      return deg*(PI / 180);
+      return deg*(PI / 180.0);
     }
 
     /// \brief convert radians to degrees
@@ -42,7 +42,7 @@ namespace rigid2d
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
-      return rad*(180 / PI);
+      return rad*(180.0 / PI);
     }
 
 
@@ -52,11 +52,13 @@ namespace rigid2d
     constexpr double normalize_angle_PI(double rad)
     {
       // floating point remainder essentially this is fmod
-      double q  = std::floor((rad + PI) / (2*PI));
-      rad = (rad + PI) - q * 2*PI;
+      const auto q  = std::floor((rad + PI) / (2.0*PI));
+      rad = (rad + PI) - q * 2.0*PI;
 
       if (rad < 0)
-        rad += 2*PI;
+      {
+        rad += 2.0*PI;
+      }
 
       return (rad - PI);
     }
@@ -90,11 +92,13 @@ namespace rigid2d
       // return rad;
 
       // floating point remainder essentially this is fmod
-      double q  = std::floor(rad / (2*PI));
-      rad = (rad) - q * 2*PI;
+      const auto q  = std::floor(rad / (2.0*PI));
+      rad = (rad) - q * 2.0*PI;
 
       if (rad < 0)
-        rad += 2*PI;
+      {
+        rad += 2.0*PI;
+      }
 
       return rad;
     }
