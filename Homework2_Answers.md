@@ -1,5 +1,7 @@
 ## Boston Cleek
 
+# TODO: finish answering questions and take video
+
 # Physical Testing
 ## 1)
 
@@ -202,3 +204,6 @@ GY = 0
 DT = 0
 DX = 0.0006
 DY = 0
+
+## 3) Waypoint Following
+After 1 cycle the robot is dy: 5cm and dx: 2cm from the start.
