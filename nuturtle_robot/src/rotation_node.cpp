@@ -134,6 +134,7 @@ int main(int argc, char** argv)
 {
 
   ros::init(argc, argv, "rotation");
+  ros::NodeHandle nh("~");
   ros::NodeHandle node_handle;
 
   ros::ServiceClient set_pose_client = node_handle.serviceClient<rigid2d::set_pose>("set_pose");
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
 
   node_handle.getParam("/max_rot", max_rot);
   node_handle.getParam("/max_trans", max_trans);
-  node_handle.getParam("rotation/frac_vel", frac_vel);
+  nh.getParam("frac_vel", frac_vel);
 
 
   ROS_INFO("max_rot %f\n", max_rot);
