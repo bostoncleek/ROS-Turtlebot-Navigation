@@ -9,7 +9,7 @@
 namespace rigid2d
 {
 
-Waypoints::Waypoints(std::vector<Vector2D> way_pts, double rot_vel, double trans_vel)
+Waypoints::Waypoints(const std::vector<Vector2D> &way_pts, double rot_vel, double trans_vel)
 {
   // store waypoints
   this->pts = way_pts;
@@ -20,7 +20,7 @@ Waypoints::Waypoints(std::vector<Vector2D> way_pts, double rot_vel, double trans
 
   // tolerances
   htol = 0.005;   // heading tolerance
-  ptol = 0.1;     // distance to goal tolerance 
+  ptol = 0.1;     // distance to goal tolerance
 
   // velocities
   this->rot_vel = rot_vel;
