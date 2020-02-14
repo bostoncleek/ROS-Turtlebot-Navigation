@@ -39,7 +39,7 @@ struct WheelAxel
 struct TurtlebotHelper
 {
   TurtlebotHelper() : left_vel(0), right_vel(0),
-                      wheelVelFlag(false), jointStatesFlag(false) {};
+                      wheelVelFlag(false), ctr(0), jointStatesFlag(false) {};
 
   /// \brief Callback for wheel speeds
   /// \param msg - wheel speed message
@@ -64,6 +64,7 @@ struct TurtlebotHelper
     right_joint.velocity = msg->velocity.at(1);
 
     jointStatesFlag = true;
+    ctr++;
   }
 
 
@@ -71,6 +72,7 @@ struct TurtlebotHelper
   int right_vel;            // right wheel velocity
   bool wheelVelFlag;        // flag for message received
 
+  int ctr;                  // counter for number of callbacks recieved
   WheelAxel left_joint;     // left wheel joint
   WheelAxel right_joint;    // right wheel joint
   bool jointStatesFlag;     // flag for joint states message
@@ -194,18 +196,39 @@ TEST(TurtleInterface, Sensort2JointState)
   sensor_data.left_encoder = 100;
   sensor_data.right_encoder = 100;
 
-
-  while(!turthelper.jointStatesFlag)
+//!turthelper.jointStatesFlag
+  while(node_handle.ok())
   {
     ros::spinOnce();
+
+    if(turthelper.jointStatesFlag)
+    {
+      // check steady state condition on wheel velocity
+      if (turthelper.ctr == 0)
+      {
+        if (turthelper.left_joint.velocity != 0 and turthelper.right_joint.velocity != 0)
+        {
+          continue;
+        }
+      }
+
+      else if (turthelper.ctr != 0)
+      {
+        if(turthelper.left_joint.velocity == 0 and turthelper.right_joint.velocity == 0)
+        {
+          break;
+        }
+      }
+    }
+
     sensor_pub.publish(sensor_data);
   }
 
-  ASSERT_NEAR(turthelper.left_joint.position, 0.15339807878856412, 1e-3);
-  ASSERT_NEAR(turthelper.right_joint.position, 0.15339807878856412,1e-3);
+  ASSERT_NEAR(turthelper.left_joint.position, 0.153, 1e-3);
+  ASSERT_NEAR(turthelper.right_joint.position, 0.153,1e-3);
 
-  ASSERT_NEAR(turthelper.left_joint.velocity, 0.15339807878856412, 1e-3);
-  ASSERT_NEAR(turthelper.right_joint.velocity, 0.15339807878856412,1e-3);
+  ASSERT_NEAR(turthelper.left_joint.velocity, 0.0, 1e-3);
+  ASSERT_NEAR(turthelper.right_joint.velocity, 0.0,1e-3);
 }
 
 
