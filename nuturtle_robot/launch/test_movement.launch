@@ -4,7 +4,7 @@
   <arg name="robot" default="0" doc="sets address for machine tag"/>
 
   <!-- rotation speed -->
-  <arg name="frac_vel" default="0.1" doc="fraction of max rotation velocity"/>
+  <arg name="frac_vel" default="1.0" doc="fraction of max rotation velocity"/>
 
   <!-- turtlebot3 diff drive params -->
   <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
