@@ -20,7 +20,7 @@ namespace rigid2d
     /// \param pts - list of waypoints to travel to
     /// \param rot_vel - roation velocity of turtle
     /// \param trans_vel - translation velocity of turtle
-    Waypoints(std::vector<Vector2D> way_pts, double rot_vel, double trans_vel);
+    Waypoints(const std::vector<Vector2D> &way_pts, double rot_vel, double trans_vel);
 
     /// \brief compose velocity for current waypoint
     /// \param pose - pose of robot in world coordinates
