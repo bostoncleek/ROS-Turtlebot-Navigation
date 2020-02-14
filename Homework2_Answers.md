@@ -1,7 +1,7 @@
 ## Boston Cleek
 
 # TODO: MERGE TO MASTER
-# TODO: finish answering questions and take video
+# TODO: finish answering questions and take video file /briefs and func docs
 
 # Physical Testing
 ## 1)
