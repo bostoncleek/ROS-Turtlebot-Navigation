@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(nuturtle_robot)
 
 # add compile options
-add_compile_options(-Wall -Werror -Wno-psabi)
+add_compile_options(-Wall -Wextra -Wno-psabi)
 
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
