@@ -9,6 +9,9 @@
 ///
 /// SUBSCRIBES:
 ///   joint_states (sensor_msgs/JointState): angular wheel positions
+///
+/// SERVICES:
+/// set_pose (set_pose) - sets the pose of the robot 
 
 
 #include <ros/ros.h>
@@ -192,6 +195,7 @@ int main(int argc, char** argv)
     // std::cout << "------------------" << std::endl;
 
     // ROS_INFO("pose %f", pose.theta);
+    // ROS_INFO("Pose %s %f %f %f", odom_frame_id.c_str(), pose.theta, pose.x, pose.y);
 
 
     // body twist
