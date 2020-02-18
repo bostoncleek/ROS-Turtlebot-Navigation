@@ -5,10 +5,10 @@
 /// \date 2/7/20
 ///
 /// PUBLISHES:
-/// cmd_vel (geometry_msgs/Twist): Commanded body twist
+///   cmd_vel (geometry_msgs/Twist): Commanded body twist
 ///
 /// SERVICES:
-/// start (start) - intiates the movement of the turtlebot and call set_pose service
+///   start (start) - intiates the movement of the turtlebot and call set_pose service
 
 
 
