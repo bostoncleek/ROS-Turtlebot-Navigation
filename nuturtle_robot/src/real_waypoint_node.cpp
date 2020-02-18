@@ -6,10 +6,12 @@
 ///
 /// PUBLISHES:
 ///   cmd_vel (Twist): linear and angular velocity controls
-///
+///   vizualize_waypoints (visualization_msgs::MarkerArray): Marker array representing waypoint
 /// SUBSCRIBES:
-///
+///   odom (nav_msgs/Odometry): The pose of the turtlebot from odometer node
 /// SEERVICES:
+///   start (nuturtle_robot/Start): resets pose and starts waypoints following
+///   stop (Empty): stops turtlebot movement
 
 
 
@@ -44,7 +46,8 @@ static bool start_call;
 static bool stop_call;
 
 
-
+/// \brief Publishes array of markers as waypoints
+/// \param pts - waypoints
 void placeMarkers(ros::Publisher &marker_pub,
                   const std::vector<rigid2d::Vector2D> &pts)
 {
@@ -88,7 +91,8 @@ void placeMarkers(ros::Publisher &marker_pub,
 /// \param req - service request direction
 /// \param res - service direction result
 /// \param set_pose_client - set pose client
-/// \param set_fake_pose_client - set pose fake client
+/// \param marker_pub - marker publisher
+/// \param pts - waypoints
 bool setStartService(nuturtle_robot::start::Request &,
                      nuturtle_robot::start::Response &res,
                      ros::ServiceClient &set_pose_client,
@@ -111,11 +115,14 @@ bool setStartService(nuturtle_robot::start::Request &,
   }
 
   start_call = true;
+  stop_call = false;
   return true;
 }
 
 
-
+/// \brief Stops turtlebot movement
+/// \param Request - empty request
+/// \param Response - empty response
 bool setStopService(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 {
   stop_call = true;
@@ -125,7 +132,8 @@ bool setStopService(std_srvs::Empty::Request&, std_srvs::Empty::Response&)
 }
 
 
-
+/// \brief Updates pose of robot
+/// \param msg - odometry feedback
 void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
   pose.x = msg->pose.pose.position.x;
@@ -240,11 +248,10 @@ int main(int argc, char** argv)
 
 
     // publish twist and markers if robot started
-    // if (start_call)
-    // {
-    //   vel_pub.publish(twist_msg);
-    // }
-    vel_pub.publish(twist_msg);
+    if (!stop_call)
+    {
+      vel_pub.publish(twist_msg);
+    }
 
     loop_rate.sleep();
   }
