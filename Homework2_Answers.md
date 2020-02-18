@@ -3,7 +3,13 @@
 # TODO: MERGE TO MASTER
 # TODO: finish answering questions and take video file /briefs and func docs
 
+
+
 # Physical Testing
+
+Observations: The use of encoders improves the estimate of the robot's odometry because the current model does not include wheel slip. Moving slower tends to improve the estimate of the pose. This is likely a result of less wheel slip and the ability of the encoders the capture the wheels orientation at lower speeds.
+
+
 ## 1)
 
 ### Rotation
@@ -102,16 +108,6 @@ DY = 0.013
 
 
 
-
-
-
-
-
-
-
-
-
-
 ## 2)
 frac_vel = 0.5
 AV = 1.42
@@ -207,4 +203,4 @@ DX = 0.0006
 DY = 0
 
 ## 3) Waypoint Following
-After 1 cycle the robot is dy: 5cm and dx: 2cm from the start.
+After 1 cycle using frac_vel = 0.5 the robot is y error: 0.12m and x error: 0.10m from the start and the total distance traveled if 5.23m.
