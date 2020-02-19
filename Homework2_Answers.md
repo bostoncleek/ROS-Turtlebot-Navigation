@@ -1,13 +1,10 @@
 ## Boston Cleek
 
-# TODO: MERGE TO MASTER
-# TODO: finish answering questions and take video file /briefs and func docs
-
-
-
 # Physical Testing
 
 Observations: The use of encoders improves the estimate of the robot's odometry because the current model does not include wheel slip. Moving slower tends to improve the estimate of the pose. This is likely a result of less wheel slip and the ability of the encoders the capture the wheels orientation at lower speeds.
+
+Traversing waypoints in rviz: [rviz waypoins](https://youtu.be/34RkrR4gX2I) and in the [real world](https://youtu.be/EiarOWEfsnA)
 
 
 ## 1)
