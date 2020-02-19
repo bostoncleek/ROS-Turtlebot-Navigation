@@ -82,7 +82,7 @@ Twist2D Waypoints::nextWaypointClosedLoop(Pose pose)
 
 
   const auto h_err = normalize_angle_PI(waypointHeading(pose));
-  const auto p_err = waypointDistance(pose);
+  // const auto p_err = waypointDistance(pose);
 
 
   // go straight
