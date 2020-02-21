@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot name="diff_drive" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find nuturtle_description)/urdf/diff_drive.urdf.xacro"/>
+
+
+<gazebo reference="base_link">
+  <material>Gazebo/TurquoiseGlowOutline</material>
+</gazebo>
+
+
+<gazebo reference="left_wheel">
+  <!--
+  <dampingFactor>0.1</dampingFactor> -->
+  <mu1>100</mu1>
+  <mu2>100</mu2>
+  <kp>500000.0</kp>
+  <kd>10.0</kd>
+  <minDepth>0.001</minDepth>
+  <maxVel>0.1</maxVel>
+  <fdir1>1 0 0</fdir1>
+  <material>Gazebo/Red</material>
+</gazebo>
+
+
+<gazebo reference="right_wheel">
+  <!--
+  <dampingFactor>0.1</dampingFactor> -->
+  <mu1>100</mu1>
+  <mu2>100</mu2>
+  <kp>500000.0</kp>
+  <kd>10.0</kd>
+  <minDepth>0.001</minDepth>
+  <maxVel>0.1</maxVel>
+  <fdir1>1 0 0</fdir1>
+  <material>Gazebo/Red</material>
+</gazebo>
+
+
+<gazebo reference="caster">
+  <mu1>100</mu1>
+  <mu2>100</mu2>
+  <kp>500000.0</kp>
+  <kd>10.0</kd>
+  <minDepth>0.001</minDepth>
+  <maxVel>0.1</maxVel>
+  <material>Gazebo/Red</material>
+  <material>Gazebo/Black</material>
+</gazebo>
+
+
+
+</robot>
