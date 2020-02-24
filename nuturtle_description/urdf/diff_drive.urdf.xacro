@@ -15,24 +15,24 @@
 <xacro:property name="caster_radius" value="${(wheel_radius - wheel_axle_offset)/2}" />
 
 <!-- mass of chassis -->
-<xacro:property name="M" value="${0.04}" />
+<xacro:property name="M" value="${0.94}" />
 <!-- mass of wheel  -->
 <xacro:property name="m" value="${0.03}" />
 
 
 
 <!-- BASE-FOOTPRINT -->
-<link name="base_footprint"/>
+<link name="base_link"/>
 <!-- Base Scan -->
 <link name="base_scan"/>
 
 
 <!-- chassis -->
-<link name="base_link" >
+<link name="base_body" >
 
   <inertial>
     <origin xyz="${chassis_length/2 - wheel_radius} 0 0" rpy="0 0 0"/>
-    <mass value="${0.04}"/>
+    <mass value="${M}"/>
     <inertia ixx="${1/12*M*(chassis_length**2+chassis_thickness**2)}"  ixy="0"  ixz="0" iyy="${1/12*M*((wheel_base - wheel_width)**2+chassis_thickness**2)}" iyz="0" izz="${1/12*M*(chassis_length**2+(wheel_base - wheel_width)**2)}" />
   </inertial>
 
@@ -143,17 +143,16 @@
 <!-- joints -->
 
 <joint name="base" type="fixed">
-  <!-- <origin xyz="${-chassis_length/2 + chassis_length/2 - wheel_radius} 0 ${chassis_thickness/2 - wheel_axle_offset + wheel_radius}" rpy="0 0 0" /> -->
   <origin xyz="${-wheel_radius} 0 ${chassis_thickness/2 - wheel_axle_offset + wheel_radius}" rpy="0 0 0" />
-  <parent link="base_footprint"/>
-  <child link="base_link" />
+  <parent link="base_link"/>
+  <child link="base_body" />
 </joint>
 
 
 <joint name="base_lidar" type="fixed">
   <origin xyz="0 0 ${chassis_thickness/2}" rpy="0 0 0" />
   <axis xyz="0 1 0"/>
-  <parent link="base_link" />
+  <parent link="base_body" />
   <child link="base_scan" />
 </joint>
 
@@ -161,7 +160,7 @@
 <joint name="left_wheel_axle" type="continuous">
   <origin xyz="0 ${wheel_base/2} ${-chassis_thickness/2 + wheel_axle_offset}" rpy="0 0 0" />
   <axis xyz="0 1 0"/>
-  <parent link="base_link" />
+  <parent link="base_body" />
   <child link="left_wheel" />
 </joint>
 
@@ -169,14 +168,14 @@
 <joint name="right_wheel_axle" type="continuous">
   <origin xyz="0 ${-wheel_base/2} ${-chassis_thickness/2 + wheel_axle_offset}" rpy="0 0 0" />
   <axis xyz="0 1 0"/>
-  <parent link="base_link" />
+  <parent link="base_body" />
   <child link="right_wheel" />
 </joint>
 
 
 <joint name="caster_joint" type="fixed">
   <origin xyz="${chassis_length - wheel_radius - caster_radius} 0 ${-chassis_thickness/2 - caster_radius}" rpy="0 0 0" />
-  <parent link="base_link" />
+  <parent link="base_body" />
   <child link="caster" />
 </joint>
 
