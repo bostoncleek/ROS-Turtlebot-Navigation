@@ -10,13 +10,18 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>gazebo_ros</build_depend>
+  <build_depend>gazebo</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>nuturtlebot</build_depend>
+  <build_depend>rigid2d</build_depend>
+
+
   <build_export_depend>gazebo_ros</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
   <exec_depend>gazebo_ros</exec_depend>
 
 
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <!-- Other tools can request additional information be placed here -->
-
+    <gazebo_ros plugin_path="${prefix}/../../lib" gazebo_media_path="${prefix}" />
   </export>
 </package>
