@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <algorithm>
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -73,6 +74,7 @@ namespace gazebo
       else
       {
         this->left_wheel_joint = _sdf->GetElement("left_wheel_joint")->Get<std::string>();
+        ROS_WARN("%s", left_wheel_joint.c_str());
       }
 
       // right_joint_name
@@ -84,6 +86,7 @@ namespace gazebo
       else
       {
         this->right_wheel_joint = _sdf->GetElement("right_wheel_joint")->Get<std::string>();
+        ROS_WARN("%s", right_wheel_joint.c_str());
       }
 
       // encoder_tics_per_rev
@@ -186,6 +189,10 @@ namespace gazebo
           this->model->GetJoint(left_wheel_joint)->SetParam("vel", 0, left_joint_speed);
           this->model->GetJoint(right_wheel_joint)->SetParam("vel", 0, right_joint_speed);
 
+
+          ROS_INFO("left_joint_speed %f", left_joint_speed);
+          ROS_INFO("right_joint_speed %f", right_joint_speed);
+
           wheel_cmd_flag = false;
         }
 
@@ -193,9 +200,14 @@ namespace gazebo
         double left_encoder = this->model->GetJoint(left_wheel_joint)->Position();
         double right_encoder = this->model->GetJoint(right_wheel_joint)->Position();
 
+        // ROS_INFO("left_encoder %f", left_encoder);
+        // ROS_INFO("right_encoder %f", right_encoder);
+
         // convert to ticks
-        left_encoder = (static_cast<double> (encoder_ticks_per_rev) / 2.0 * rigid2d::PI) * left_encoder;
-        right_encoder = (static_cast<double> (encoder_ticks_per_rev) / 2.0 * rigid2d::PI) * right_encoder;
+        left_encoder = (static_cast<double> (encoder_ticks_per_rev) / (2.0 * rigid2d::PI)) * left_encoder;
+        right_encoder = (static_cast<double> (encoder_ticks_per_rev) / (2.0 * rigid2d::PI)) * right_encoder;
+
+
 
         nuturtlebot::SensorData sensor_data;
         sensor_data.left_encoder = static_cast<int> (std::round(left_encoder));
