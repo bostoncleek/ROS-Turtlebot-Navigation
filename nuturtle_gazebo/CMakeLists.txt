@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5.4)
 project(nuturtle_gazebo)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -9,7 +9,13 @@ project(nuturtle_gazebo)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
+	roscpp
 )
+
+
+find_package(gazebo REQUIRED)
+find_package(nuturtlebot REQUIRED)
+find_package(rigid2d REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -103,7 +109,9 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nuturtle_gazebo
-#  CATKIN_DEPENDS gazebo_ros
+	CATKIN_DEPENDS
+	gazebo_ros
+	roscpp
 #  DEPENDS system_lib
 )
 
@@ -116,12 +124,18 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+	${nuturtlebot_INCLUDE_DIRS}
+	${rigid2d_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/nuturtle_gazebo.cpp
-# )
+add_library(${PROJECT_NAME}_plugin SHARED src/turtle_drive_plugin.cpp)
+
+target_link_libraries(${PROJECT_NAME}_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+target_include_directories(${PROJECT_NAME}_plugin PUBLIC ${GAZEBO_INCLUDE_DIRS})
+
+add_dependencies(${PROJECT_NAME}_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
