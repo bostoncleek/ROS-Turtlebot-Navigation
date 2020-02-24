@@ -45,8 +45,12 @@
   </group>
 
 
-  <!-- load model into parameter server -->
-  <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
+
+  <group if="$(eval arg('robot') != -1)">
+    <!-- load model into parameter server -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
+  </group>
+
 
   <!-- robot state publisher -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
