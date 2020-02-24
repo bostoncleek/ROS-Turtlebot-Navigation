@@ -3,6 +3,48 @@
 
 <xacro:include filename="$(find nuturtle_description)/urdf/diff_drive.urdf.xacro"/>
 
+<xacro:property name="diff_params" value="${load_yaml('$(find nuturtle_description)/config/diff_params.yaml')}" />
+<xacro:property name="odometer_params" value="${load_yaml('$(find rigid2d)/config/odometer_params.yaml')}" />
+
+
+<xacro:property name="left_joint_name" value="${odometer_params['left_wheel_joint']}" />
+<xacro:property name="right_joint_name" value="${odometer_params['right_wheel_joint']}" />
+
+
+<xacro:property name="Hz" value="${200}" />
+
+
+<xacro:property name="wheel_cmd_topic" value="nuturtlebot/WheelCommands" />
+<xacro:property name="sensor_topic" value="nuturtlebot/SensorData" />
+
+
+<xacro:property name="encoder_ticks_per_rev" value="${diff_params['encoder_ticks_per_rev']}" />
+<xacro:property name="max_motor_rot_vel" value="${diff_params['max_rot_motor']}" />
+<xacro:property name="max_motor_power" value="${diff_params['max_motor_power']}" />
+<xacro:property name="max_motor_torque" value="${diff_params['max_motor_torque']}" />
+
+
+<gazebo>
+  <plugin name="turtle_drive_plugin" filename="libnuturtle_gazebo_plugin.so">
+
+    <left_wheel_joint>${left_joint_name}</left_wheel_joint>
+    <right_wheel_joint>${right_joint_name}</right_wheel_joint>
+
+    <sensor_frequency>${Hz}</sensor_frequency>
+
+    <wheel_cmd_topic>${wheel_cmd_topic}</wheel_cmd_topic>
+    <sensor_topic>${sensor_topic}</sensor_topic>
+
+    <encoder_ticks_per_rev>${encoder_ticks_per_rev}</encoder_ticks_per_rev>
+    <max_motor_rot_vel>${max_motor_rot_vel}</max_motor_rot_vel>
+    <max_motor_power>${max_motor_power}</max_motor_power>
+    <max_motor_torque>${max_motor_torque}</max_motor_torque>
+
+
+  </plugin>
+
+</gazebo>
+
 
 <gazebo reference="base_link">
   <material>Gazebo/TurquoiseGlowOutline</material>
