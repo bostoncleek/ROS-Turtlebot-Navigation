@@ -14,8 +14,8 @@
 <xacro:property name="Hz" value="${200}" />
 
 
-<xacro:property name="wheel_cmd_topic" value="nuturtlebot/WheelCommands" />
-<xacro:property name="sensor_topic" value="nuturtlebot/SensorData" />
+<xacro:property name="wheel_cmd_topic" value="wheel_cmd" />
+<xacro:property name="sensor_topic" value="sensor_data" />
 
 
 <xacro:property name="encoder_ticks_per_rev" value="${diff_params['encoder_ticks_per_rev']}" />
@@ -46,47 +46,37 @@
 </gazebo>
 
 
-<gazebo reference="base_link">
+<gazebo reference="base_body">
   <material>Gazebo/TurquoiseGlowOutline</material>
 </gazebo>
 
 
 <gazebo reference="left_wheel">
-  <!--
-  <dampingFactor>0.1</dampingFactor> -->
   <mu1>100</mu1>
   <mu2>100</mu2>
   <kp>500000.0</kp>
   <kd>10.0</kd>
-  <minDepth>0.001</minDepth>
   <maxVel>0.1</maxVel>
-  <fdir1>1 0 0</fdir1>
   <material>Gazebo/Red</material>
 </gazebo>
 
 
 <gazebo reference="right_wheel">
-  <!--
-  <dampingFactor>0.1</dampingFactor> -->
   <mu1>100</mu1>
   <mu2>100</mu2>
   <kp>500000.0</kp>
   <kd>10.0</kd>
-  <minDepth>0.001</minDepth>
   <maxVel>0.1</maxVel>
-  <fdir1>1 0 0</fdir1>
   <material>Gazebo/Red</material>
 </gazebo>
 
 
 <gazebo reference="caster">
-  <mu1>100</mu1>
-  <mu2>100</mu2>
+  <mu1>0.1</mu1>
+  <mu2>0.1</mu2>
   <kp>500000.0</kp>
   <kd>10.0</kd>
-  <minDepth>0.001</minDepth>
   <maxVel>0.1</maxVel>
-  <material>Gazebo/Red</material>
   <material>Gazebo/Black</material>
 </gazebo>
 
