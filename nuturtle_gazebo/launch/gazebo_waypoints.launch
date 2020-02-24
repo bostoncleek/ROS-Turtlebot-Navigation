@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- run nodes on turtlebot machine -->
+  <arg name="robot" default="-1" doc="sets address for machine tag"/>
+
+
+  <include file = "$(find nuturtle_robot)/launch/follow_waypoints.launch" >
+    <arg name="robot" value="$(arg robot)" />
+  </include>
+
+
+  <include file = "$(find nuturtle_gazebo)/launch/diff_drive_gazebo.launch" />
+
+</launch>
