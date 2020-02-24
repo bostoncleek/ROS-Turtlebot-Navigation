@@ -9,19 +9,28 @@
     <machine name="turtlebot" address="localhost" />
   </group>
 
+
+  <!-- launchfile is being run directly on a my machine -->
+  <group if="$(eval arg('robot') == -1)">
+    <machine name="turtlebot" address="localhost" />
+  </group>
+
+
   <!-- launchfile is being run directly on my machine -->
-  <group if="$(eval arg('robot') != 0)" >
+  <group if="$(eval arg('robot') > 0)" >
     <machine name="turtlebot"
       address="turtlebot$(arg robot)"
       env-loader="/home/student/install/env.sh" user="student" >
     </machine>
   </group>
 
-  <node machine="turtlebot" name="serial_node" pkg="rosserial_python" type="serial_node.py" >
-    <param name="port" value="/dev/ttyACM0"/>
-    <param name="baud" value="115200"/>
-  </node>
 
+  <group if="$(eval arg('robot') != -1)">
+    <node machine="turtlebot" name="serial_node" pkg="rosserial_python" type="serial_node.py" >
+      <param name="port" value="/dev/ttyACM0"/>
+      <param name="baud" value="115200"/>
+    </node>
+  </group>
 
 
 
