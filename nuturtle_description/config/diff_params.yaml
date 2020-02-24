@@ -9,7 +9,7 @@ wheel_base: 0.160
 # The length of the main chassis link
 chassis_length: 0.138
 # The thickness of the plate that forms the chassis
-chassis_thickness: 0.01
+chassis_thickness: 0.140
 # Number of ticks per revolution per wheel (DYNAMIXEL XL430-W250-T)
 encoder_ticks_per_rev: 4096
 # Max translational velocity of robot (m/2)
@@ -21,3 +21,8 @@ max_rot_motor: 6.35495
 # Max motor power between [-265 265]
 # this is the absolute value
 max_motor_power: 265
+# wheel axis distance from bottom of chassis
+# 2cm
+wheel_axle_offset: 0.02
+# max motor torque (N/m)
+max_motor_torque: 1.5
