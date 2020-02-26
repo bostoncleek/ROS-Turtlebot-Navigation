@@ -130,7 +130,7 @@ Transform2D::Transform2D()
 Transform2D::Transform2D(const Vector2D & trans)
 {
   theta = 0.0;
-  ctheta = 0.0;
+  ctheta = 1.0;
   stheta = 0.0;
   x = trans.x;
   y = trans.y;
