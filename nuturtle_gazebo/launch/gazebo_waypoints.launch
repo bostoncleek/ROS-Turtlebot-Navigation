@@ -4,11 +4,12 @@
   <arg name="robot" default="-1" doc="sets address for machine tag"/>
 
 
+  <!-- waypoints node -->
   <include file = "$(find nuturtle_robot)/launch/follow_waypoints.launch" >
     <arg name="robot" value="$(arg robot)" />
   </include>
 
-
+  <!-- turtblebot urdf in gazebo -->
   <include file = "$(find nuturtle_gazebo)/launch/diff_drive_gazebo.launch" />
 
 </launch>
