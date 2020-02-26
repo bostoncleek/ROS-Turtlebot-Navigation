@@ -150,7 +150,7 @@
 
 
 <joint name="base_lidar" type="fixed">
-  <origin xyz="0 0 ${chassis_thickness/2}" rpy="0 0 0" />
+  <origin xyz="0 0 ${chassis_thickness/2 + 0.005}" rpy="0 0 0" />
   <axis xyz="0 1 0"/>
   <parent link="base_body" />
   <child link="base_scan" />
