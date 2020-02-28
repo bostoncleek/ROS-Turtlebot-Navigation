@@ -55,11 +55,19 @@ namespace nuslam
   struct Cluster
   {
     std::vector<Vector2D> points;   // point in the landmark
+    std::vector<double> z;
+
     double radius = 0.0;            // radius of cluster
-    double x = 0.0;                 // x - centorid
-    double y = 0.0;                 // y - centroid
+    double x_hat = 0.0;                 // x - centroid
+    double y_hat = 0.0;                 // y - centroid
+
+    double x_bar = 0.0;
+    double y_bar = 0.0;
+    double z_bar = 0.0;
 
     /// \brief
+    Cluster() {}
+
     Cluster(const std::vector<Vector2D> &points) : points(points) {}
   };
 
@@ -80,6 +88,16 @@ namespace nuslam
 
 
     bool generateClusters(const std::vector<float> &beam_length);
+
+
+    void centroid(Cluster &cluster);
+
+
+    void shiftCentroidToOrigin(Cluster &cluster);
+
+
+    void composeCircle(Cluster &cluster);
+
 
 
     // list of landmarks
