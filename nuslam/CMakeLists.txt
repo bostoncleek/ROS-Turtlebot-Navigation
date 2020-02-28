@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(rigid2d REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -124,6 +125,7 @@ include_directories(
 	include
   ${catkin_INCLUDE_DIRS}
 	${rigid2d_INCLUDE_DIRS}
+	${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -207,6 +209,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
+
+
+if(CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(${PROJECT_NAME}_test test/test_landmarks.cpp)
+    target_link_libraries(${PROJECT_NAME}_test ${catkin_Libraries} ${PROJECT_NAME} gtest_main)
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
