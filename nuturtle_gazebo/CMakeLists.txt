@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.5.4)
 project(nuturtle_gazebo)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-Wall -Wextra -Wno-psabi)
+
+# Compile as C++17
+set(CMAKE_CXX_STANDARD 17)
+# don't use gnu extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
