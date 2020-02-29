@@ -310,7 +310,7 @@ void Landmarks::composeCircle(Cluster &cluster)
   std::cout << V << std::endl;
 
 
-  if (true /*sigma4 < 1e-12*/)
+  if (sigma4 < 1e-12)
   {
     std::cout << "sigma4 < 1e-12" << std::endl;
     A = V.col(3);
