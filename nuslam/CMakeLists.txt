@@ -12,10 +12,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	geometry_msgs
 	message_generation
-	message_runtime
   roscpp
 	sensor_msgs
+	std_msgs
+	visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -53,9 +55,10 @@ find_package(Eigen3 REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-# )
+add_message_files(
+  FILES
+	TurtleMap.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -74,6 +77,7 @@ find_package(Eigen3 REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
+	std_msgs
 )
 
 ################################################
@@ -109,9 +113,12 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
+ 	geometry_msgs
  	 message_runtime
 	 roscpp
 	 sensor_msgs
+	 std_msgs
+	 visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -142,6 +149,8 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(landmarks src/landmarks_node.cpp)
+add_executable(draw_map src/draw_map_node.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -152,6 +161,7 @@ add_executable(landmarks src/landmarks_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(landmarks ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(draw_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(landmarks
@@ -160,9 +170,18 @@ target_link_libraries(landmarks
 	${rigid2d_LIBRARIES}
 )
 
+target_link_libraries(draw_map
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+	${rigid2d_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
+
+install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
@@ -176,7 +195,7 @@ target_link_libraries(landmarks
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS landmarks
+install(TARGETS draw_map landmarks
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
