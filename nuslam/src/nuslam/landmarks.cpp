@@ -27,13 +27,20 @@ Vector2D range2Cartesian(double range, double beam_angle)
 }
 
 
-double pointDistance(const Vector2D &v1, const Vector2D &v2)
+double pointDistance(const Vector2D p1, const Vector2D &p2)
 {
-  return std::sqrt(std::pow(v2.x - v1.x, 2) + std::pow(v2.y - v1.y, 2));
+  const auto dx = p1.x - p2.x;
+  const auto dy = p1.y - p2.y;
+
+  return std::sqrt(dx*dx + dy*dy);
 }
 
 
-
+double lawCosines(const double a, const double b, const double c)
+{
+  const auto var = (b*b - a*a - c*c) / (-2.0 * a * c);
+  return std::acos(var);
+}
 
 
 
@@ -46,6 +53,39 @@ Landmarks::Landmarks(const LaserProperties &props, double epsilon)
                             epsilon(epsilon)
 {
 }
+
+
+
+void Landmarks::featureDetection(const std::vector<float> &beam_length)
+{
+  // convert scan to cartesian coordinates
+  std::vector<Vector2D> end_points;
+  laserEndPoints(end_points, beam_length);
+
+  // cluster the points
+  clusterScan(end_points);
+
+  // classify the circles
+  for(unsigned int i = 0; i < lm.size(); i++)
+  {
+    // remove it if not a circle
+    if (!classifyCircles(lm.at(i)))
+    {
+      lm.erase(lm.begin() + i);
+    }
+  }
+
+
+  // fit circles
+  for(unsigned int i = 0; i < lm.size(); i++)
+  {
+    centroid(lm.at(i));
+    shiftCentroidToOrigin(lm.at(i));
+    composeCircle(lm.at(i));
+  }
+
+}
+
 
 
 void Landmarks::laserEndPoints(std::vector<Vector2D> &end_points,
@@ -127,7 +167,7 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
     else if (dist > epsilon)
     {
       // check if temp as less than three points
-      if (temp_points.size() >= 3)
+      if (temp_points.size() > 4)
       {
         // std::cout << "new cluster" << std::endl;
 
@@ -147,7 +187,7 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
   // std::cout << temp_points.size() << std::endl;
   // possibly there is only one cluster to add
-  if (lm.empty() and temp_points.size() >= 3)
+  if (lm.empty() and temp_points.size() > 4)
   {
     // std::cout << "one cluster" << std::endl;
     Cluster cluster(temp_points);
@@ -157,7 +197,7 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
   // compare last point to first point
   // check if they are within the same cluster
-  if (lm.size() >= 1)
+  if (lm.size() > 1)
   {
     const auto dist = pointDistance(end_points.front(), end_points.back());
 
@@ -175,15 +215,15 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
 
 
-bool Landmarks::generateClusters(const std::vector<float> &beam_length)
-{
-  std::vector<Vector2D> end_points;
-  laserEndPoints(end_points, beam_length);
-
-  clusterScan(end_points);
-
-  return lm.empty() ? false : true;
-}
+// bool Landmarks::generateClusters(const std::vector<float> &beam_length)
+// {
+//   std::vector<Vector2D> end_points;
+//   laserEndPoints(end_points, beam_length);
+//
+//   clusterScan(end_points);
+//
+//   return lm.empty() ? false : true;
+// }
 
 
 
@@ -259,18 +299,18 @@ void Landmarks::composeCircle(Cluster &cluster)
   }
 
 
-  // compose the M matrix
-  Eigen::MatrixXd M(4,4);
-  M = Z.transpose() * Z;
-  M *= (1.0 / static_cast<double> (cluster.points.size()));
-
-
-  // Hyperaccurate algebraic fit
-  Eigen::MatrixXd H(4,4);
-  H << 8.0*cluster.z_bar, 0.0, 0.0, 2.0,
-       0.0,               1.0, 0.0, 0.0,
-       0.0,               0.0, 1.0, 0.0,
-       2.0,               0.0, 0.0, 0.0;
+  // // compose the M matrix
+  // Eigen::MatrixXd M(4,4);
+  // M = Z.transpose() * Z;
+  // M *= (1.0 / static_cast<double> (cluster.points.size()));
+  //
+  //
+  // // Hyperaccurate algebraic fit
+  // Eigen::MatrixXd H(4,4);
+  // H << 8.0*cluster.z_bar, 0.0, 0.0, 2.0,
+  //      0.0,               1.0, 0.0, 0.0,
+  //      0.0,               0.0, 1.0, 0.0,
+  //      2.0,               0.0, 0.0, 0.0;
 
 
   // H^-1
@@ -292,51 +332,51 @@ void Landmarks::composeCircle(Cluster &cluster)
   Sigma(2,2) = svd.singularValues()(2);
   Sigma(3,3) = svd.singularValues()(3);
 
-  std::cout << "Sigma: " << std::endl;
-  std::cout << Sigma << std::endl;
+  // std::cout << "Sigma: " << std::endl;
+  // std::cout << Sigma << std::endl;
   // std::cout << Sigma.rows() << std::endl;
   // std::cout << Sigma.cols() << std::endl;
 
 
   // take the smallest singular value
   const auto sigma4 = svd.singularValues()(3);
-  std::cout << "smallest singular value: " << sigma4 << std::endl;
+  // std::cout << "smallest singular value: " << sigma4 << std::endl;
 
 
   Eigen::MatrixXd A(4,1);
 
   Eigen::MatrixXd V = svd.matrixV();
-  std::cout << "V: " << std::endl;
-  std::cout << V << std::endl;
+  // std::cout << "V: " << std::endl;
+  // std::cout << V << std::endl;
 
 
   if (sigma4 < 1e-12)
   {
-    std::cout << "sigma4 < 1e-12" << std::endl;
+    // std::cout << "sigma4 < 1e-12" << std::endl;
     A = V.col(3);
   }
 
 
   else
   {
-    std::cout << "sigma4 > 1e-12" << std::endl;
+    // std::cout << "sigma4 > 1e-12" << std::endl;
     // std::cout.precision(10);
 
     Eigen::MatrixXd Y = V * Sigma * V.transpose();
     Eigen::MatrixXd Q = Y * Hinv * Y;
 
-    std::cout << "Y: " << std::endl;
-    std::cout << Y << std::endl;
+    // std::cout << "Y: " << std::endl;
+    // std::cout << Y << std::endl;
 
     // find index of smallest
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Q);
     Eigen::MatrixXd values(es.eigenvalues());
 
-    std::cout << "Eigen vectors: " << std::endl;
-    std::cout << es.eigenvectors() << std::endl;
-
-    std::cout << "Eigen values: " << std::endl;
-    std::cout << values << std::endl;
+    // std::cout << "Eigen vectors: " << std::endl;
+    // std::cout << es.eigenvectors() << std::endl;
+    //
+    // std::cout << "Eigen values: " << std::endl;
+    // std::cout << values << std::endl;
 
     int idx = 0;
     auto temp = 0.0;
@@ -351,19 +391,19 @@ void Landmarks::composeCircle(Cluster &cluster)
       }
     }
 
-    std::cout << "Index: " << idx << std::endl;
+    // std::cout << "Index: " << idx << std::endl;
 
     Eigen::MatrixXd Astar(es.eigenvectors().col(idx));
 
-    std::cout << "A*: " << std::endl;
-    std::cout << Astar << std::endl;
+    // std::cout << "A*: " << std::endl;
+    // std::cout << Astar << std::endl;
 
     A = Y.completeOrthogonalDecomposition().solve(Astar);
   }
 
 
-  std::cout << "A: " << std::endl;
-  std::cout << A << std::endl;
+  // std::cout << "A: " << std::endl;
+  // std::cout << A << std::endl;
 
 
   const auto a = -A(1) / (2.0 * A(0));
@@ -372,7 +412,7 @@ void Landmarks::composeCircle(Cluster &cluster)
   const auto R2 = (A(1)*A(1) + A(2)*A(2) - 4.0*A(0)*A(3)) / (4.0*A(0)*A(0));
 
 
-  std::cout << a << " " << b << " " << R2 << std::endl;
+  // std::cout << a << " " << b << " " << R2 << std::endl;
 
 
   // update the actual center
@@ -384,6 +424,62 @@ void Landmarks::composeCircle(Cluster &cluster)
 }
 
 
+
+bool Landmarks::classifyCircles(const Cluster &cluster)
+{
+  const Vector2D p_start = cluster.points.front();
+  const Vector2D p_end = cluster.points.back();
+
+  // p_start to p_end
+  const auto c = pointDistance(p_start, p_end);
+
+  // number of points between the endpoints
+  unsigned int num_inner_points = cluster.points.size()-2;
+
+  // store angles in vector
+  std::vector<double> angles;
+  angles.reserve(num_inner_points);
+
+
+  // loop through all points between the endpoints
+  for(unsigned int i = 1; i < num_inner_points; i++)
+  {
+    const Vector2D p = cluster.points.at(i);
+
+    // p_start to p
+    const auto a = pointDistance(p_start, p);
+
+    // p to p_end
+    const auto b = pointDistance(p, p_end);
+
+    // angle
+    angles.push_back(lawCosines(a, b, c));
+  }
+
+
+  // average angle
+  auto mean_angle = std::accumulate(angles.begin(), angles.end(), 0.0);
+  mean_angle /= static_cast<double>(num_inner_points);
+
+  // standard deviation of angles
+  auto sum = 0.0;
+  for(const auto angle: angles)
+  {
+    const auto delta = angle - mean_angle;
+    sum += delta*delta;
+  }
+
+  const auto sigma = std::sqrt(sum / static_cast<double>(num_inner_points));
+
+
+  // is a circle
+  if ((sigma < 0.15) and (mean_angle <= 135) and (mean_angle >= 90))
+  {
+    return true;
+  }
+
+  return false;
+}
 
 
 

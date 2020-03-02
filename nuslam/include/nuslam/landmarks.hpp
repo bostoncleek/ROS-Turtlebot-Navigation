@@ -20,9 +20,12 @@ namespace nuslam
   Vector2D range2Cartesian(double range, double beam_angle);
 
   /// \brief distance between two points
-  /// \param v1 - point 1
-  /// \param v2 - point 2
-  double pointDistance(const Vector2D &v1, const Vector2D &v2);
+  /// \param p1 - point 1
+  /// \param p2 - point 2
+  double pointDistance(const Vector2D p1, const Vector2D &p2);
+
+
+  double lawCosines(const double a, const double b, const double c);
 
 
 
@@ -80,23 +83,32 @@ namespace nuslam
     Landmarks(const LaserProperties &props, double epsilon);
 
 
+    void featureDetection(const std::vector<float> &beam_length);
+
+
+    /// \brief Convertes range and bearing to cartesian coordinates
     void laserEndPoints(std::vector<Vector2D> &end_points,
                        const std::vector<float> &beam_length);
 
 
+    /// \brief Groups the laser scan into clusters
     void clusterScan(const std::vector<Vector2D> &end_points);
 
 
-    bool generateClusters(const std::vector<float> &beam_length);
+    // bool generateClusters(const std::vector<float> &beam_length);
 
 
+    /// \brief Compose centroid of cluster
     void centroid(Cluster &cluster);
 
-
+    /// \brief shifts the centorid of the cluster to the center
     void shiftCentroidToOrigin(Cluster &cluster);
 
-
+    /// \brief Fite a circle to the cluster
     void composeCircle(Cluster &cluster);
+
+    /// \brief Classifies a cluster as a circle or not
+    bool classifyCircles(const Cluster &cluster);
 
 
 
@@ -104,9 +116,9 @@ namespace nuslam
     std::vector<Cluster> lm;
 
   private:
-    double beam_min, beam_max, beam_delta;
-    double range_min, range_max;
-    double epsilon;
+    double beam_min, beam_max, beam_delta;    // beam angles
+    double range_min, range_max;              // range limits
+    double epsilon;                           // distance threshold for clustering
   };
 }
 
