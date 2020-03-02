@@ -95,9 +95,6 @@ namespace nuslam
     void clusterScan(const std::vector<Vector2D> &end_points);
 
 
-    // bool generateClusters(const std::vector<float> &beam_length);
-
-
     /// \brief Compose centroid of cluster
     void centroid(Cluster &cluster);
 
@@ -119,6 +116,7 @@ namespace nuslam
     double beam_min, beam_max, beam_delta;    // beam angles
     double range_min, range_max;              // range limits
     double epsilon;                           // distance threshold for clustering
+    double radius_thresh;                     // threshold for radius size
   };
 }
 

@@ -50,7 +50,8 @@ Landmarks::Landmarks(const LaserProperties &props, double epsilon)
                             beam_delta(props.beam_delta),
                             range_min(props.range_min),
                             range_max(props.range_max),
-                            epsilon(epsilon)
+                            epsilon(epsilon),
+                            radius_thresh(0.1)
 {
 }
 
@@ -65,16 +66,6 @@ void Landmarks::featureDetection(const std::vector<float> &beam_length)
   // cluster the points
   clusterScan(end_points);
 
-  // classify the circles
-  for(unsigned int i = 0; i < lm.size(); i++)
-  {
-    // remove it if not a circle
-    if (!classifyCircles(lm.at(i)))
-    {
-      lm.erase(lm.begin() + i);
-    }
-  }
-
 
   // fit circles
   for(unsigned int i = 0; i < lm.size(); i++)
@@ -82,6 +73,38 @@ void Landmarks::featureDetection(const std::vector<float> &beam_length)
     centroid(lm.at(i));
     shiftCentroidToOrigin(lm.at(i));
     composeCircle(lm.at(i));
+  }
+
+
+  // classify the circles
+  for(unsigned int i = 0; i < lm.size(); i++)
+  {
+    // remove it if not a circle
+    if (!classifyCircles(lm.at(i)))
+    {
+      std::cout << "Not a circle" << std::endl;
+      lm.erase(lm.begin() + i);
+      // decrement i because if something is deleted
+      // the size of the landmark vector changes
+      i--;
+    }
+
+    // check if any circles are left
+    if (lm.empty())
+    {
+      std::cout << "No circles found" << std::endl;
+      return;
+    }
+
+    // eliminate circles with large radius
+    // if (lm.at(i).radius > radius_thresh)
+    // {
+    //   lm.erase(lm.begin() + i);
+    //
+    //   // decrement i because if something is deleted
+    //   // the size of the landmark vector changes
+    //   i--;
+    // }
   }
 
 }
@@ -212,19 +235,6 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
     }
   }
 }
-
-
-
-// bool Landmarks::generateClusters(const std::vector<float> &beam_length)
-// {
-//   std::vector<Vector2D> end_points;
-//   laserEndPoints(end_points, beam_length);
-//
-//   clusterScan(end_points);
-//
-//   return lm.empty() ? false : true;
-// }
-
 
 
 void Landmarks::centroid(Cluster &cluster)
@@ -431,7 +441,7 @@ bool Landmarks::classifyCircles(const Cluster &cluster)
   const Vector2D p_end = cluster.points.back();
 
   // p_start to p_end
-  const auto c = pointDistance(p_start, p_end);
+  const auto b = pointDistance(p_start, p_end);
 
   // number of points between the endpoints
   unsigned int num_inner_points = cluster.points.size()-2;
@@ -442,15 +452,15 @@ bool Landmarks::classifyCircles(const Cluster &cluster)
 
 
   // loop through all points between the endpoints
-  for(unsigned int i = 1; i < num_inner_points; i++)
+  for(unsigned int i = 1; i < cluster.points.size()-1; i++)
   {
     const Vector2D p = cluster.points.at(i);
 
     // p_start to p
-    const auto a = pointDistance(p_start, p);
+    const auto c = pointDistance(p_start, p);
 
     // p to p_end
-    const auto b = pointDistance(p, p_end);
+    const auto a = pointDistance(p, p_end);
 
     // angle
     angles.push_back(lawCosines(a, b, c));
@@ -472,8 +482,15 @@ bool Landmarks::classifyCircles(const Cluster &cluster)
   const auto sigma = std::sqrt(sum / static_cast<double>(num_inner_points));
 
 
+  std::cout << "mean angle: " << rigid2d::rad2deg(mean_angle) << std::endl;
+  std::cout << "sigma: " << sigma << std::endl;
+
+
+
   // is a circle
-  if ((sigma < 0.15) and (mean_angle <= 135) and (mean_angle >= 90))
+  if ((sigma < 0.15) and \
+      (mean_angle <= rigid2d::deg2rad(135)) and \
+      (mean_angle >= rigid2d::deg2rad(90)))
   {
     return true;
   }
