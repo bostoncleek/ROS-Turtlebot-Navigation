@@ -11,10 +11,25 @@
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x 0.0 -y 0.0 -z 0 -model diff_drive" respawn="false" output="screen"/>
 
 
-  <!-- load world -->
+  <!-- load world empty -->
   <group if="$(arg empty_world)">
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch" >
+      <arg name="paused" value="true"/>
+      <arg name="gui" value="true"/>
+      <arg name="use_sim_time" value="true"/>
+      <arg name="recording" value="false"/>
+      <arg name="debug" value="false"/>
+    </include>
+
+  </group>
+
+
+  <!-- load block world -->
+  <group unless="$(arg empty_world)">
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch" >
+      <arg name="world_name" value="$(find nuturtlebot)/worlds/block.world"/>
       <arg name="paused" value="true"/>
       <arg name="gui" value="true"/>
       <arg name="use_sim_time" value="true"/>
