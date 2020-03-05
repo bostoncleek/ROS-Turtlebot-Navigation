@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- run nodes on turtlebot machine -->
+  <arg name="robot" default="-1" doc="sets address for machine tag"/>
+
+  <!-- debug argument -->
+  <arg name="robot" default="false" doc="provides your slam node with fake data with known data association"/>
+
+
+  <!-- teleop -->
+  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
+       name="turtlebot3_teleop_keyboard"  output="screen" />
+
+</launch>
