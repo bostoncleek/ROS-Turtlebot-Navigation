@@ -70,7 +70,7 @@ int main(int argc, char** argv)
   ros::Publisher circle_pub = node_handle.advertise<nuslam::TurtleMap>("landmarks", 1);
 
 
-  ros::Publisher cloud_pub = node_handle.advertise<sensor_msgs::PointCloud>("point_cloud_test", 1);
+  ros::Publisher cloud_pub = node_handle.advertise<sensor_msgs::PointCloud>("point_cloud_test", 100);
 
 
   // frame id
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
       map.header.stamp = current_time;
 
 
-      std::cout << "Number of circles: " << landmarks.lm.size() << std::endl;
+      // std::cout << "Number of circles: " << landmarks.lm.size() << std::endl;
 
       for(unsigned int i = 0; i < landmarks.lm.size(); i++)
       {
@@ -121,9 +121,11 @@ int main(int argc, char** argv)
         map.r.push_back(landmarks.lm.at(i).radius);
 
 
-        std::cout << "radius: " << landmarks.lm.at(i).radius <<
-                     " cx: " << landmarks.lm.at(i).x_hat <<
-                     " cy: " << landmarks.lm.at(i).y_hat << std::endl;
+
+
+        // std::cout << "radius: " << landmarks.lm.at(i).radius <<
+        //              " cx: " << landmarks.lm.at(i).x_hat <<
+        //              " cy: " << landmarks.lm.at(i).y_hat << std::endl;
 
 
       }
@@ -133,15 +135,23 @@ int main(int argc, char** argv)
 
 
       // point cloud for testing
-      std::vector<Vector2D> end_points;
-      landmarks.laserEndPoints(end_points, scan);
+      // std::vector<Vector2D> end_points;
+      // landmarks.laserEndPoints(end_points, scan);
 
       sensor_msgs::PointCloud point_cloud;
       point_cloud.header.stamp = ros::Time::now();
       point_cloud.header.frame_id = "base_scan";
-      pointCloud(end_points, point_cloud);
+      // pointCloud(end_points, point_cloud);
 
-      cloud_pub.publish(point_cloud);
+      // if (!landmarks.lm.empty())
+      // {
+      //   for(unsigned int i = 0; i < landmarks.lm.size(); i++)
+      //   {
+      //     pointCloud(landmarks.lm.at(i).points, point_cloud);
+      //     cloud_pub.publish(point_cloud);
+      //   }
+      // }
+
     }
   }
   return 0;
