@@ -67,7 +67,7 @@ int main(int argc, char** argv)
       {
         marker_array.markers[i].header.frame_id = frame_id;
         marker_array.markers[i].header.stamp = ros::Time::now();
-        marker_array.markers[i].lifetime = ros::Duration();
+        marker_array.markers[i].lifetime = ros::Duration(1.0/ 5.0); // 1/5th sec
         marker_array.markers[i].ns = "marker";
         marker_array.markers[i].id = i;
 
