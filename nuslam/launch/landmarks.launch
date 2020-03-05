@@ -28,12 +28,12 @@
 
 
   <!-- teleop -->
-  <!-- <group if="$(eval arg('robot') != 0)">
+  <group if="$(eval arg('robot') != 0)">
 
     <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
        name="turtlebot3_teleop_keyboard"  output="screen" />
 
-  </group> -->
+  </group>
 
 
   <!-- feature detection -->
