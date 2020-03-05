@@ -117,6 +117,10 @@ namespace nuslam
     double range_min, range_max;              // range limits
     double epsilon;                           // distance threshold for clustering
     double radius_thresh;                     // threshold for radius size
+
+    double angle_std;                         // standard deviation of angles
+    double mu_min, mux_max;                   // min and max mean angles of circle
+    unsigned int num_points;                  // min points per circle
   };
 }
 

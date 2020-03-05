@@ -51,7 +51,11 @@ Landmarks::Landmarks(const LaserProperties &props, double epsilon)
                             range_min(props.range_min),
                             range_max(props.range_max),
                             epsilon(epsilon),
-                            radius_thresh(0.1)
+                            radius_thresh(0.08),
+                            angle_std(0.30),
+                            mu_min(90.0),
+                            mux_max(135.0),
+                            num_points(4)
 {
 }
 
@@ -79,32 +83,33 @@ void Landmarks::featureDetection(const std::vector<float> &beam_length)
   // classify the circles
   for(unsigned int i = 0; i < lm.size(); i++)
   {
-    // remove it if not a circle
-    if (!classifyCircles(lm.at(i)))
-    {
-      std::cout << "Not a circle" << std::endl;
-      lm.erase(lm.begin() + i);
-      // decrement i because if something is deleted
-      // the size of the landmark vector changes
-      i--;
-    }
-
-    // check if any circles are left
-    if (lm.empty())
-    {
-      std::cout << "No circles found" << std::endl;
-      return;
-    }
-
-    // eliminate circles with large radius
-    // if (lm.at(i).radius > radius_thresh)
+    // // remove it if not a circle
+    // if (!classifyCircles(lm.at(i)))
     // {
+    //   // std::cout << "Not a circle" << std::endl;
     //   lm.erase(lm.begin() + i);
-    //
     //   // decrement i because if something is deleted
     //   // the size of the landmark vector changes
     //   i--;
     // }
+
+    // check if any circles are left
+    // if (lm.empty())
+    // {
+    //   std::cout << "No circles found" << std::endl;
+    //   return;
+    // }
+
+    // eliminate circles with large radius
+    if (lm.at(i).radius > radius_thresh)
+    {
+      std::cout << "radius: " << lm.at(i).radius << std::endl;
+      lm.erase(lm.begin() + i);
+
+      // decrement i because if something is deleted
+      // the size of the landmark vector changes
+      i--;
+    }
   }
 
 }
@@ -168,6 +173,10 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
   curr_point = end_points.at(0);
   prev_point = curr_point;
 
+  // std::cout << "----------------" << std::endl;
+  // std::cout << "size: " << end_points.size() << std::endl;
+
+
   for(unsigned int i = 0; i < end_points.size(); i++)
   {
     curr_point = end_points.at(i);
@@ -189,16 +198,11 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
     else if (dist > epsilon)
     {
-      // check if temp as less than three points
-      if (temp_points.size() > 4)
-      {
-        // std::cout << "new cluster" << std::endl;
-
-        // create new cluster
-        // and add cluster to landmarks
-        Cluster cluster(temp_points);
-        lm.push_back(cluster);
-      }
+      // std::cout << "new cluster" << std::endl;
+      // create new cluster
+      // and add cluster to landmarks
+      Cluster cluster(temp_points);
+      lm.push_back(cluster);
 
       // clear temp list
       temp_points.clear();
@@ -208,14 +212,12 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
   } // end loop
 
-  // std::cout << temp_points.size() << std::endl;
-  // possibly there is only one cluster to add
-  if (lm.empty() and temp_points.size() > 4)
-  {
-    // std::cout << "one cluster" << std::endl;
-    Cluster cluster(temp_points);
-    lm.push_back(cluster);
-  }
+  // add last cluster
+  // std::cout << "new cluster" << std::endl;
+  Cluster cluster(temp_points);
+  lm.push_back(cluster);
+
+  // std::cout << "----------------" << std::endl;
 
 
   // compare last point to first point
@@ -234,7 +236,107 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
       lm.pop_back();
     }
   }
+
+
+  // remove clusters less than four points
+  for(unsigned int i = 0; i < lm.size(); i++)
+  {
+    if (lm.at(i).points.size() < num_points)
+    {
+      lm.erase(lm.begin() + i);
+      i--;
+    }
+  }
+
 }
+
+
+
+
+// void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
+// {
+//   // TODO: fixed the edge case where the scan starts in the center of
+//   //        a cluster. This is was causing a segfault during testing.
+//
+//
+//   // clear current landmarks
+//   lm.clear();
+//
+//   // store points in temp vector
+//   std::vector<Vector2D> temp_points;
+//
+//   // compare previous and current points
+//   Vector2D curr_point, prev_point;
+//   curr_point = end_points.at(0);
+//   prev_point = curr_point;
+//
+//   for(unsigned int i = 0; i < end_points.size(); i++)
+//   {
+//     curr_point = end_points.at(i);
+//
+//     const auto dist = pointDistance(curr_point, prev_point);
+//
+//     // std::cout << "----------------" << std::endl;
+//     // std::cout << curr_point;
+//     // std::cout << prev_point;
+//     // std::cout << dist << std::endl;
+//     // std::cout << "----------------" << std::endl;
+//
+//     if (dist <= epsilon)
+//     {
+//       // std::cout << "in cluster" << std::endl;
+//       temp_points.push_back(end_points.at(i));
+//     }
+//
+//
+//     else if (dist > epsilon)
+//     {
+//       // check if temp as less than three points
+//       if (temp_points.size() >= 4)
+//       {
+//         // std::cout << "new cluster" << std::endl;
+//
+//         // create new cluster
+//         // and add cluster to landmarks
+//         Cluster cluster(temp_points);
+//         lm.push_back(cluster);
+//       }
+//
+//       // clear temp list
+//       temp_points.clear();
+//     }
+//
+//     prev_point = curr_point;
+//
+//   } // end loop
+//
+//   // std::cout << temp_points.size() << std::endl;
+//   // possibly there is only one cluster to add
+//   if (lm.empty() and temp_points.size() >= 4)
+//   {
+//     // std::cout << "one cluster" << std::endl;
+//     Cluster cluster(temp_points);
+//     lm.push_back(cluster);
+//   }
+//
+//
+//   // compare last point to first point
+//   // check if they are within the same cluster
+//   // if (lm.size() > 1)
+//   // {
+//   //   const auto dist = pointDistance(end_points.front(), end_points.back());
+//   //
+//   //   if (dist <= epsilon)
+//   //   {
+//   //     // std::cout << "scan in center of cluster" << std::endl;
+//   //     lm.front().points.insert(lm.front().points.end(),
+//   //                              lm.back().points.begin(),
+//   //                              lm.back().points.end());
+//   //
+//   //     lm.pop_back();
+//   //   }
+//   // }
+// }
 
 
 void Landmarks::centroid(Cluster &cluster)
@@ -482,15 +584,15 @@ bool Landmarks::classifyCircles(const Cluster &cluster)
   const auto sigma = std::sqrt(sum / static_cast<double>(num_inner_points));
 
 
-  std::cout << "mean angle: " << rigid2d::rad2deg(mean_angle) << std::endl;
-  std::cout << "sigma: " << sigma << std::endl;
+  // std::cout << "mean angle: " << rigid2d::rad2deg(mean_angle) << std::endl;
+  // std::cout << "sigma: " << sigma << std::endl;
 
 
 
   // is a circle
-  if ((sigma < 0.15) and \
-      (mean_angle <= rigid2d::deg2rad(135)) and \
-      (mean_angle >= rigid2d::deg2rad(90)))
+  if ((sigma < angle_std) and \
+      (mean_angle <= rigid2d::deg2rad(mux_max)) and \
+      (mean_angle >= rigid2d::deg2rad(mu_min)))
   {
     return true;
   }
