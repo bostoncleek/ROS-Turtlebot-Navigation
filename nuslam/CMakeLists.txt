@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	gazebo_ros
 	geometry_msgs
 	message_generation
   roscpp
@@ -113,7 +114,8 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
- 	geometry_msgs
+ 	 gazebo_ros
+ 	 geometry_msgs
  	 message_runtime
 	 roscpp
 	 sensor_msgs
@@ -148,8 +150,10 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(landmarks src/landmarks_node.cpp)
+add_executable(analysis src/analysis_node.cpp)
 add_executable(draw_map src/draw_map_node.cpp)
+add_executable(landmarks src/landmarks_node.cpp)
+add_executable(slam src/slam_node.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -160,17 +164,34 @@ add_executable(draw_map src/draw_map_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(landmarks ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(analysis ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(draw_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(landmarks ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(landmarks
+target_link_libraries(analysis
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
 )
 
 target_link_libraries(draw_map
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+	${rigid2d_LIBRARIES}
+)
+
+
+target_link_libraries(landmarks
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+	${rigid2d_LIBRARIES}
+)
+
+target_link_libraries(slam
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
@@ -195,7 +216,7 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS draw_map landmarks
+install(TARGETS analysis draw_map landmarks slam
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
