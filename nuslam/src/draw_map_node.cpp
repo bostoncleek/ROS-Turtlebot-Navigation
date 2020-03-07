@@ -52,6 +52,7 @@ int main(int argc, char** argv)
   ros::Subscriber scan_sub = node_handle.subscribe("landmarks", 1, mapCallback);
   ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("map", 100);
 
+  ROS_INFO("Successfully launched draw_map node");
 
 
   while(node_handle.ok())
