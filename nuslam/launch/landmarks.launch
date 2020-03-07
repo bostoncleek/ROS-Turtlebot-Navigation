@@ -3,8 +3,12 @@
   <!-- run nodes on turtlebot machine -->
   <arg name="robot" default="-1" doc="sets address for machine tag"/>
 
+  <!-- debug argument -->
+  <arg name="debug" default="false" doc="provides your slam node with fake data with known data association"/>
+
   <!--  option to launch turtlebot in empty world -->
   <arg name="empty_world" default="false" doc="launch turtlebot in empty world"/>
+
 
 
   <!-- turtlebot3 diff drive params -->
@@ -19,20 +23,16 @@
 
   <!-- turtlebot model in world -->
   <group if="$(eval arg('robot') == -1)">
-
     <include file = "$(find nuturtle_gazebo)/launch/diff_drive_gazebo.launch" >
       <arg name="empty_world" value="$(arg empty_world)" />
     </include>
-
   </group>
 
 
   <!-- teleop -->
   <group if="$(eval arg('robot') != 0)">
-
     <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
        name="turtlebot3_teleop_keyboard"  output="screen" />
-
   </group>
 
 
@@ -42,8 +42,20 @@
   </node>
 
 
-  <!-- feature markers  -->
-  <node machine="turtlebot" name="draw_map" pkg="nuslam" type="draw_map" output="screen" />
+  <!-- publish real landmarks and robot pose from gazebo -->
+  <group ns="real">
+    <node machine="turtlebot" name="analysis" pkg="nuslam" type="analysis" output="screen" >
+      <param name="radius" value="3.0" />
+      <param name="frame_id" value="base_scan" />
+    </node>
+  </group>
+
+
+  <!-- mapping feature markers -->
+  <node machine="turtlebot" name="draw_map" pkg="nuslam" type="draw_map" output="screen" >
+    <remap if="$(arg debug)" from="landmarks" to="real/landmarks" />
+  </node>
+
 
 
   <!-- load params in these are private to the node  -->
