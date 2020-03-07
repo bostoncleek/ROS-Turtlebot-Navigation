@@ -79,6 +79,8 @@ int main(int argc, char** argv)
 
   ROS_WARN("frame_id %s\n", frame_id.c_str());
 
+  ROS_INFO("Successfully launched landmarks node");
+
   scan_update = false;
 
   // lidar properties
@@ -92,14 +94,10 @@ int main(int argc, char** argv)
   double epsilon = 0.05;
   Landmarks landmarks(props, epsilon);
 
-  // timing
-  ros::Time current_time;
-
 
   while(node_handle.ok())
   {
     ros::spinOnce();
-    current_time = ros::Time::now();
 
     if (scan_update)
     {
@@ -109,7 +107,7 @@ int main(int argc, char** argv)
       // new map
       nuslam::TurtleMap map;
       map.header.frame_id = frame_id;
-      map.header.stamp = current_time;
+      map.header.stamp = ros::Time::now();
 
 
       // std::cout << "Number of circles: " << landmarks.lm.size() << std::endl;
@@ -138,9 +136,9 @@ int main(int argc, char** argv)
       // std::vector<Vector2D> end_points;
       // landmarks.laserEndPoints(end_points, scan);
 
-      sensor_msgs::PointCloud point_cloud;
-      point_cloud.header.stamp = ros::Time::now();
-      point_cloud.header.frame_id = "base_scan";
+      // sensor_msgs::PointCloud point_cloud;
+      // point_cloud.header.stamp = ros::Time::now();
+      // point_cloud.header.frame_id = "base_scan";
       // pointCloud(end_points, point_cloud);
 
       // if (!landmarks.lm.empty())

@@ -103,7 +103,7 @@ void Landmarks::featureDetection(const std::vector<float> &beam_length)
     // eliminate circles with large radius
     if (lm.at(i).radius > radius_thresh)
     {
-      std::cout << "radius: " << lm.at(i).radius << std::endl;
+      // std::cout << "radius: " << lm.at(i).radius << std::endl;
       lm.erase(lm.begin() + i);
 
       // decrement i because if something is deleted
