@@ -19,6 +19,7 @@ namespace nuslam
 {
   using Eigen::MatrixXd;
   using Eigen::VectorXd;
+  using Eigen::Ref;
   using rigid2d::Twist2D;
   using rigid2d::Vector2D;
   using rigid2d::Pose;
@@ -42,24 +43,39 @@ namespace nuslam
   class EKF
   {
   public:
-    EKF();
+    EKF(int num_lm);
 
-    void initState(Pose pose, std::vector<Vector2D> lm);
+    /// \brief Initialize state vector
+    ///        assume robot starts at (0,0,0) and
+    ///        all landmarks are at (0,0)
+    void initState();
 
-    void initCov(int num_lm);
+    /// \brief Initialize the state covariance matrix
+    ///        assume we know where the robot is but
+    ///        do not the where the landmarks are
+    void initCov();
+
+    /// \brief Initialize the Process noise matrix
+    void initProcessNoise();
 
     /// \brief Updates the robot pose based on odometry
     /// \param u - change in the odometry pose (dtheta, dx, dy=0)
-    void motionUpdate(Twist2D u);
+    void motionUpdate(const Twist2D &u);
+
+    /// \brief Update the uncertainty in the robots pose
+    ///        and for the landmark locations
+    void uncertaintyUpdate(const Twist2D &u, Ref<MatrixXd> sigma_bar);
 
 
   private:
+    int n;                      // number of landmarks
+
     // (theta, x, y)
-    MatrixXd state;             // state vector for robot and landmarks
+    VectorXd state;             // state vector for robot and landmarks
     MatrixXd state_cov;         // state covariance for robot and landmarks
 
-    // motion model noise
     MatrixXd motion_noise;      // noise in the motion model
+    MatrixXd process_noise;    // process noise matrix
 
 
   };
