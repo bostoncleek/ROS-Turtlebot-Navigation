@@ -132,8 +132,12 @@ namespace nuslam
     void measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const;
 
     /// \brief Get currnet Robot stated
-    /// \returns Transform from map to robot 
+    /// \returns Transform from map to robot
     Transform2D getRobotState();
+
+    /// \brief Get the estimates (x,y) of each landmark
+    /// map[out] - vector of landmarks position
+    void getMap(std::vector<Vector2D> &map);
 
 
   private:

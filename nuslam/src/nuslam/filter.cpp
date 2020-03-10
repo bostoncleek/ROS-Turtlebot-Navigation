@@ -505,6 +505,21 @@ Transform2D EKF::getRobotState()
 }
 
 
+void EKF::getMap(std::vector<Vector2D> &map)
+{
+  map.reserve(n);
+  for(auto i = 0; i < n; i++)
+  {
+    const auto jx = 2*i + 3;
+    const auto jy = 2*i + 4;
+
+    Vector2D marker(state(jx), state(jy));
+    map.push_back(marker);
+  }
+
+}
+
+
 
 
 } // end namespace
