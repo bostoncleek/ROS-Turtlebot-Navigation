@@ -61,15 +61,15 @@ EKF::EKF(int num_lm) : n(num_lm)
 
   // init motion noise
   motion_noise = MatrixXd::Zero(3,3);
-  // motion_noise(0,0) = 1e-10;  // theta var
-  // motion_noise(1,1) = 1e-5;   // x var
-  // motion_noise(2,2) = 1e-5;   // y var
+  motion_noise(0,0) = 1e-10;  // theta var
+  motion_noise(1,1) = 1e-5;   // x var
+  motion_noise(2,2) = 1e-5;   // y var
   // std::cout << motion_noise << std::endl;
 
   // init measurement noise
   measurement_noise = MatrixXd::Zero(2,2);
-  // measurement_noise(0,0) = 1e-5;   // r var
-  // measurement_noise(1,1) = 1e-5;   // b var
+  measurement_noise(0,0) = 1e-5;   // r var
+  measurement_noise(1,1) = 1e-5;   // b var
   // std::cout << measurement_noise << std::endl;
 
   // init state and covariance
@@ -289,7 +289,7 @@ Vector2d EKF::predictedMeasurement(const int j, const Ref<VectorXd> state_bar) c
 // }
 
 
-void EKF::newLandmark(const LM &m, const int j, const Ref<VectorXd> state_bar)
+void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
 {
   // index of jth correspondence
   // first 3 indecis are for (theta, x, y)
@@ -307,7 +307,7 @@ void EKF::newLandmark(const LM &m, const int j, const Ref<VectorXd> state_bar)
 void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 {
   // TODO: transform points into frame of robot using state_bar ?????
-
+  // TODO: check eigens inverse function
 
   // 1) motion model
   VectorXd state_bar = VectorXd::Zero(state_size);
@@ -317,8 +317,6 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
   // 2) propagate uncertainty
   MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
   uncertaintyUpdate(u, sigma_bar);
-  // std::cout << "sigma_bar" << std::endl;
-  // std::cout << sigma_bar << std::endl;
 
   // 3) update state based on observations
   // measurements come in as (x,y) in robot frame
@@ -329,13 +327,15 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
 
   std::cout << "--------------------------------------" << std::endl;
 
-  for(const auto &m : lm_meas)
-  // for(unsigned int i = 0; i < lm_meas.size(); i++)
+  // for(const auto &m : lm_meas)
+  for(unsigned int i = 0; i < n/*lm_meas.size()*/; i++)
   // LM m = lm_meas.at(0);
   {
+    LM m = lm_meas.at(i);
+
     // find correspondence based in id
-    int j = findKnownCorrespondence(m);
-    // int j = 0;
+    // int j = findKnownCorrespondence(m);
+    int j = i;//0;
     // std::cout << j << std::endl;
 
 
@@ -353,44 +353,52 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
       // add id to observed list
       // init new landmark with measurement
       lm_j.push_back(j);
-      newLandmark(m, j);
+      newLandmark(m, j, state_bar);
     }
 
 
     // 4) predicted measurement z_hat (r,b)
-    Vector2d z_hat = predictedMeasurement(j);
+    Vector2d z_hat = predictedMeasurement(j, state_bar);
     // std::cout << "z_hat" << std::endl;
     // std::cout << z_hat << std::endl;
 
 
-    // std::cout << "ID: " << j << " r: " << m.r << " b: " << m.b << std::endl;
-
     // 5) measurement jacobian
     MatrixXd H = MatrixXd::Zero(2, state_size);
-    measurementJacobian(j, H);
-
+    measurementJacobian(j, state_bar, H);
+    // std::cout << "H" << std::endl;
+    // std::cout << H << std::endl;
 
     // 6) kalman gain
-    // MatrixXd temp = MatrixXd::Zero(2,2);
-    MatrixXd temp = H * sigma_bar * H.transpose() + measurement_noise;
-    MatrixXd temp_inv = temp.inverse();
+    MatrixXd temp = MatrixXd::Zero(2,2);
+    temp = H * sigma_bar * H.transpose() + measurement_noise;
 
-    MatrixXd K = sigma_bar * H.transpose() * temp_inv;
+    // std::cout << "temp" << std::endl;
+    // std::cout << temp << std::endl;
+
+    MatrixXd temp_inv = MatrixXd::Zero(2,2);
+    temp_inv = temp.inverse();
+    // std::cout << "Inverse" << std::endl;
+    // std::cout << temp_inv << std::endl;
+
+
+    MatrixXd K = MatrixXd::Zero(state_size, 2);
+    K = sigma_bar * H.transpose() * temp_inv;
     // std::cout << "kalman Gain" << std::endl;
     // std::cout << K << std::endl;
 
 
     // 7) Update the state vector
-    // difference in measurements
+    // difference in measurements delta_z (r,b)
     Vector2d delta_z;
     delta_z(0) = m.r - z_hat(0);
     delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
     // std::cout << "delta_z" << std::endl;
     // std::cout << delta_z << std::endl;
 
-    state += K * delta_z;
-    // std::cout << "State" << std::endl;
-    // std::cout << state << std::endl;
+    state_bar += K * delta_z;
+    // std::cout << "state_bar" << std::endl;
+    // std::cout << state_bar << std::endl;
 
 
     // 8) Update covariance sigma bar
@@ -398,6 +406,11 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
     sigma_bar = (I - (K * H)) * sigma_bar;
 
   } // end loop
+
+  // 9) Update state vector
+  state = state_bar;
+  std::cout << "state" << std::endl;
+  std::cout << state << std::endl;
 
   // 9) Update covariance
   state_cov = sigma_bar;
@@ -413,40 +426,40 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
 
 
 
-int EKF::findKnownCorrespondence(const LM &m) const
-{
-  auto smallest_d = 1e12;
-  auto index = -1;
-
-  // measured landmark
-  Vector2D meas_m(m.x, m.y);
-  // compute distance to every landmark
-  for(unsigned int i = 0; i < lm.size(); i++)
-  {
-    // known landmark
-    Vector2D know_m(lm.at(i)(0), lm.at(i)(1));
-    // distance from known landmark to measurement
-    const auto d = pointDistance(know_m, meas_m);
-
-    // update if smaller
-    if (d < smallest_d)
-    {
-      smallest_d = d;
-      index = i;
-    }
-  }
-
-  // std::cout << "smallest_d: " << smallest_d << std::endl;
-  // std::cout << "known_dist_thresh: " << known_dist_thresh << std::endl;
-
-  // within distance threshold
-  if (smallest_d < known_dist_thresh)
-  {
-    return index;
-  }
-
-  return -1;
-}
+// int EKF::findKnownCorrespondence(const LM &m) const
+// {
+//   auto smallest_d = 1e12;
+//   auto index = -1;
+//
+//   // measured landmark
+//   Vector2D meas_m(m.x, m.y);
+//   // compute distance to every landmark
+//   for(unsigned int i = 0; i < lm.size(); i++)
+//   {
+//     // known landmark
+//     Vector2D know_m(lm.at(i)(0), lm.at(i)(1));
+//     // distance from known landmark to measurement
+//     const auto d = pointDistance(know_m, meas_m);
+//
+//     // update if smaller
+//     if (d < smallest_d)
+//     {
+//       smallest_d = d;
+//       index = i;
+//     }
+//   }
+//
+//   // std::cout << "smallest_d: " << smallest_d << std::endl;
+//   // std::cout << "known_dist_thresh: " << known_dist_thresh << std::endl;
+//
+//   // within distance threshold
+//   if (smallest_d < known_dist_thresh)
+//   {
+//     return index;
+//   }
+//
+//   return -1;
+// }
 
 
 void EKF::measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const
@@ -471,17 +484,26 @@ void EKF::measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_
     lm_meas.at(i).x = state(1) + r * std::cos(b + state(0));
     lm_meas.at(i).y = state(2) + r * std::sin(b + state(0));
 
-    // std::cout << "ID: " << i << " x: " << lm_meas.at(i).x << " y: " << lm_meas.at(i).y << std::endl;
 
 
     // if (i == 0)
     // {
-    //   std::cout << "ID: " << i << " r: " << r << " b: " << b << std::endl;
+    //   std::cout << "ID: " << i << " x: " << lm_meas.at(i).x << " y: " << lm_meas.at(i).y << std::endl;
+    //   // std::cout << "ID: " << i << " r: " << r << " b: " << b << std::endl;
     // }
 
 
   }
 }
+
+
+Transform2D EKF::getRobotState()
+{
+  Vector2D vmr(state(1), state(2));
+  Transform2D Tmr(vmr, state(0));
+  return Tmr;
+}
+
 
 
 

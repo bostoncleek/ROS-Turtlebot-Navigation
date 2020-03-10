@@ -27,6 +27,7 @@ namespace nuslam
   using rigid2d::Vector2D;
   using rigid2d::almost_equal;
   using rigid2d::normalize_angle_PI;
+  using rigid2d::Transform2D;
 
 
 
@@ -111,8 +112,8 @@ namespace nuslam
     ///        observed before
     /// \param m - measurement of a landmark in the map frame
     /// \param j - correspondence id
-    /// \param state_bar- estimated state vector
-    void newLandmark(const LM &m, const int j, const Ref<VectorXd> state_bar);
+    /// state_bar[out] - estimated state vector
+    void newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar);
 
     /// \brief Updates the stated vector
     /// \param meas - x/y coordinates of landmarks in the robot frame
@@ -123,13 +124,16 @@ namespace nuslam
     /// \brief Searches for the corresponding landmark id (j)
     /// \param m - measurement of a landmark in the map frame
     /// returns - landmark id and -1 if not found
-    int findKnownCorrespondence(const LM &m) const;
+    // int findKnownCorrespondence(const LM &m) const;
 
 
     /// \brief Transform landmark (x,y) into frame of map
     /// \param meas - landmarks (x,y) and (r,b) in frame of robot
     void measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const;
 
+    /// \brief Get currnet Robot stated
+    /// \returns Transform from map to robot 
+    Transform2D getRobotState();
 
 
   private:
