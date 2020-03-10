@@ -28,6 +28,8 @@ namespace nuslam
   using rigid2d::almost_equal;
   using rigid2d::normalize_angle_PI;
 
+
+
   /// \brief Returns a random number engine
   std::mt19937_64 &getTwister();
 
@@ -76,9 +78,11 @@ namespace nuslam
     /// \param lm - (x,y,id) in map for landmarks
     void setKnownLandamrks(const std::vector<Vector3d> &landmarks);
 
-    /// \brief Updates the robot pose based on odometry
+    /// \brief Estimates the robot pose based on odometry
     /// \param u - twist from odometry given wheel velocities (dtheta, dx, dy=0)
-    void motionUpdate(const Twist2D &u);
+    /// state_bar[out] - estimated state vector
+    void motionUpdate(const Twist2D &u, Ref<VectorXd> state_bar);
+
 
     /// \brief Update the uncertainty in the robots pose
     ///        and for the landmark locations
@@ -87,27 +91,28 @@ namespace nuslam
     void uncertaintyUpdate(const Twist2D &u, Ref<MatrixXd> sigma_bar) const;
 
     /// \brief Compose the measurement jacobian
-    /// \param dx - relative x-distance from robot to landmark
-    /// \param dj - relative j-distance from robot to landmark
     /// \param j - correspondence id
+    /// \param state_bar- estimated state vector
     /// H[out] - the measurement jacobian
-    void measurementJacobian(const int j, Ref<MatrixXd> H) const;
+    void measurementJacobian(const int j, const Ref<VectorXd> state_bar, Ref<MatrixXd> H) const;
 
     /// \brief Predicted range and bering given the current state vector
     /// \param j - correspondence id
+    /// \param state_bar- estimated state vector
     /// \returns the expected range and bearing of a landmark (r,b)
-    Vector2d predictedMeasurement(const int j) const;
+    Vector2d predictedMeasurement(const int j, const Ref<VectorXd> state_bar) const;
 
-    /// \brief Access the (x,y) position of landmark in the map
-    /// \param j - correspondence id
-    /// \returns -  (x,y) position of landmark with id j
-    Vector2d landmarkState(const int j) const;
+    // /// \brief Access the (x,y) position of landmark in the map
+    // /// \param j - correspondence id
+    // /// \returns -  (x,y) position of landmark with id j
+    // Vector2d landmarkState(const int j) const;
 
     /// \brief Initialize a new landmark that has not been
     ///        observed before
     /// \param m - measurement of a landmark in the map frame
     /// \param j - correspondence id
-    void newLandmark(const LM &m, const int j);
+    /// \param state_bar- estimated state vector
+    void newLandmark(const LM &m, const int j, const Ref<VectorXd> state_bar);
 
     /// \brief Updates the stated vector
     /// \param meas - x/y coordinates of landmarks in the robot frame

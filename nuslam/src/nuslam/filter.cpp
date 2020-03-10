@@ -83,7 +83,10 @@ EKF::EKF(int num_lm) : n(num_lm)
 
 void EKF::initState()
 {
+  // pose is (theta, x, y)
   state = VectorXd::Zero(state_size);
+  // state(0) = 0.174533;
+  // state(1) = 0.3;
   // std::cout << state << std::endl;
 }
 
@@ -125,8 +128,11 @@ void EKF::setKnownLandamrks(const std::vector<Vector3d> &landmarks)
 }
 
 
-void EKF::motionUpdate(const Twist2D &u)
+void EKF::motionUpdate(const Twist2D &u, Ref<VectorXd> state_bar)
 {
+  // set estimated state equal to current state and then update it
+  state_bar = state;
+
   // sample noise
   VectorXd w = sampleMultivariateDistribution(motion_noise);
 
@@ -135,23 +141,23 @@ void EKF::motionUpdate(const Twist2D &u)
   if (almost_equal(u.w, 0.0))
   {
     // update theta
-    state(0) = normalize_angle_PI(state(0) + w(0));
+    state_bar(0) = normalize_angle_PI(state_bar(0) + w(0));
     // update x
-    state(1) += u.vx * std::cos(state(2)) + w(1);
+    state_bar(1) += u.vx * std::cos(state_bar(0)) + w(1);
     // update y
-    state(2) += u.vx * std::sin(state(2)) + w(2);
+    state_bar(2) += u.vx * std::sin(state_bar(0)) + w(2);
   }
 
   else
   {
     // update theta
-    state(0) = normalize_angle_PI(state(0) + u.w + w(0));
+    state_bar(0) = normalize_angle_PI(state_bar(0) + u.w + w(0));
     // update x
-    state(1) += (-u.vx / u.w) * std::sin(state(0)) + \
-                            (u.vx / u.w) * std::sin(state(0) + u.w) + w(1);
+    state_bar(1) += (-u.vx / u.w) * std::sin(state_bar(0)) + \
+                            (u.vx / u.w) * std::sin(state_bar(0) + u.w) + w(1);
     // update y
-    state(2) += (u.vx / u.w) * std::cos(state(0)) - \
-                            (u.vx / u.w) * std::cos(state(0) + u.w) + w(2);
+    state_bar(2) += (u.vx / u.w) * std::cos(state_bar(0)) - \
+                            (u.vx / u.w) * std::cos(state_bar(0) + u.w) + w(2);
   }
 
   // std::cout << state << std::endl;
@@ -191,12 +197,18 @@ void EKF::uncertaintyUpdate(const Twist2D &u, Ref<MatrixXd> sigma_bar) const
 
 
 
-void EKF::measurementJacobian(const int j, Ref<MatrixXd> H) const
+void EKF::measurementJacobian(const int j, const Ref<VectorXd> state_bar, Ref<MatrixXd> H) const
 {
   // difference between landmark and robot
-  Vector2d lm_st = landmarkState(j);
-  const auto dx = lm_st(0) - state(1);
-  const auto dy = lm_st(1) - state(2);
+  // Vector2d lm_st = landmarkState(j);
+  // const auto dx = lm_st(0) - state_bar(1);
+  // const auto dy = lm_st(1) - state_bar(2);
+
+  const auto jx = 2*j + 3;
+  const auto jy = 2*j + 4;
+
+  const auto dx = state_bar(jx) - state_bar(1);
+  const auto dy = state_bar(jy) - state_bar(2);
 
 
   const auto q = dx*dx + dy*dy;
@@ -218,10 +230,11 @@ void EKF::measurementJacobian(const int j, Ref<MatrixXd> H) const
 
 
   // // row 1
-  h(0,1) = (-sqrt_q * dx) / q;
-  h(0,2) = (-sqrt_q * dy) / q;
-  h(0,3) = (sqrt_q * dx) / q;
-  h(0,4) = (sqrt_q * dy) / q;
+  h(0,0) = 0.0;
+  h(0,1) = -dx / sqrt_q;
+  h(0,2) = -dy / sqrt_q;
+  h(0,3) = dx / sqrt_q;
+  h(0,4) = dy / sqrt_q;
 
   // // row 2
   h(1,0) = -1.0;
@@ -236,7 +249,7 @@ void EKF::measurementJacobian(const int j, Ref<MatrixXd> H) const
 }
 
 
-Vector2d EKF::predictedMeasurement(const int j) const
+Vector2d EKF::predictedMeasurement(const int j, const Ref<VectorXd> state_bar) const
 {
   // index of jth correspondence
   // first 3 indecis are for (theta, x, y)
@@ -244,44 +257,47 @@ Vector2d EKF::predictedMeasurement(const int j) const
   const auto jy = 2*j + 4;
 
   // change in x landmark to robot
-  const auto delta_x = state(jx) - state(1);
-  const auto delta_y = state(jy) - state(2);
+  const auto delta_x = state_bar(jx) - state_bar(1);
+  const auto delta_y = state_bar(jy) - state_bar(2);
 
   // measurement noise
   VectorXd v = sampleMultivariateDistribution(measurement_noise);
 
   Vector2d z_hat;
+
+  // predicted range
   z_hat(0) = std::sqrt(delta_x * delta_x + delta_y * delta_y) + v(0);
-  z_hat(1) = normalize_angle_PI(std::atan2(delta_y, delta_x) - normalize_angle_PI(state(0)) + v(1));
-  // std::cout << z_hat << std::endl;
+  // predicted bearing
+  z_hat(1) = normalize_angle_PI(std::atan2(delta_y, delta_x) - normalize_angle_PI(state_bar(0)) + v(1));
+
 
   return z_hat;
 }
 
 
-Vector2d EKF::landmarkState(const int j) const
+// Vector2d EKF::landmarkState(const int j) const
+// {
+//   // index of jth correspondence
+//   // first 3 indecis are for (theta, x, y)
+//   const auto jx = 2*j + 3;
+//   const auto jy = 2*j + 4;
+//
+//   Vector2d st;
+//   st << state(jx), state(jy);
+//
+//   return st;
+// }
+
+
+void EKF::newLandmark(const LM &m, const int j, const Ref<VectorXd> state_bar)
 {
   // index of jth correspondence
   // first 3 indecis are for (theta, x, y)
   const auto jx = 2*j + 3;
   const auto jy = 2*j + 4;
 
-  Vector2d st;
-  st << state(jx), state(jy);
-
-  return st;
-}
-
-
-void EKF::newLandmark(const LM &m, const int j)
-{
-  // index of jth correspondence
-  // first 3 indecis are for (theta, x, y)
-  const auto jx = 2*j + 3;
-  const auto jy = 2*j + 4;
-
-  state(jx) = state(1) + m.r * std::cos(m.b + state(0));
-  state(jy) = state(2) + m.r * std::sin(m.b + state(0));
+  state_bar(jx) = state_bar(1) + m.r * std::cos(m.b + state_bar(0));
+  state_bar(jy) = state_bar(2) + m.r * std::sin(m.b + state_bar(0));
 }
 
 
@@ -290,14 +306,19 @@ void EKF::newLandmark(const LM &m, const int j)
 
 void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 {
+  // TODO: transform points into frame of robot using state_bar ?????
+
+
   // 1) motion model
-  motionUpdate(u);
+  VectorXd state_bar = VectorXd::Zero(state_size);
+  motionUpdate(u, state_bar);
 
 
-  // // 2) propagate uncertainty
-  Eigen::MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
+  // 2) propagate uncertainty
+  MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
   uncertaintyUpdate(u, sigma_bar);
-
+  // std::cout << "sigma_bar" << std::endl;
+  // std::cout << sigma_bar << std::endl;
 
   // 3) update state based on observations
   // measurements come in as (x,y) in robot frame
@@ -306,11 +327,15 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
   std::vector<LM> lm_meas(meas.size());
   measRobotToMap(meas, lm_meas);
 
+  std::cout << "--------------------------------------" << std::endl;
 
-  for(const auto m : lm_meas)
+  for(const auto &m : lm_meas)
+  // for(unsigned int i = 0; i < lm_meas.size(); i++)
+  // LM m = lm_meas.at(0);
   {
     // find correspondence based in id
     int j = findKnownCorrespondence(m);
+    // int j = 0;
     // std::cout << j << std::endl;
 
 
@@ -332,10 +357,13 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
     }
 
 
-    // 4) predicted measurement
+    // 4) predicted measurement z_hat (r,b)
     Vector2d z_hat = predictedMeasurement(j);
+    // std::cout << "z_hat" << std::endl;
     // std::cout << z_hat << std::endl;
 
+
+    // std::cout << "ID: " << j << " r: " << m.r << " b: " << m.b << std::endl;
 
     // 5) measurement jacobian
     MatrixXd H = MatrixXd::Zero(2, state_size);
@@ -356,19 +384,27 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
     // difference in measurements
     Vector2d delta_z;
     delta_z(0) = m.r - z_hat(0);
-    delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(0)));
+    delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
+    // std::cout << "delta_z" << std::endl;
+    // std::cout << delta_z << std::endl;
 
     state += K * delta_z;
-    std::cout << "State" << std::endl;
-    std::cout << state << std::endl;
+    // std::cout << "State" << std::endl;
+    // std::cout << state << std::endl;
 
 
-    // 8) Update covariance
-    // state_cov +=
-
+    // 8) Update covariance sigma bar
+    MatrixXd I = MatrixXd::Identity(state_size, state_size);
+    sigma_bar = (I - (K * H)) * sigma_bar;
 
   } // end loop
 
+  // 9) Update covariance
+  state_cov = sigma_bar;
+  // std::cout << "Covariance" << std::endl;
+  // std::cout << state_cov << std::endl;
+
+  std::cout << "--------------------------------------" << std::endl;
 
 
 
@@ -423,12 +459,27 @@ void EKF::measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_
     const auto my = meas.at(i).y;
 
     // to polar coordinates
-    lm_meas.at(i).r = std::sqrt(mx * mx + my *my);
-    lm_meas.at(i).b = normalize_angle_PI(std::atan2(my, mx) - normalize_angle_PI(state(0)));
+    const auto r = std::sqrt(mx * mx + my *my);
+
+    // TODO: check this bearing
+    const auto b = normalize_angle_PI(std::atan2(my, mx));// - normalize_angle_PI(state(0)));
+
+    lm_meas.at(i).r = r;
+    lm_meas.at(i).b = b;
 
     // // frame: robot -> map
-    lm_meas.at(i).x = mx + state(1);
-    lm_meas.at(i).y = my + state(2);
+    lm_meas.at(i).x = state(1) + r * std::cos(b + state(0));
+    lm_meas.at(i).y = state(2) + r * std::sin(b + state(0));
+
+    // std::cout << "ID: " << i << " x: " << lm_meas.at(i).x << " y: " << lm_meas.at(i).y << std::endl;
+
+
+    // if (i == 0)
+    // {
+    //   std::cout << "ID: " << i << " r: " << r << " b: " << b << std::endl;
+    // }
+
+
   }
 }
 
