@@ -199,52 +199,64 @@ void EKF::uncertaintyUpdate(const Twist2D &u, Ref<MatrixXd> sigma_bar) const
 
 void EKF::measurementJacobian(const int j, const Ref<VectorXd> state_bar, Ref<MatrixXd> H) const
 {
-  // difference between landmark and robot
-  // Vector2d lm_st = landmarkState(j);
-  // const auto dx = lm_st(0) - state_bar(1);
-  // const auto dy = lm_st(1) - state_bar(2);
-
   const auto jx = 2*j + 3;
   const auto jy = 2*j + 4;
 
   const auto dx = state_bar(jx) - state_bar(1);
   const auto dy = state_bar(jy) - state_bar(2);
 
-
   const auto q = dx*dx + dy*dy;
   const auto sqrt_q = std::sqrt(q);
 
-  MatrixXd F = MatrixXd::Zero(5, state_size);
-  // MatrixXd H = MatrixXd::Zero(2, num_cols);
-  MatrixXd h = MatrixXd::Zero(2, 5);
 
-  // upper left is diagonal for pose
-  F(0,0) = 1;
-  F(1,1) = 1;
-  F(2,2) = 1;
+  // row 1
+  H(0,0) = 0.0;
+  H(0,1) = -dx / sqrt_q;
+  H(0,2) = -dy / sqrt_q;
 
-  // lower right diagonal
-  F(3, 2*j + 3) = 1;
-  F(4, 2*j + 4) = 1;
-  // std::cout << F << std::endl;
+  H(0,jx) = dx / sqrt_q;
+  H(0,jy) = dy / sqrt_q;
 
 
-  // // row 1
-  h(0,0) = 0.0;
-  h(0,1) = -dx / sqrt_q;
-  h(0,2) = -dy / sqrt_q;
-  h(0,3) = dx / sqrt_q;
-  h(0,4) = dy / sqrt_q;
+  // row 2
+  H(1,0) = -1.0;
+  H(1,1) = dy / q;
+  H(1,2) = -dx / q;
 
-  // // row 2
-  h(1,0) = -1.0;
-  h(1,1) = dy / q;
-  h(1,2) = -dx / q;
-  h(1,3) = -dy /q;
-  h(1,4) = dx / q;
+  H(1,jx) = -dy /q;
+  H(1,jy) = dx / q;
 
 
-  H = h * F;
+  // MatrixXd F = MatrixXd::Zero(5, state_size);
+  // MatrixXd h = MatrixXd::Zero(2, 5);
+  //
+  // // upper left is diagonal for pose
+  // F(0,0) = 1;
+  // F(1,1) = 1;
+  // F(2,2) = 1;
+  //
+  // // lower right diagonal
+  // F(3, 2*j + 3) = 1;
+  // F(4, 2*j + 4) = 1;
+  // // std::cout << F << std::endl;
+  //
+  //
+  // // // row 1
+  // h(0,0) = 0.0;
+  // h(0,1) = -dx / sqrt_q;
+  // h(0,2) = -dy / sqrt_q;
+  // h(0,3) = dx / sqrt_q;
+  // h(0,4) = dy / sqrt_q;
+  //
+  // // // row 2
+  // h(1,0) = -1.0;
+  // h(1,1) = dy / q;
+  // h(1,2) = -dx / q;
+  // h(1,3) = -dy /q;
+  // h(1,4) = dx / q;
+  //
+  //
+  // H = h * F;
   // std::cout << H << std::endl;
 }
 
@@ -306,7 +318,6 @@ void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
 
 void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 {
-  // TODO: transform points into frame of robot using state_bar ?????
   // TODO: check eigens inverse function
 
   // 1) motion model
