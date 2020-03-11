@@ -18,6 +18,7 @@
 #include <ros/console.h>
 #include <sensor_msgs/JointState.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <gazebo_msgs/ModelStates.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -51,13 +52,45 @@ using rigid2d::TransformData2D;
 static std::string left_wheel_joint, right_wheel_joint;    // joint names
 static double left, right;                                 // wheel angular positions
 // static bool message;                                       // callback flag
-
 // static rigid2d::Pose pose_srv;                             // pose set by srv
 // static bool srv_active;                                    // set pose srv activated
 
 
 static std::vector<Vector2D> meas;
 static bool map_flag;
+
+
+static geometry_msgs::PoseStamped gazebo_robot_pose;
+
+
+
+void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
+{
+  // store names of all items in gazebo
+  std::vector<std::string> names = model_data->name;
+
+  // index of robot
+  int robot_index = 0;
+
+  // find diff_drive robot
+  int ctr = 0;
+  for(const auto &item : names)
+  {
+    // check for robot
+    if (item == "diff_drive")
+    {
+      robot_index = ctr;
+    }
+
+    ctr++;
+  } // end loop
+
+
+  // pose of robot
+  gazebo_robot_pose.header.stamp = ros::Time::now();
+  gazebo_robot_pose.pose.position = model_data->pose[robot_index].position;
+  gazebo_robot_pose.pose.orientation = model_data->pose[robot_index].orientation;
+}
 
 
 
@@ -149,8 +182,10 @@ int main(int argc, char** argv)
 
   ros::Subscriber joint_sub = node_handle.subscribe("joint_states", 1, jointStatesCallback);
   ros::Subscriber map_sub = node_handle.subscribe("landmarks", 1, mapCallBack);
+  ros::Subscriber scan_sub = nh.subscribe("/gazebo/model_states", 1, modelCallBack);
   ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 1);
   ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
+  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 1);
   ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 100);
   // ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
 
@@ -219,16 +254,21 @@ int main(int argc, char** argv)
   // diff drive model
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
 
-  // path from odometry
-  nav_msgs::Path odom_path;
 
-
+  // number of landmarks in model
   int n = 12;
   nuslam::EKF ekf(n);
   ekf.setKnownLandamrks(landmarks);
 
+
+  // path from odometry
+  nav_msgs::Path odom_path;
+
   // path from SLAM
   nav_msgs::Path ekf_path;
+
+  // path from gazebo
+  nav_msgs::Path gazebo_path;
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -314,6 +354,7 @@ int main(int argc, char** argv)
     geometry_msgs::Quaternion quat_mr;
     quat_mr = tf2::toMsg(q_mr);
 
+    slam_pose.header.stamp = ros::Time::now();
     slam_pose.pose.position.x = pose_map_robot.x;
     slam_pose.pose.position.y = pose_map_robot.y;
     slam_pose.pose.orientation = quat_mr;
@@ -334,6 +375,7 @@ int main(int argc, char** argv)
     geometry_msgs::Quaternion quat_or;
     quat_or = tf2::toMsg(q_or);
 
+    odom_pose.header.stamp = ros::Time::now();
     odom_pose.pose.position.x = pose.x;
     odom_pose.pose.position.y = pose.y;
     odom_pose.pose.orientation = quat_or;
@@ -345,6 +387,16 @@ int main(int argc, char** argv)
     odom_path_pub.publish(odom_path);
 
     /////////////////////////////////////////////////////////////////////////////
+
+    // path from gazebo
+    gazebo_path.header.stamp = ros::Time::now();
+    gazebo_path.header.frame_id = map_frame_id;
+    gazebo_path.poses.push_back(gazebo_robot_pose);
+
+    gazebo_path_pub.publish(gazebo_path);
+
+    /////////////////////////////////////////////////////////////////////////////
+
 
     // marker array of landmark estimates from the ekf filter
     std::vector<Vector2D> map;
