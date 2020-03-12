@@ -68,7 +68,9 @@ WheelVelocities DiffDrive::twistToWheels(const Twist2D &twist) const
   vel.ur = (1 / wheel_radius) * (d*twist.w + twist.vx);
 
   if (twist.vy != 0)
-    throw std::invalid_argument("Twist cannot have y velocity component");
+  {
+    throw std::invalid_argument("Twist cannot have y velocity component");    
+  }
 
   return vel;
 }
