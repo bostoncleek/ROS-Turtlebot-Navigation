@@ -16,12 +16,14 @@
   <build_depend>rigid2d</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>gazebo_ros</build_depend>
+  <build_depend>tf2</build_depend>
 
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>gazebo_ros</build_export_depend>
+  <build_export_depend>tf2</build_export_depend>
 
 
   <exec_depend>roscpp</exec_depend>
