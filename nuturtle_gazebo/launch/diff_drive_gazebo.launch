@@ -8,7 +8,7 @@
   <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_gazebo)/urdf/diff_drive.gazebo.xacro'"/>
 
   <!-- spawn robot using urdf -->
-  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x 0.0 -y 0.0 -z 0 -model diff_drive" respawn="false" output="screen"/>
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x 0.0 -y 0.0 -z 0.0 -model diff_drive" respawn="false" output="screen"/>
 
 
   <!-- load world empty -->
