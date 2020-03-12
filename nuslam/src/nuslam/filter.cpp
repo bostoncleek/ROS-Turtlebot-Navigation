@@ -339,13 +339,19 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
   std::cout << "--------------------------------------" << std::endl;
 
   // for(const auto &m : lm_meas)
-  for(unsigned int i = 0; i < n/*lm_meas.size()*/; i++)
+  for(unsigned int i = 0; i < lm_meas.size(); i++)
   // LM m = lm_meas.at(0);
   {
+    // new measurement
     LM m = lm_meas.at(i);
 
-    // find correspondence based in id
-    // int j = findKnownCorrespondence(m);
+    // check if outside search radius
+    if(std::isnan(m.x) && std::isnan(m.y))
+    {
+      continue;
+    }
+
+    // find correspondence id is the index the measurement comes in at
     int j = i;//0;
     // std::cout << j << std::endl;
 
@@ -525,7 +531,13 @@ void EKF::getMap(std::vector<Vector2D> &map)
     const auto jy = 2*i + 4;
 
     Vector2D marker(state(jx), state(jy));
-    map.push_back(marker);
+
+    // assume no landmarks are here at (0,0)
+    // because robot starts here 
+    if (!almost_equal(marker.x, 0.0) and !almost_equal(marker.y, 0.0))
+    {
+      map.push_back(marker);
+    }
   }
 
 }

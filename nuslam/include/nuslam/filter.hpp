@@ -136,6 +136,8 @@ namespace nuslam
     Transform2D getRobotState();
 
     /// \brief Get the estimates (x,y) of each landmark
+    ///        Does not return landmarks at (0,0) because we assume that the
+    ///        robot starts there
     /// map[out] - vector of landmarks position
     void getMap(std::vector<Vector2D> &map);
 
