@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 	sensor_msgs
 	std_msgs
+	tf2
 	visualization_msgs
 )
 
@@ -120,6 +121,7 @@ catkin_package(
 	 roscpp
 	 sensor_msgs
 	 std_msgs
+	 tf2
 	 visualization_msgs
 #  DEPENDS system_lib
 )
@@ -139,6 +141,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
+	src/${PROJECT_NAME}/filter.cpp
   src/${PROJECT_NAME}/landmarks.cpp
 )
 
@@ -189,12 +192,14 @@ target_link_libraries(landmarks
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
+	${EIGEN3_LIBRARIES}
 )
 
 target_link_libraries(slam
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
+	${EIGEN3_LIBRARIES}
 )
 
 #############
