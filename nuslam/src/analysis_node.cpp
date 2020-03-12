@@ -15,6 +15,8 @@
 #include <ros/console.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <geometry_msgs/Pose.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 #include <string>
 #include <vector>
@@ -25,6 +27,9 @@
 #include "nuslam/TurtleMap.h"
 
 using rigid2d::Vector2D;
+using rigid2d::Transform2D;
+using rigid2d::TransformData2D;
+
 using nuslam::pointDistance;
 
 static double radius_circles;
@@ -70,11 +75,23 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
   robot_pose.position = model_data->pose[robot_index].position;
   robot_pose.orientation = model_data->pose[robot_index].orientation;
 
+  tf2::Quaternion robot_quat(model_data->pose[robot_index].orientation.x,
+                             model_data->pose[robot_index].orientation.y,
+                             model_data->pose[robot_index].orientation.z,
+                             model_data->pose[robot_index].orientation.w);
+
+  tf2::Matrix3x3 mat(robot_quat);
+  auto roll = 0.0, pitch = 0.0 , yaw = 0.0;
+  mat.getRPY(roll, pitch, yaw);
+
+
 
   // x/y location of robot
   Vector2D p1;
   p1.x = robot_pose.position.x;
   p1.y = robot_pose.position.y;
+  // map to robot
+  Transform2D Tmr(p1, yaw);
 
 
   // clear previous map
@@ -90,12 +107,33 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
     p2.x = model_data->pose[index].position.x;
     p2.y = model_data->pose[index].position.y;
 
+    // map to landmark
+    Transform2D Tml(p2);
+
+    // robot to map
+    Transform2D Trm = Tmr.inv();
+
+    // robot to landmark
+    Transform2D Trl = Trm * Tml;
+
+    // position of landmark in frame of robot
+    TransformData2D plr = Trl.displacement();
 
     // note: use relative position of landmarks
     if (pointDistance(p1, p2) <= radius)
     {
-      map.cx.push_back(p2.x - p1.x);
-      map.cy.push_back(p2.y - p1.y);
+      map.cx.push_back(plr.x);
+      map.cy.push_back(plr.y);
+
+      // hard code radius of circle
+      map.r.push_back(radius_circles);
+    }
+
+    // outside the radius set values to nan
+    else
+    {
+      map.cx.push_back(NAN);
+      map.cy.push_back(NAN);
 
       // hard code radius of circle
       map.r.push_back(radius_circles);
@@ -124,7 +162,7 @@ int main(int argc, char** argv)
 
   // radius from robot to landmarks
   // which landmarks are in sight
-
+  // detect all circles within this radius
   nh.getParam("radius", radius);
   nh.getParam("frame_id", frame_id);
 
@@ -133,8 +171,7 @@ int main(int argc, char** argv)
 
   ROS_INFO("Successfully launched analysis node");
 
-
-  // hard code radius of circle
+  // hard code radius of circles to publish in map
   radius_circles = 0.05;
 
 
