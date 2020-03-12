@@ -22,7 +22,8 @@ namespace nuslam
   /// \brief distance between two points
   /// \param p1 - point 1
   /// \param p2 - point 2
-  double pointDistance(const Vector2D p1, const Vector2D &p2);
+  /// returns distance between p1 and p2
+  double pointDistance(const Vector2D p1, const Vector2D p2);
 
 
   double lawCosines(const double a, const double b, const double c);

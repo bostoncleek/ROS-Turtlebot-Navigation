@@ -27,7 +27,7 @@ Vector2D range2Cartesian(double range, double beam_angle)
 }
 
 
-double pointDistance(const Vector2D p1, const Vector2D &p2)
+double pointDistance(const Vector2D p1, const Vector2D p2)
 {
   const auto dx = p1.x - p2.x;
   const auto dy = p1.y - p2.y;
@@ -51,7 +51,7 @@ Landmarks::Landmarks(const LaserProperties &props, double epsilon)
                             range_min(props.range_min),
                             range_max(props.range_max),
                             epsilon(epsilon),
-                            radius_thresh(0.08),
+                            radius_thresh(0.07),
                             angle_std(0.30),
                             mu_min(90.0),
                             mux_max(135.0),
