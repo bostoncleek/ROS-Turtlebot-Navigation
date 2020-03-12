@@ -11,6 +11,9 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /MarkerArray1
+        - /Path1
+        - /Path2
+        - /Path3
       Splitter Ratio: 0.42181068658828735
     Tree Height: 549
   - Class: rviz/Selection
@@ -31,7 +34,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -106,37 +109,22 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_body:
-          Value: false
         base_link:
           Value: true
-        base_scan:
-          Value: true
-        caster:
-          Value: true
-        left_wheel:
+        map:
           Value: true
         odom:
           Value: true
-        right_wheel:
-          Value: false
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            base_body:
-              base_scan:
-                {}
-              caster:
-                {}
-              left_wheel:
-                {}
-              right_wheel:
-                {}
+        map:
+          odom:
+            base_link:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -182,7 +170,7 @@ Visualization Manager:
       Marker Topic: /map
       Name: MarkerArray
       Namespaces:
-        marker: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -215,11 +203,88 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 0; 255
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /slam_path
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /odom_path
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /slam_map
+      Name: MarkerArray
+      Namespaces:
+        marker: true
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 255; 88; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /gazebo_path
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -243,25 +308,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.5906877517700195
+      Distance: 4.9051289558410645
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.027223000302910805
-        Y: -0.009257343597710133
-        Z: 0.10676194727420807
+        X: 0.1268848329782486
+        Y: -0.04711570590734482
+        Z: 0.13015109300613403
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7753978371620178
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.405402183532715
+      Yaw: 3.1404056549072266
     Saved: ~
 Window Geometry:
   Displays:
@@ -279,5 +344,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1555
-  X: 2071
+  X: 2052
   Y: 0
