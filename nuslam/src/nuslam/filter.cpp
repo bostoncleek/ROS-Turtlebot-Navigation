@@ -50,14 +50,344 @@ VectorXd sampleMultivariateDistribution(const MatrixXd &cov)
 
 
 
-EKF::EKF(int num_lm) : n(num_lm)
+EKF::EKF(int num_lm, double md_max, double md_min)
+                    : n(num_lm),
+                      N(0),
+                      dmax(md_max),
+                      dmin(md_min)
 {
   // total state vector size robot plus landmarks
   state_size = 3 + 2 * n;
 
-  // distance threshold for the known correspondences case
-  // for determining which landmark we are looking at
-  known_dist_thresh = 0.1;
+  initFilter();
+}
+
+
+// void EKF::setKnownLandamrks(const std::vector<Vector3d> &landmarks)
+// {
+//   lm = landmarks;
+// }
+
+
+/// \brief Updates the stated vector
+/// \param meas - x/y coordinates of landmarks in the robot frame
+/// \param u - twist from odometry given wheel velocities
+void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
+{
+  // 1) motion model
+  VectorXd state_bar = VectorXd::Zero(state_size);
+  motionUpdate(u, state_bar);
+
+
+  // 2) propagate uncertainty
+  MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
+  uncertaintyUpdate(u, sigma_bar);
+
+  // 3) update state based on observations
+  // measurements come in as (x,y) in robot frame
+  // convert them to range and bearing
+  // convert landmark positions in robot frame to map frame
+  std::vector<LM> lm_meas(meas.size());
+  measRobotToMap(meas, lm_meas);
+
+  std::cout << "--------------------------------------" << std::endl;
+
+  // for(const auto &m : lm_meas)
+  // for(unsigned int i = 0; i < lm_meas.size(); i++)
+  LM m = lm_meas.at(0);
+  {
+
+    // check if outside search radius
+    // if(std::isnan(m.x) && std::isnan(m.y))
+    // {
+    //   continue;
+    // }
+
+    // temporatily assume the measurement is for a previously unseen landmark
+    auto j = N;
+    newLandmark(m, j, state_bar);
+
+    // std::cout << "state_bar" << std::endl;
+    // std::cout << state_bar << std::endl;
+
+    std::vector<double> distances(N);
+    std::vector<Vector2d> delta_z_vec(N);
+    std::vector<MatrixXd> H_vec(N);
+    std::vector<MatrixXd> Psi_vec(N);
+
+    // compute mahalanobis distance to each landmark
+    for(int k = 0; k < N + 1; k++)
+    {
+
+      // predicted measurement z_hat (r,b)
+      Vector2d z_hat = predictedMeasurement(k, state_bar);
+      std::cout << "z_hat" << std::endl;
+      std::cout << z_hat << std::endl;
+
+
+      // measurement jacobian
+      MatrixXd H = MatrixXd::Zero(2, state_size);
+      measurementJacobian(k, state_bar, H);
+      H_vec.emplace_back(H);
+      std::cout << "H" << std::endl;
+      std::cout << H << std::endl;
+
+
+      // Psi
+      MatrixXd Psi = MatrixXd::Zero(2, 2);
+      Psi = H * sigma_bar * H.transpose() + measurement_noise;
+
+      Psi_vec.emplace_back(Psi);
+      std::cout << "Psi" << std::endl;
+      std::cout << Psi << std::endl;
+
+
+      // difference in measurements delta_z (r,b)
+      Vector2d delta_z;
+      delta_z(0) = m.r - z_hat(0);
+      delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
+
+      delta_z_vec.emplace_back(delta_z);
+      std::cout << "delta_z" << std::endl;
+      std::cout << delta_z << std::endl;
+
+
+      // mahalanobis distance
+      const auto d = delta_z.transpose() * Psi.inverse() * delta_z;
+      distances.emplace_back(d);
+
+    } // end inner for loop
+
+    // find index of d* (min mahalanobis distance)
+    const auto l = std::min_element(distances.begin(), distances.end()) - distances.begin();
+    const auto dstar = distances.at(l);
+    std::cout << "dstar" << std::endl;
+    // std::cout << l << std::endl;
+    std::cout << dstar << std::endl;
+
+
+    if (dstar < dmin or dstar > dmax)
+    {
+      if (dstar < dmin)
+      {
+        std::cout << "Updating existing landmark: " << l << std::endl;
+      }
+
+      // d* is bellow d*_min update existing landmark
+      // kalman gain
+      MatrixXd K = MatrixXd::Zero(state_size, 2);
+      K = sigma_bar * H_vec.at(l).transpose() * Psi_vec.at(l).inverse();
+      std::cout << "kalman Gain" << std::endl;
+      std::cout << K << std::endl;
+
+      // Update the state vector
+      state_bar += K * delta_z_vec.at(l);
+      std::cout << "state_bar" << std::endl;
+      std::cout << state_bar << std::endl;
+
+      // Update covariance sigma bar
+      MatrixXd I = MatrixXd::Identity(state_size, state_size);
+      sigma_bar = (I - (K * H_vec.at(l))) * sigma_bar;
+
+
+
+
+      // d* is above d*_max add new landmark
+      // increment number of landmarks
+      if (dstar > dmax)
+      {
+        std::cout << "Adding new landmark" << std::endl;
+        N++;
+      }
+    }
+
+
+  } // end  outer loop
+
+
+  // 9) Update state vector
+  // state = state_bar;
+  // std::cout << "state" << std::endl;
+  // std::cout << state << std::endl;
+
+  // 9) Update covariance
+  // state_cov = sigma_bar;
+  // std::cout << "Covariance" << std::endl;
+  // std::cout << state_cov << std::endl;
+
+  std::cout << "--------------------------------------" << std::endl;
+}
+
+
+
+void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
+{
+  // 1) motion model
+  VectorXd state_bar = VectorXd::Zero(state_size);
+  motionUpdate(u, state_bar);
+
+
+  // 2) propagate uncertainty
+  MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
+  uncertaintyUpdate(u, sigma_bar);
+
+  // 3) update state based on observations
+  // measurements come in as (x,y) in robot frame
+  // convert them to range and bearing
+  // convert landmark positions in robot frame to map frame
+  std::vector<LM> lm_meas(meas.size());
+  measRobotToMap(meas, lm_meas);
+
+  std::cout << "--------------------------------------" << std::endl;
+
+  // for(const auto &m : lm_meas)
+  for(unsigned int i = 0; i < lm_meas.size(); i++)
+  // LM m = lm_meas.at(0);
+  {
+    // new measurement
+    LM m = lm_meas.at(i);
+
+    // check if outside search radius
+    if(std::isnan(m.x) && std::isnan(m.y))
+    {
+      continue;
+    }
+
+    // find correspondence id is the index the measurement comes in at
+    int j = i;//0;
+    // std::cout << j << std::endl;
+
+
+    // landmark has not been scene before
+    if (std::find(lm_j.begin(), lm_j.end(), j) == lm_j.end())
+    {
+      // std::cout << "new landmark id: " << j << std::endl;
+      // add id to observed list
+      // init new landmark with measurement
+      lm_j.push_back(j);
+      newLandmark(m, j, state_bar);
+    }
+
+
+    // 4) predicted measurement z_hat (r,b)
+    Vector2d z_hat = predictedMeasurement(j, state_bar);
+    // std::cout << "z_hat" << std::endl;
+    // std::cout << z_hat << std::endl;
+
+
+    // 5) measurement jacobian
+    MatrixXd H = MatrixXd::Zero(2, state_size);
+    measurementJacobian(j, state_bar, H);
+    // std::cout << "H" << std::endl;
+    // std::cout << H << std::endl;
+
+    // 6) kalman gain
+    MatrixXd temp = MatrixXd::Zero(2,2);
+    temp = H * sigma_bar * H.transpose() + measurement_noise;
+
+    // std::cout << "temp" << std::endl;
+    // std::cout << temp << std::endl;
+
+    MatrixXd temp_inv = MatrixXd::Zero(2,2);
+    temp_inv = temp.inverse();
+    // std::cout << "Inverse" << std::endl;
+    // std::cout << temp_inv << std::endl;
+
+
+    MatrixXd K = MatrixXd::Zero(state_size, 2);
+    K = sigma_bar * H.transpose() * temp_inv;
+    // std::cout << "kalman Gain" << std::endl;
+    // std::cout << K << std::endl;
+
+
+    // 7) Update the state vector
+    // difference in measurements delta_z (r,b)
+    Vector2d delta_z;
+    delta_z(0) = m.r - z_hat(0);
+    delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
+    // std::cout << "delta_z" << std::endl;
+    // std::cout << delta_z << std::endl;
+
+    state_bar += K * delta_z;
+    // std::cout << "state_bar" << std::endl;
+    // std::cout << state_bar << std::endl;
+
+
+    // 8) Update covariance sigma bar
+    MatrixXd I = MatrixXd::Identity(state_size, state_size);
+    sigma_bar = (I - (K * H)) * sigma_bar;
+
+  } // end loop
+
+  // 9) Update state vector
+  state = state_bar;
+  // std::cout << "state" << std::endl;
+  // std::cout << state << std::endl;
+
+  // 9) Update covariance
+  state_cov = sigma_bar;
+  // std::cout << "Covariance" << std::endl;
+  // std::cout << state_cov << std::endl;
+
+  std::cout << "--------------------------------------" << std::endl;
+}
+
+
+Transform2D EKF::getRobotState()
+{
+  Vector2D vmr(state(1), state(2));
+  Transform2D Tmr(vmr, state(0));
+  return Tmr;
+}
+
+
+void EKF::getMap(std::vector<Vector2D> &map)
+{
+  map.reserve(n);
+  for(auto i = 0; i < n; i++)
+  {
+    const auto jx = 2*i + 3;
+    const auto jy = 2*i + 4;
+
+    Vector2D marker(state(jx), state(jy));
+
+    // assume no landmarks are here at (0,0)
+    // because robot starts here
+    if (!almost_equal(marker.x, 0.0) and !almost_equal(marker.y, 0.0))
+    {
+      map.push_back(marker);
+    }
+  }
+}
+
+
+void EKF::initFilter()
+{
+  ////////////////////////////////////////////
+
+  // init state vector
+  // pose is (theta, x, y)
+  // set pose to (0,0,0)
+  state = VectorXd::Zero(state_size);
+  // state(0) = 0.174533;
+  // state(1) = 0.3;
+  // std::cout << state << std::endl;
+
+  ////////////////////////////////////////////
+
+  // init state covariance
+  state_cov = MatrixXd::Zero(state_size, state_size);
+  // set pose to (0,0,0)
+  // set landmarks to a large number
+  for(auto i = 0; i < 2*n; i++)
+  {
+    auto row = 3 + i;
+    auto col = 3 + i;
+    state_cov(row, col) = 1e12;
+  }
+  // std::cout << state_cov << std::endl;
+
+  ////////////////////////////////////////////
 
   // init motion noise
   motion_noise = MatrixXd::Zero(3,3);
@@ -66,65 +396,22 @@ EKF::EKF(int num_lm) : n(num_lm)
   motion_noise(2,2) = 1e-5;   // y var
   // std::cout << motion_noise << std::endl;
 
+  ////////////////////////////////////////////
+
   // init measurement noise
   measurement_noise = MatrixXd::Zero(2,2);
   measurement_noise(0,0) = 1e-5;   // r var
   measurement_noise(1,1) = 1e-5;   // b var
   // std::cout << measurement_noise << std::endl;
 
-  // init state and covariance
-  initState();
-  initCov();
+  ////////////////////////////////////////////
 
   // init process noise
-  initProcessNoise();
-}
-
-
-void EKF::initState()
-{
-  // pose is (theta, x, y)
-  state = VectorXd::Zero(state_size);
-  // state(0) = 0.174533;
-  // state(1) = 0.3;
-  // std::cout << state << std::endl;
-}
-
-
-
-void EKF::initCov()
-{
-  state_cov = MatrixXd::Zero(state_size, state_size);
-
-  // set pose to (0,0,0)
-
-  // set landmarks to a large number
-  for(auto i = 0; i < 2*n; i++)
-  {
-    auto row = 3 + i;
-    auto col = 3 + i;
-    state_cov(row, col) = 1e12;
-  }
-
-  // std::cout << state_cov << std::endl;
-}
-
-
-void EKF::initProcessNoise()
-{
   process_noise = MatrixXd::Zero(state_size, state_size);
-
   process_noise(0,0) = motion_noise(0,0);
   process_noise(1,1) = motion_noise(1,1);
   process_noise(2,2) = motion_noise(2,2);
-
   // std::cout << process_noise << std::endl;
-}
-
-
-void EKF::setKnownLandamrks(const std::vector<Vector3d> &landmarks)
-{
-  lm = landmarks;
 }
 
 
@@ -287,198 +574,6 @@ Vector2d EKF::predictedMeasurement(const int j, const Ref<VectorXd> state_bar) c
 }
 
 
-// Vector2d EKF::landmarkState(const int j) const
-// {
-//   // index of jth correspondence
-//   // first 3 indecis are for (theta, x, y)
-//   const auto jx = 2*j + 3;
-//   const auto jy = 2*j + 4;
-//
-//   Vector2d st;
-//   st << state(jx), state(jy);
-//
-//   return st;
-// }
-
-
-void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
-{
-  // index of jth correspondence
-  // first 3 indecis are for (theta, x, y)
-  const auto jx = 2*j + 3;
-  const auto jy = 2*j + 4;
-
-  state_bar(jx) = state_bar(1) + m.r * std::cos(m.b + state_bar(0));
-  state_bar(jy) = state_bar(2) + m.r * std::sin(m.b + state_bar(0));
-}
-
-
-
-
-
-void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
-{
-  // TODO: check eigens inverse function
-
-  // 1) motion model
-  VectorXd state_bar = VectorXd::Zero(state_size);
-  motionUpdate(u, state_bar);
-
-
-  // 2) propagate uncertainty
-  MatrixXd sigma_bar = MatrixXd::Zero(state_size, state_size);
-  uncertaintyUpdate(u, sigma_bar);
-
-  // 3) update state based on observations
-  // measurements come in as (x,y) in robot frame
-  // convert them to range and bearing
-  // convert landmark positions in robot frame to map frame
-  std::vector<LM> lm_meas(meas.size());
-  measRobotToMap(meas, lm_meas);
-
-  std::cout << "--------------------------------------" << std::endl;
-
-  // for(const auto &m : lm_meas)
-  for(unsigned int i = 0; i < lm_meas.size(); i++)
-  // LM m = lm_meas.at(0);
-  {
-    // new measurement
-    LM m = lm_meas.at(i);
-
-    // check if outside search radius
-    if(std::isnan(m.x) && std::isnan(m.y))
-    {
-      continue;
-    }
-
-    // find correspondence id is the index the measurement comes in at
-    int j = i;//0;
-    // std::cout << j << std::endl;
-
-
-    // not found in list
-    // this is a problem
-    if (j == -1)
-    {
-      throw std::invalid_argument("Known landmark not found in correspondence list!");
-    }
-
-    // landmark has not been scene before
-    if (std::find(lm_j.begin(), lm_j.end(), j) == lm_j.end())
-    {
-      // std::cout << "new landmark id: " << j << std::endl;
-      // add id to observed list
-      // init new landmark with measurement
-      lm_j.push_back(j);
-      newLandmark(m, j, state_bar);
-    }
-
-
-    // 4) predicted measurement z_hat (r,b)
-    Vector2d z_hat = predictedMeasurement(j, state_bar);
-    // std::cout << "z_hat" << std::endl;
-    // std::cout << z_hat << std::endl;
-
-
-    // 5) measurement jacobian
-    MatrixXd H = MatrixXd::Zero(2, state_size);
-    measurementJacobian(j, state_bar, H);
-    // std::cout << "H" << std::endl;
-    // std::cout << H << std::endl;
-
-    // 6) kalman gain
-    MatrixXd temp = MatrixXd::Zero(2,2);
-    temp = H * sigma_bar * H.transpose() + measurement_noise;
-
-    // std::cout << "temp" << std::endl;
-    // std::cout << temp << std::endl;
-
-    MatrixXd temp_inv = MatrixXd::Zero(2,2);
-    temp_inv = temp.inverse();
-    // std::cout << "Inverse" << std::endl;
-    // std::cout << temp_inv << std::endl;
-
-
-    MatrixXd K = MatrixXd::Zero(state_size, 2);
-    K = sigma_bar * H.transpose() * temp_inv;
-    // std::cout << "kalman Gain" << std::endl;
-    // std::cout << K << std::endl;
-
-
-    // 7) Update the state vector
-    // difference in measurements delta_z (r,b)
-    Vector2d delta_z;
-    delta_z(0) = m.r - z_hat(0);
-    delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
-    // std::cout << "delta_z" << std::endl;
-    // std::cout << delta_z << std::endl;
-
-    state_bar += K * delta_z;
-    // std::cout << "state_bar" << std::endl;
-    // std::cout << state_bar << std::endl;
-
-
-    // 8) Update covariance sigma bar
-    MatrixXd I = MatrixXd::Identity(state_size, state_size);
-    sigma_bar = (I - (K * H)) * sigma_bar;
-
-  } // end loop
-
-  // 9) Update state vector
-  state = state_bar;
-  std::cout << "state" << std::endl;
-  std::cout << state << std::endl;
-
-  // 9) Update covariance
-  state_cov = sigma_bar;
-  // std::cout << "Covariance" << std::endl;
-  // std::cout << state_cov << std::endl;
-
-  std::cout << "--------------------------------------" << std::endl;
-
-
-
-
-}
-
-
-
-// int EKF::findKnownCorrespondence(const LM &m) const
-// {
-//   auto smallest_d = 1e12;
-//   auto index = -1;
-//
-//   // measured landmark
-//   Vector2D meas_m(m.x, m.y);
-//   // compute distance to every landmark
-//   for(unsigned int i = 0; i < lm.size(); i++)
-//   {
-//     // known landmark
-//     Vector2D know_m(lm.at(i)(0), lm.at(i)(1));
-//     // distance from known landmark to measurement
-//     const auto d = pointDistance(know_m, meas_m);
-//
-//     // update if smaller
-//     if (d < smallest_d)
-//     {
-//       smallest_d = d;
-//       index = i;
-//     }
-//   }
-//
-//   // std::cout << "smallest_d: " << smallest_d << std::endl;
-//   // std::cout << "known_dist_thresh: " << known_dist_thresh << std::endl;
-//
-//   // within distance threshold
-//   if (smallest_d < known_dist_thresh)
-//   {
-//     return index;
-//   }
-//
-//   return -1;
-// }
-
-
 void EKF::measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const
 {
   // TODO: check if conversion to polar is correct
@@ -514,34 +609,16 @@ void EKF::measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_
 }
 
 
-Transform2D EKF::getRobotState()
+void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
 {
-  Vector2D vmr(state(1), state(2));
-  Transform2D Tmr(vmr, state(0));
-  return Tmr;
+  // index of jth correspondence
+  // first 3 indecis are for (theta, x, y)
+  const auto jx = 2*j + 3;
+  const auto jy = 2*j + 4;
+
+  state_bar(jx) = state_bar(1) + m.r * std::cos(m.b + state_bar(0));
+  state_bar(jy) = state_bar(2) + m.r * std::sin(m.b + state_bar(0));
 }
-
-
-void EKF::getMap(std::vector<Vector2D> &map)
-{
-  map.reserve(n);
-  for(auto i = 0; i < n; i++)
-  {
-    const auto jx = 2*i + 3;
-    const auto jy = 2*i + 4;
-
-    Vector2D marker(state(jx), state(jy));
-
-    // assume no landmarks are here at (0,0)
-    // because robot starts here 
-    if (!almost_equal(marker.x, 0.0) and !almost_equal(marker.y, 0.0))
-    {
-      map.push_back(marker);
-    }
-  }
-
-}
-
 
 
 

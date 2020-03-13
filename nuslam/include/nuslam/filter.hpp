@@ -60,30 +60,46 @@ namespace nuslam
   class EKF
   {
   public:
-    EKF(int num_lm);
-
-    /// \brief Initialize state vector
-    ///        assume robot starts at (0,0,0) and
-    ///        all landmarks are at (0,0)
-    void initState();
-
-    /// \brief Initialize the state covariance matrix
-    ///        assume we know where the robot is but
-    ///        do not the where the landmarks are
-    void initCov();
-
-    /// \brief Initialize the Process noise matrix
-    void initProcessNoise();
+    EKF(int num_lm, double md_max, double md_min);
 
     /// \brief Set known landmarks
     /// \param lm - (x,y,id) in map for landmarks
-    void setKnownLandamrks(const std::vector<Vector3d> &landmarks);
+    // void setKnownLandamrks(const std::vector<Vector3d> &landmarks);
+
+    /// \brief Updates the stated vector
+    /// \param meas - x/y coordinates of landmarks in the robot frame
+    /// \param u - twist from odometry given wheel velocities
+    void SLAM(const std::vector<Vector2D> &meas, const Twist2D &u);
+
+    /// \brief Updates the stated vector
+    /// \param meas - x/y coordinates of landmarks in the robot frame
+    /// \param u - twist from odometry given wheel velocities
+    void knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u);
+
+    /// \brief Get currnet Robot stated
+    /// \returns Transform from map to robot
+    Transform2D getRobotState();
+
+    /// \brief Get the estimates (x,y) of each landmark
+    ///        Does not return landmarks at (0,0) because we assume that the
+    ///        robot starts there
+    /// map[out] - vector of landmarks position
+    void getMap(std::vector<Vector2D> &map);
+
+
+  private:
+    /// \brief Initialize state vector, state covariance matrix,
+    ///       motion and sensor model noise, and process noise
+    ///       assume we know where the robot is but
+    ///       do not the where the landmarks are
+    ///       assume robot starts at (0,0,0) and
+    ///       all landmarks are at (0,0)
+    void initFilter();
 
     /// \brief Estimates the robot pose based on odometry
     /// \param u - twist from odometry given wheel velocities (dtheta, dx, dy=0)
     /// state_bar[out] - estimated state vector
     void motionUpdate(const Twist2D &u, Ref<VectorXd> state_bar);
-
 
     /// \brief Update the uncertainty in the robots pose
     ///        and for the landmark locations
@@ -103,10 +119,9 @@ namespace nuslam
     /// \returns the expected range and bearing of a landmark (r,b)
     Vector2d predictedMeasurement(const int j, const Ref<VectorXd> state_bar) const;
 
-    // /// \brief Access the (x,y) position of landmark in the map
-    // /// \param j - correspondence id
-    // /// \returns -  (x,y) position of landmark with id j
-    // Vector2d landmarkState(const int j) const;
+    /// \brief Transform landmark (x,y) into frame of map
+    /// \param meas - landmarks (x,y) and (r,b) in frame of robot
+    void measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const;
 
     /// \brief Initialize a new landmark that has not been
     ///        observed before
@@ -115,39 +130,13 @@ namespace nuslam
     /// state_bar[out] - estimated state vector
     void newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar);
 
-    /// \brief Updates the stated vector
-    /// \param meas - x/y coordinates of landmarks in the robot frame
-    /// \param u - twist from odometry given wheel velocities
-    void knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u);
 
 
-    /// \brief Searches for the corresponding landmark id (j)
-    /// \param m - measurement of a landmark in the map frame
-    /// returns - landmark id and -1 if not found
-    // int findKnownCorrespondence(const LM &m) const;
-
-
-    /// \brief Transform landmark (x,y) into frame of map
-    /// \param meas - landmarks (x,y) and (r,b) in frame of robot
-    void measRobotToMap(const std::vector<Vector2D> &meas, std::vector<LM> &lm_meas) const;
-
-    /// \brief Get currnet Robot stated
-    /// \returns Transform from map to robot
-    Transform2D getRobotState();
-
-    /// \brief Get the estimates (x,y) of each landmark
-    ///        Does not return landmarks at (0,0) because we assume that the
-    ///        robot starts there
-    /// map[out] - vector of landmarks position
-    void getMap(std::vector<Vector2D> &map);
-
-
-  private:
     int n;                         // max number of landmarks, determines state size
-    // int n_obs;                     // number of landmarks observed so far
+    int N;                         // number of landmarks observed
     int state_size;                // size of state vector
 
-    double known_dist_thresh;      // distance threshold for known correspondences
+    double dmax, dmin;             // max and min mahalanobis distance thresholds
 
     // (theta, x, y)
     VectorXd state;                // state vector for robot and landmarks
@@ -157,11 +146,15 @@ namespace nuslam
     MatrixXd measurement_noise;    // noise in measurement model
     MatrixXd process_noise;        // process noise matrix
 
-    // for known correspondences
-    std::vector<Vector3d> lm;
+    // // for known correspondences
+    // std::vector<Vector3d> lm;
 
     // landmark j observed
     std::vector<int> lm_j;
+
+    // number of timers landmark j is observed
+    std::vector<int> lm_counts;
+
 
   };
 
