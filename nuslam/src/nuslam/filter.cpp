@@ -93,9 +93,9 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
   std::cout << "--------------------------------------" << std::endl;
 
   // for(const auto &m : lm_meas)
-  // for(unsigned int i = 0; i < lm_meas.size(); i++)
-  LM m = lm_meas.at(0);
+  for(unsigned int i = 0; i < n;/*lm_meas.size();*/ i++)
   {
+    LM m = lm_meas.at(i);
 
     // check if outside search radius
     // if(std::isnan(m.x) && std::isnan(m.y))
@@ -103,20 +103,36 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
     //   continue;
     // }
 
-    // temporatily assume the measurement is for a previously unseen landmark
-    auto j = N;
-    newLandmark(m, j, state_bar);
 
-    // std::cout << "state_bar" << std::endl;
-    // std::cout << state_bar << std::endl;
+    // temporalily assume the measurement is for a previously unseen landmark
+    // as long as the max number of landmarks has not been reached
+    // if (N != n)
+    // {
+    //   auto j = N;
+    //   newLandmark(m, j, state_bar);
+    // }
+    // else
+    // {
+    //   std::cout << "Max number of landmarks reached" << std::endl;
+    // }
 
-    std::vector<double> distances(N);
-    std::vector<Vector2d> delta_z_vec(N);
-    std::vector<MatrixXd> H_vec(N);
-    std::vector<MatrixXd> Psi_vec(N);
+    // logic for adding first arguement
+    std::vector<double> distances;
+    if (N == 0)
+    {
+      // only place one element set to a large number
+      // so the first landmark is added
+      distances.emplace_back(1e12);
+    }
+    else
+    {
+      distances.reserve(N);
+    }
+
 
     // compute mahalanobis distance to each landmark
-    for(int k = 0; k < N + 1; k++)
+    std::cout << "---- mahalanobis loop ----" << std::endl;
+    for(int k = 0; k < N; k++)
     {
 
       // predicted measurement z_hat (r,b)
@@ -128,7 +144,6 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       // measurement jacobian
       MatrixXd H = MatrixXd::Zero(2, state_size);
       measurementJacobian(k, state_bar, H);
-      H_vec.emplace_back(H);
       std::cout << "H" << std::endl;
       std::cout << H << std::endl;
 
@@ -136,8 +151,6 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       // Psi
       MatrixXd Psi = MatrixXd::Zero(2, 2);
       Psi = H * sigma_bar * H.transpose() + measurement_noise;
-
-      Psi_vec.emplace_back(Psi);
       std::cout << "Psi" << std::endl;
       std::cout << Psi << std::endl;
 
@@ -146,8 +159,6 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       Vector2d delta_z;
       delta_z(0) = m.r - z_hat(0);
       delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
-
-      delta_z_vec.emplace_back(delta_z);
       std::cout << "delta_z" << std::endl;
       std::cout << delta_z << std::endl;
 
@@ -157,63 +168,112 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       distances.emplace_back(d);
 
     } // end inner for loop
+    std::cout << "---- mahalanobis loop ----" << std::endl;
+
 
     // find index of d* (min mahalanobis distance)
-    const auto l = std::min_element(distances.begin(), distances.end()) - distances.begin();
-    const auto dstar = distances.at(l);
-    std::cout << "dstar" << std::endl;
-    // std::cout << l << std::endl;
-    std::cout << dstar << std::endl;
+    auto j = std::min_element(distances.begin(), distances.end()) - distances.begin();
+    const auto dstar = distances.at(j);
+    std::cout << "landmark ID: " << j << std::endl;
+    std::cout << "Min mahalanobis distance: " << dstar << std::endl;
 
 
     if (dstar < dmin or dstar > dmax)
     {
+      // d* is bellow d*_min update existing landmark
       if (dstar < dmin)
       {
-        std::cout << "Updating existing landmark: " << l << std::endl;
+        std::cout << "Updating existing landmark: " << j << std::endl;
       }
-
-      // d* is bellow d*_min update existing landmark
-      // kalman gain
-      MatrixXd K = MatrixXd::Zero(state_size, 2);
-      K = sigma_bar * H_vec.at(l).transpose() * Psi_vec.at(l).inverse();
-      std::cout << "kalman Gain" << std::endl;
-      std::cout << K << std::endl;
-
-      // Update the state vector
-      state_bar += K * delta_z_vec.at(l);
-      std::cout << "state_bar" << std::endl;
-      std::cout << state_bar << std::endl;
-
-      // Update covariance sigma bar
-      MatrixXd I = MatrixXd::Identity(state_size, state_size);
-      sigma_bar = (I - (K * H_vec.at(l))) * sigma_bar;
-
-
-
 
       // d* is above d*_max add new landmark
       // increment number of landmarks
-      if (dstar > dmax)
+      else if (dstar > dmax)
       {
-        std::cout << "Adding new landmark" << std::endl;
-        N++;
+        // max number of landmarks
+        if ((N + 1) <= n)
+        {
+          // set new ID to N
+          // because we index from 0
+          j = N;
+
+          std::cout << "Adding new landmark ID: " << j << std::endl;
+
+
+          newLandmark(m, j, state_bar);
+          N++;
+        }
+
+        else
+        {
+          std::cout << "WARNING Max number of landmarks reached" << std::endl;
+        }
       }
-    }
+
+      // update
+      // 4) predicted measurement z_hat (r,b)
+      Vector2d z_hat = predictedMeasurement(j, state_bar);
+      std::cout << "z_hat" << std::endl;
+      std::cout << z_hat << std::endl;
+
+
+      // 5) measurement jacobian
+      MatrixXd H = MatrixXd::Zero(2, state_size);
+      measurementJacobian(j, state_bar, H);
+      std::cout << "H" << std::endl;
+      std::cout << H << std::endl;
+
+      // 6) kalman gain
+      MatrixXd temp = MatrixXd::Zero(2,2);
+      temp = H * sigma_bar * H.transpose() + measurement_noise;
+
+      // std::cout << "temp" << std::endl;
+      // std::cout << temp << std::endl;
+
+      MatrixXd temp_inv = MatrixXd::Zero(2,2);
+      temp_inv = temp.inverse();
+      // std::cout << "Inverse" << std::endl;
+      // std::cout << temp_inv << std::endl;
+
+
+      MatrixXd K = MatrixXd::Zero(state_size, 2);
+      K = sigma_bar * H.transpose() * temp_inv;
+      std::cout << "kalman Gain" << std::endl;
+      std::cout << K << std::endl;
+
+
+      // 7) Update the state vector
+      // difference in measurements delta_z (r,b)
+      Vector2d delta_z;
+      delta_z(0) = m.r - z_hat(0);
+      delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
+      std::cout << "delta_z" << std::endl;
+      std::cout << delta_z << std::endl;
+
+      state_bar += K * delta_z;
+      std::cout << "state_bar" << std::endl;
+      std::cout << state_bar << std::endl;
+
+
+      // 8) Update covariance sigma bar
+      MatrixXd I = MatrixXd::Identity(state_size, state_size);
+      sigma_bar = (I - (K * H)) * sigma_bar;
+
+    } // end update/add landmark if
 
 
   } // end  outer loop
 
 
-  // 9) Update state vector
+  //  Update state vector
   // state = state_bar;
   // std::cout << "state" << std::endl;
   // std::cout << state << std::endl;
-
-  // 9) Update covariance
+  //
+  // //  Update covariance
   // state_cov = sigma_bar;
-  // std::cout << "Covariance" << std::endl;
-  // std::cout << state_cov << std::endl;
+  // // std::cout << "Covariance" << std::endl;
+  // // std::cout << state_cov << std::endl;
 
   std::cout << "--------------------------------------" << std::endl;
 }
@@ -623,3 +683,20 @@ void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
 
 
 } // end namespace
+
+
+
+// kalman gain
+// MatrixXd K = MatrixXd::Zero(state_size, 2);
+// K = sigma_bar * H_vec.at(l).transpose() * Psi_vec.at(l).inverse();
+// std::cout << "kalman Gain" << std::endl;
+// std::cout << K << std::endl;
+//
+// // Update the state vector
+// state_bar += K * delta_z_vec.at(l);
+// std::cout << "state_bar" << std::endl;
+// std::cout << state_bar << std::endl;
+//
+// // Update covariance sigma bar
+// MatrixXd I = MatrixXd::Identity(state_size, state_size);
+// sigma_bar = (I - (K * H_vec.at(l))) * sigma_bar;

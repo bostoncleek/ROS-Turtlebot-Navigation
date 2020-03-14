@@ -50,7 +50,11 @@ using rigid2d::Transform2D;
 using rigid2d::TransformData2D;
 
 static std::string left_wheel_joint, right_wheel_joint;    // joint names
-static double left, right;                                 // wheel angular positions
+static double left, right;                                 // wheel angular positions for odometry
+static double ekf_left, ekf_right;                         // wheel angular positions for SLAM
+
+static bool wheel_odom_flag;                               // odometry update
+
 // static bool message;                                       // callback flag
 // static rigid2d::Pose pose_srv;                             // pose set by srv
 // static bool srv_active;                                    // set pose srv activated
@@ -167,10 +171,17 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
-  // message = true;
+  ekf_left += left;
+  ekf_right += right;
+
+
+  wheel_odom_flag = true;
 }
 
 
+
+// TODO: add flag for odom update
+// TODO: turn noise on in gazebo update
 
 int main(int argc, char** argv)
 {
@@ -183,30 +194,32 @@ int main(int argc, char** argv)
   ros::Subscriber joint_sub = node_handle.subscribe("joint_states", 1, jointStatesCallback);
   ros::Subscriber map_sub = node_handle.subscribe("landmarks", 1, mapCallBack);
   ros::Subscriber scan_sub = nh.subscribe("/gazebo/model_states", 1, modelCallBack);
+
   ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 1);
   ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
   ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 1);
   ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 100);
+
   // ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
 
   /////////////////////////////////////////////////////////////////////////////
   // load in real landmark data
-  std::vector<double> lm_x;
-  std::vector<double> lm_y;
-  std::vector<int> lm_id;
-
-  nh.getParam("x", lm_x);
-  nh.getParam("y", lm_y);
-  nh.getParam("id", lm_id);
-
-  std::vector<Vector3d> landmarks;
-  for(unsigned int i = 0; i < lm_id.size(); i++)
-  {
-    Vector3d lmvec;
-    lmvec << lm_x.at(i), lm_y.at(i), lm_id.at(i);
-    // std::cout << lmvec << std::endl;
-    landmarks.push_back(lmvec);
-  }
+  // std::vector<double> lm_x;
+  // std::vector<double> lm_y;
+  // std::vector<int> lm_id;
+  //
+  // nh.getParam("x", lm_x);
+  // nh.getParam("y", lm_y);
+  // nh.getParam("id", lm_id);
+  //
+  // std::vector<Vector3d> landmarks;
+  // for(unsigned int i = 0; i < lm_id.size(); i++)
+  // {
+  //   Vector3d lmvec;
+  //   lmvec << lm_x.at(i), lm_y.at(i), lm_id.at(i);
+  //   // std::cout << lmvec << std::endl;
+  //   landmarks.push_back(lmvec);
+  // }
   /////////////////////////////////////////////////////////////////////////////
 
   std::string map_frame_id, odom_frame_id, marker_frame_id;
@@ -240,6 +253,7 @@ int main(int argc, char** argv)
 
   tf2_ros::TransformBroadcaster odom_broadcaster;
   map_flag = false;
+  wheel_odom_flag = false;
   // srv_active = false;
 
 
@@ -251,14 +265,18 @@ int main(int argc, char** argv)
   pose.y = 0;
 
 
-  // diff drive model
+  // diff drive model for odometry
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
+  // diff drive model for SLAM
+  rigid2d::DiffDrive ekf_drive(pose, wheel_base, wheel_radius);
 
 
   // number of landmarks in model
-  int n = 12;
-  nuslam::EKF ekf(n);
-  ekf.setKnownLandamrks(landmarks);
+  int n = 1;
+  double md_max = 0.05; // currently not used
+  double md_min = 1e-3;
+  nuslam::EKF ekf(n, md_max, md_min);
+  // ekf.setKnownLandamrks(landmarks);
 
 
   // path from odometry
@@ -273,10 +291,10 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////////////////
 
 
-  // int frequency = 10;
-  // ros::Rate loop_rate(frequency);
+  int frequency = 5;
+  ros::Rate loop_rate(frequency);
 
-  // Turn noise in gazebo back on
+  // TODO: Turn noise in gazebo back on
 
   while(node_handle.ok())
   {
@@ -292,21 +310,33 @@ int main(int argc, char** argv)
 
     /////////////////////////////////////////////////////////////////////////////
 
-    drive.updateOdometry(left, right);
-    pose = drive.pose();
-    rigid2d::WheelVelocities vel = drive.wheelVelocities();
-    rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
-
-    /////////////////////////////////////////////////////////////////////////////
-
-    if (map_flag)
+    if (wheel_odom_flag)
     {
-      ekf.knownCorrespondenceSLAM(meas, vb);
-      map_flag = false;
+      // most recent odom update
+      drive.updateOdometry(left, right);
+      pose = drive.pose();
+
+      // update ekf with odometry and sensor measurements
+      if (map_flag)
+      {
+        ekf_drive.updateOdometry(ekf_left, ekf_right);
+        rigid2d::WheelVelocities vel = ekf_drive.wheelVelocities();
+        rigid2d::Twist2D vb = ekf_drive.wheelsToTwist(vel);
+
+        // ekf.knownCorrespondenceSLAM(meas, vb);
+        ekf.SLAM(meas, vb);
+
+        ekf_left = 0.0;
+        ekf_right = 0.0;
+
+        map_flag = false;
+      }
+
+      wheel_odom_flag = false;
     }
 
-
     /////////////////////////////////////////////////////////////////////////////
+
 
     // braodcast transform from map to odom
     // transform from map to robot
@@ -418,7 +448,7 @@ int main(int argc, char** argv)
 
       marker_array.markers[i].pose.position.x = map.at(i).x;
       marker_array.markers[i].pose.position.y = map.at(i).y;
-      marker_array.markers[i].pose.position.z = 0.14;
+      marker_array.markers[i].pose.position.z = 0.15;
 
       marker_array.markers[i].pose.orientation.x = 0.0;
       marker_array.markers[i].pose.orientation.y = 0.0;
@@ -436,7 +466,7 @@ int main(int argc, char** argv)
     }
     marker_pub.publish(marker_array);
 
-
+    loop_rate.sleep();
   }
 
   return 0;
