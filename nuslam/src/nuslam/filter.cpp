@@ -98,23 +98,13 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
     LM m = lm_meas.at(i);
 
     // check if outside search radius
-    // if(std::isnan(m.x) && std::isnan(m.y))
-    // {
-    //   continue;
-    // }
+    if(std::isnan(m.x) && std::isnan(m.y))
+    {
+      continue;
+    }
 
+    std::cout << "Current Number of landmarks: " << N << std::endl;
 
-    // temporalily assume the measurement is for a previously unseen landmark
-    // as long as the max number of landmarks has not been reached
-    // if (N != n)
-    // {
-    //   auto j = N;
-    //   newLandmark(m, j, state_bar);
-    // }
-    // else
-    // {
-    //   std::cout << "Max number of landmarks reached" << std::endl;
-    // }
 
     // logic for adding first arguement
     std::vector<double> distances;
@@ -122,7 +112,7 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
     {
       // only place one element set to a large number
       // so the first landmark is added
-      distances.emplace_back(1e12);
+      distances.push_back(1e12);
     }
     else
     {
@@ -165,7 +155,18 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 
       // mahalanobis distance
       const auto d = delta_z.transpose() * Psi.inverse() * delta_z;
-      distances.emplace_back(d);
+
+      distances.push_back(d);
+      std::cout << "mahalanobis distance: " << d << std::endl;
+
+      std::cout << "Determinant: " << Psi.determinant() << std::endl;
+      std::cout << "Psi.inverse()" << std::endl;
+      std::cout << Psi.inverse() << std::endl;
+
+      if (d < 0)
+      {
+        throw std::invalid_argument("WARNING mahalanobis distance is negative");
+      }
 
     } // end inner for loop
     std::cout << "---- mahalanobis loop ----" << std::endl;
@@ -198,19 +199,19 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
           j = N;
 
           std::cout << "Adding new landmark ID: " << j << std::endl;
-
-
           newLandmark(m, j, state_bar);
+
           N++;
         }
 
         else
         {
-          std::cout << "WARNING Max number of landmarks reached" << std::endl;
+          throw std::invalid_argument("WARNING Max number of landmarks reached");
+          // std::cout << "WARNING Max number of landmarks reached" << std::endl;
         }
       }
 
-      // update
+      // update based on index d* (j)
       // 4) predicted measurement z_hat (r,b)
       Vector2d z_hat = predictedMeasurement(j, state_bar);
       std::cout << "z_hat" << std::endl;
@@ -226,9 +227,8 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       // 6) kalman gain
       MatrixXd temp = MatrixXd::Zero(2,2);
       temp = H * sigma_bar * H.transpose() + measurement_noise;
-
-      // std::cout << "temp" << std::endl;
-      // std::cout << temp << std::endl;
+      std::cout << "temp" << std::endl;
+      std::cout << temp << std::endl;
 
       MatrixXd temp_inv = MatrixXd::Zero(2,2);
       temp_inv = temp.inverse();
@@ -259,21 +259,25 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       MatrixXd I = MatrixXd::Identity(state_size, state_size);
       sigma_bar = (I - (K * H)) * sigma_bar;
 
+
     } // end update/add landmark if
 
-
+    else
+    {
+      std::cout << "!!!!!!! Dead Band Zone !!!!!!!" << std::endl;
+    }
   } // end  outer loop
 
 
-  //  Update state vector
-  // state = state_bar;
-  // std::cout << "state" << std::endl;
-  // std::cout << state << std::endl;
-  //
-  // //  Update covariance
-  // state_cov = sigma_bar;
-  // // std::cout << "Covariance" << std::endl;
-  // // std::cout << state_cov << std::endl;
+   // Update state vector
+  state = state_bar;
+  std::cout << "state" << std::endl;
+  std::cout << state << std::endl;
+
+  //  Update covariance
+  state_cov = sigma_bar;
+  // std::cout << "Covariance" << std::endl;
+  // std::cout << state_cov << std::endl;
 
   std::cout << "--------------------------------------" << std::endl;
 }
@@ -350,6 +354,7 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
 
     MatrixXd temp_inv = MatrixXd::Zero(2,2);
     temp_inv = temp.inverse();
+    // std::cout << "Determinant: " << temp.determinant() << std::endl;
     // std::cout << "Inverse" << std::endl;
     // std::cout << temp_inv << std::endl;
 
