@@ -272,9 +272,9 @@ int main(int argc, char** argv)
 
 
   // number of landmarks in model
-  int n = 1;
-  double md_max = 0.05; // currently not used
-  double md_min = 1e-3;
+  int n = 12;
+  double md_max = 100; // currently not used
+  double md_min = 2.00;
   nuslam::EKF ekf(n, md_max, md_min);
   // ekf.setKnownLandamrks(landmarks);
 
@@ -291,8 +291,8 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////////////////
 
 
-  int frequency = 5;
-  ros::Rate loop_rate(frequency);
+  // int frequency = 5;
+  // ros::Rate loop_rate(frequency);
 
   // TODO: Turn noise in gazebo back on
 
@@ -466,7 +466,7 @@ int main(int argc, char** argv)
     }
     marker_pub.publish(marker_array);
 
-    loop_rate.sleep();
+    // loop_rate.sleep();
   }
 
   return 0;
