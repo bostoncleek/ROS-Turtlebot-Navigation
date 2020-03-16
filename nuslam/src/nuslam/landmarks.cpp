@@ -433,7 +433,7 @@ void Landmarks::composeCircle(Cluster &cluster)
           0.5, 0.0, 0.0, -2.0*cluster.z_bar;
 
 
-  Eigen::BDCSVD<Eigen::MatrixXd> svd(Z, Eigen::ComputeFullU |
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(Z, Eigen::ComputeFullU |
                                         Eigen::ComputeFullV);
 
 
