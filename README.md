@@ -2,17 +2,17 @@
 Author: Boston Cleek
 # Tasks Submitted
 (List the tasks that you worked on and completed here)
-A.005
-E.006
-F.001
-F.002
-F.003
-F.004
-F.005
-F.006
-F.007
-F.008
-F.009
+A.004
+G.001
+G.002
+G.003
+G.004
+G.005
+S.000
+S.001
+L.001
+L.002
+L.003
 
 
 
@@ -22,7 +22,7 @@ A.000
 A.001
 A.002
 A.003
-A.004
+A.005
 B.000
 B.001
 B.002
@@ -45,5 +45,15 @@ E.002
 E.003
 E.004
 E.005
+E.006
+F.001
+F.002
+F.003
+F.004
+F.005
+F.006
+F.007
+F.008
+F.009
 B.005
 B.006
