@@ -4,11 +4,30 @@
   <arg name="robot" default="-1" doc="sets address for machine tag"/>
 
   <!-- debug argument -->
-  <arg name="robot" default="false" doc="provides your slam node with fake data with known data association"/>
+  <arg name="debug" default="false" doc="provides slam node with fake data with known data association"/>
+
+
+  <!-- landmarks -->
+  <include file = "$(find nuslam)/launch/landmarks.launch" >
+    <arg name="robot" value="$(arg robot)" />
+    <arg name="debug" value="$(arg debug)" />
+  </include>
+
+  <!-- SLAM -->
+  <node name="slam" pkg="nuslam" type="slam" output="screen" >
+    <rosparam command="load" file="$(find nuslam)/config/block_world_landmarks.yaml" />
+    <remap if="$(arg debug)" from="landmarks" to="real/landmarks" />
+    <param name="map_frame_id" value="map" />
+    <param name="odom_frame_id" value="odom" />
+    <param name="marker_frame_id" value="map" />
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
+
 
 
   <!-- teleop -->
   <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard"  output="screen" />
+       name="turtlebot3_teleop_keyboard" />
 
 </launch>
