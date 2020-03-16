@@ -45,6 +45,13 @@ namespace nuslam
   VectorXd sampleMultivariateDistribution(const MatrixXd &cov);
 
 
+  double eps(double x);
+
+  bool isSPD(const Ref<MatrixXd> A);
+
+  void nearestSPD(const Ref<MatrixXd> A, Ref<MatrixXd> A_hat);
+
+
 
   struct LM
   {
@@ -135,6 +142,9 @@ namespace nuslam
     int n;                         // max number of landmarks, determines state size
     int N;                         // number of landmarks observed
     int state_size;                // size of state vector
+
+    double md_sum;
+    int count;
 
     double dmax, dmin;             // max and min mahalanobis distance thresholds
 

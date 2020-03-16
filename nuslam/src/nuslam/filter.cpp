@@ -4,6 +4,11 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <iomanip>
+
+
+#include <eigen3/Eigen/SVD>
+#include <Eigen/Eigenvalues>
 
 #include "nuslam/filter.hpp"
 
@@ -41,12 +46,86 @@ VectorXd sampleMultivariateDistribution(const MatrixXd &cov)
   VectorXd rand_vec = sampleStandardNormal(dim);
 
   // cholesky decomposition
-  Eigen::MatrixXd L( cov.llt().matrixL() );
+  MatrixXd L( cov.llt().matrixL() );
 
   return L * rand_vec;
 }
 
 
+double eps(double x)
+{
+  x = std::fabs(x);
+  const auto tol =  std::nextafter(x, x + 1.0);
+  const auto res = tol - x;
+  // std::cout << "eps " << std::setprecision(20) << res << std::endl;
+  return res;
+}
+
+
+bool isSPD(const Ref<MatrixXd> A)
+{
+  // check if sigma_bar is already SPD
+  MatrixXd L(A.llt().matrixL());
+
+  //reassemble sigma bar
+  MatrixXd A_test = L * L.transpose();
+
+
+  if (A.isApprox(A_test))
+  {
+    std::cout << "Matrix is SPD" << std::endl;
+    return true;
+  }
+
+  std::cout << "Matrix is NOT SPD" << std::endl;
+  return false;
+}
+
+
+
+void nearestSPD(const Ref<MatrixXd> A, Ref<MatrixXd> A_hat)
+{
+  // symmetrize A into B
+  MatrixXd B = 0.5 * (A + A.transpose());
+
+  // Compute the symmetric polar factor of B. Call it H.
+  // Clearly H is itself SPD.
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(B, Eigen::ComputeFullU |
+                                        Eigen::ComputeFullV);
+
+  MatrixXd S = svd.singularValues().asDiagonal();
+  MatrixXd V = svd.matrixV();
+
+  MatrixXd H = V * S * V.transpose();
+
+  // get Ahat in the above formula
+  A_hat = 0.5 * (B + H);
+
+  // ensure symmetry
+  A_hat = 0.5 * (A_hat + A_hat.transpose());
+
+  // test that Ahat is in fact PD. if it is not so, then tweak it just a bit
+  bool flag = false;
+  int k = 0;
+
+  while(!flag)
+  {
+    flag = isSPD(A_hat);
+    k++;
+
+    if (!flag)
+    {
+      std::cout << "Adjust Ahat" << std::endl;
+
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(A_hat);
+      double mineig = es.eigenvalues().minCoeff();
+
+      MatrixXd I = MatrixXd::Identity(A_hat.rows(), A_hat.cols());
+
+      A_hat = A_hat + (-mineig*(k*k) + eps(mineig))*I;
+    }
+  } // end while
+}
 
 
 
@@ -59,7 +138,23 @@ EKF::EKF(int num_lm, double md_max, double md_min)
   // total state vector size robot plus landmarks
   state_size = 3 + 2 * n;
 
+  count = 0;
+  md_sum = 0.0;
+
   initFilter();
+
+
+  // MatrixXd T(3,3);
+  // T << 1.0, 0.1, 0.001,
+  //      0.0, 1.0, 0.00005,
+  //      0.0, 0.0, 3.0;
+  //
+  // MatrixXd T_close = MatrixXd::Zero(3,3);
+  //
+  //
+  // nearestSPD(T, T_close);
+  // std::cout << "T_close" << std::endl;
+  // std::cout << T_close << std::endl;
 }
 
 
@@ -69,11 +164,21 @@ EKF::EKF(int num_lm, double md_max, double md_min)
 // }
 
 
+
 /// \brief Updates the stated vector
 /// \param meas - x/y coordinates of landmarks in the robot frame
 /// \param u - twist from odometry given wheel velocities
 void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 {
+
+  if(!isSPD(state_cov))
+  {
+    MatrixXd fixed_cov = MatrixXd::Zero(state_size, state_size);
+    nearestSPD(state_cov, fixed_cov);
+    state_cov = fixed_cov;
+  }
+
+
   // 1) motion model
   VectorXd state_bar = VectorXd::Zero(state_size);
   motionUpdate(u, state_bar);
@@ -93,8 +198,10 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
   std::cout << "--------------------------------------" << std::endl;
 
   // for(const auto &m : lm_meas)
-  for(unsigned int i = 0; i < n;/*lm_meas.size();*/ i++)
+  // for(unsigned int i = 0; i < n; i++)
+  for(unsigned int i = 0; i < lm_meas.size(); i++)
   {
+
     LM m = lm_meas.at(i);
 
     // check if outside search radius
@@ -124,49 +231,117 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
     std::cout << "---- mahalanobis loop ----" << std::endl;
     for(int k = 0; k < N; k++)
     {
+      if(!isSPD(sigma_bar))
+      {
+        MatrixXd fixed_sigma_bar = MatrixXd::Zero(state_size, state_size);
+        nearestSPD(sigma_bar, fixed_sigma_bar);
+        sigma_bar = fixed_sigma_bar;
+      }
+
 
       // predicted measurement z_hat (r,b)
       Vector2d z_hat = predictedMeasurement(k, state_bar);
-      std::cout << "z_hat" << std::endl;
-      std::cout << z_hat << std::endl;
+      // std::cout << "z_hat" << std::endl;
+      // std::cout << z_hat << std::endl;
 
 
       // measurement jacobian
       MatrixXd H = MatrixXd::Zero(2, state_size);
       measurementJacobian(k, state_bar, H);
-      std::cout << "H" << std::endl;
-      std::cout << H << std::endl;
+      // std::cout << "H" << std::endl;
+      // std::cout << H << std::endl;
 
 
       // Psi
       MatrixXd Psi = MatrixXd::Zero(2, 2);
       Psi = H * sigma_bar * H.transpose() + measurement_noise;
-      std::cout << "Psi" << std::endl;
-      std::cout << Psi << std::endl;
+      // std::cout << "Psi" << std::endl;
+      // std::cout << Psi << std::endl;
 
 
       // difference in measurements delta_z (r,b)
       Vector2d delta_z;
       delta_z(0) = m.r - z_hat(0);
       delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
-      std::cout << "delta_z" << std::endl;
-      std::cout << delta_z << std::endl;
+      // std::cout << "delta_z" << std::endl;
+      // std::cout << delta_z << std::endl;
 
+      // Eigen::Matrix<__float128,Eigen::Dynamic,Eigen::Dynamic> Psi_128;
+      // std::cout << "Psi Inverse 128" << std::endl;
+      // std::cout << Psi_128 << std::endl;
+
+
+
+
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Psi);
+      std::cout << "eigen values of Psi" << std::endl;
+      std::cout << es.eigenvalues() << std::endl;
+
+
+      // SVD to take inverse of Psi
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd(Psi, Eigen::ComputeFullU |
+                                            Eigen::ComputeFullV);
+
+      Eigen::MatrixXd S = svd.singularValues().asDiagonal();
+
+      // std::cout << S << std::endl;
+
+      Eigen::MatrixXd V = svd.matrixV();
+      Eigen::MatrixXd U = svd.matrixU();
+
+      Eigen::MatrixXd Psi_inv = V * S.inverse() * U.transpose();
+      // std::cout << "Psi Inverse SVD" << std::endl;
+      // std::cout << Psi_inv << std::endl;
 
       // mahalanobis distance
-      const auto d = delta_z.transpose() * Psi.inverse() * delta_z;
+      // double d = delta_z.transpose() * Psi.inverse() * delta_z;
+      double d = delta_z.transpose() * Psi_inv * delta_z;
+
+      // std::cout << "Psi Inverse" << std::endl;
+      // std::cout << Psi.inverse() << std::endl;
+
+
+      // if (d <= 0.0)
+      // {
+      //   std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      //   std::cout << "NEGATIVE MAHALANOBIS DISTANCE" << std::endl;
+      //   std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+      //   d = 1e12; // ignore negative distances
+      // }
 
       distances.push_back(d);
       std::cout << "mahalanobis distance: " << d << std::endl;
+      // std::cout << "Determinant of Psi: " << Psi.determinant() << std::endl;
+      // std::cout << "Determinant of S: " << S.determinant() << std::endl;
+      // std::cout << "Psi.inverse()" << std::endl;
+      // std::cout << Psi.inverse() << std::endl;
 
-      std::cout << "Determinant: " << Psi.determinant() << std::endl;
-      std::cout << "Psi.inverse()" << std::endl;
-      std::cout << Psi.inverse() << std::endl;
-
+      // md_sum += d;
+      // count++;
+      //
+      // if (count == 100)
+      // {
+      //   double avg_md = md_sum / static_cast<double>(count);
+      //   std::cout << "average mahalanobis distance: " << avg_md << std::endl;
+      //   throw std::invalid_argument("Reaches count 100");
+      //
+      // }
+      //
       if (d < 0)
       {
         throw std::invalid_argument("WARNING mahalanobis distance is negative");
       }
+
+      /////////////////////////////////////////////////////////////////////////
+      // euclidean distance alternative
+
+      // const auto est_x = state_bar(2*k + 3);
+      // const auto est_y = state_bar(2*k + 4);
+      // const auto dx = est_x - m.x;
+      // const auto dy = est_y - m.y;
+      // double d = std::sqrt(dx*dx + dy*dy);
+
+      /////////////////////////////////////////////////////////////////////////
 
     } // end inner for loop
     std::cout << "---- mahalanobis loop ----" << std::endl;
@@ -204,42 +379,65 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
           N++;
         }
 
-        else
-        {
-          throw std::invalid_argument("WARNING Max number of landmarks reached");
-          // std::cout << "WARNING Max number of landmarks reached" << std::endl;
-        }
+        // else
+        // {
+        //   throw std::invalid_argument("WARNING Max number of landmarks reached");
+        //   // std::cout << "WARNING Max number of landmarks reached" << std::endl;
+        // }
       }
+
+
+      if(!isSPD(sigma_bar))
+      {
+        MatrixXd fixed_sigma_bar = MatrixXd::Zero(state_size, state_size);
+        nearestSPD(sigma_bar, fixed_sigma_bar);
+        sigma_bar = fixed_sigma_bar;
+      }
+
 
       // update based on index d* (j)
       // 4) predicted measurement z_hat (r,b)
       Vector2d z_hat = predictedMeasurement(j, state_bar);
-      std::cout << "z_hat" << std::endl;
-      std::cout << z_hat << std::endl;
+      // std::cout << "z_hat" << std::endl;
+      // std::cout << z_hat << std::endl;
 
 
       // 5) measurement jacobian
       MatrixXd H = MatrixXd::Zero(2, state_size);
       measurementJacobian(j, state_bar, H);
-      std::cout << "H" << std::endl;
-      std::cout << H << std::endl;
+      // std::cout << "H" << std::endl;
+      // std::cout << H << std::endl;
 
       // 6) kalman gain
       MatrixXd temp = MatrixXd::Zero(2,2);
       temp = H * sigma_bar * H.transpose() + measurement_noise;
-      std::cout << "temp" << std::endl;
-      std::cout << temp << std::endl;
+      // std::cout << "temp" << std::endl;
+      // std::cout << temp << std::endl;
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(temp);
+      std::cout << "eigen values of temp" << std::endl;
+      std::cout << es.eigenvalues() << std::endl;
 
-      MatrixXd temp_inv = MatrixXd::Zero(2,2);
-      temp_inv = temp.inverse();
-      // std::cout << "Inverse" << std::endl;
-      // std::cout << temp_inv << std::endl;
+
+      // SVD to take inverse of temp
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd(temp, Eigen::ComputeFullU |
+                                            Eigen::ComputeFullV);
+
+      MatrixXd S = svd.singularValues().asDiagonal();
+      MatrixXd V = svd.matrixV();
+      MatrixXd U = svd.matrixU();
+
+      MatrixXd temp_inv = V * S.inverse() * U.transpose();
+
+      // MatrixXd temp_inv = MatrixXd::Zero(2,2);
+      // temp_inv = temp.inverse();
+      // // std::cout << "Inverse" << std::endl;
+      // // std::cout << temp_inv << std::endl;
 
 
       MatrixXd K = MatrixXd::Zero(state_size, 2);
       K = sigma_bar * H.transpose() * temp_inv;
-      std::cout << "kalman Gain" << std::endl;
-      std::cout << K << std::endl;
+      // std::cout << "kalman Gain" << std::endl;
+      // std::cout << K << std::endl;
 
 
       // 7) Update the state vector
@@ -247,12 +445,12 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
       Vector2d delta_z;
       delta_z(0) = m.r - z_hat(0);
       delta_z(1) = normalize_angle_PI(normalize_angle_PI(m.b) - normalize_angle_PI(z_hat(1)));
-      std::cout << "delta_z" << std::endl;
-      std::cout << delta_z << std::endl;
+      // std::cout << "delta_z" << std::endl;
+      // std::cout << delta_z << std::endl;
 
       state_bar += K * delta_z;
-      std::cout << "state_bar" << std::endl;
-      std::cout << state_bar << std::endl;
+      // std::cout << "state_bar" << std::endl;
+      // std::cout << state_bar << std::endl;
 
 
       // 8) Update covariance sigma bar
@@ -262,17 +460,17 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 
     } // end update/add landmark if
 
-    else
-    {
-      std::cout << "!!!!!!! Dead Band Zone !!!!!!!" << std::endl;
-    }
+    // else
+    // {
+    //   std::cout << "!!!!!!! Dead Band Zone !!!!!!!" << std::endl;
+    // }
   } // end  outer loop
 
 
    // Update state vector
   state = state_bar;
-  std::cout << "state" << std::endl;
-  std::cout << state << std::endl;
+  // std::cout << "state" << std::endl;
+  // std::cout << state << std::endl;
 
   //  Update covariance
   state_cov = sigma_bar;
@@ -286,6 +484,14 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 
 void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
 {
+  if(!isSPD(state_cov))
+  {
+    MatrixXd fixed_cov = MatrixXd::Zero(state_size, state_size);
+    nearestSPD(state_cov, fixed_cov);
+    state_cov = fixed_cov;
+  }
+
+
   // 1) motion model
   VectorXd state_bar = VectorXd::Zero(state_size);
   motionUpdate(u, state_bar);
@@ -308,6 +514,14 @@ void EKF::knownCorrespondenceSLAM(const std::vector<Vector2D> &meas, const Twist
   for(unsigned int i = 0; i < lm_meas.size(); i++)
   // LM m = lm_meas.at(0);
   {
+    if(!isSPD(sigma_bar))
+    {
+      MatrixXd fixed_sigma_bar = MatrixXd::Zero(state_size, state_size);
+      nearestSPD(sigma_bar, fixed_sigma_bar);
+      sigma_bar = fixed_sigma_bar;
+    }
+
+
     // new measurement
     LM m = lm_meas.at(i);
 
@@ -443,6 +657,10 @@ void EKF::initFilter()
   // init state covariance
   state_cov = MatrixXd::Zero(state_size, state_size);
   // set pose to (0,0,0)
+  // state_cov(0,0) = 1e-5;
+  // state_cov(1,1) = 1e-5;
+  // state_cov(2,2) = 1e-5;
+
   // set landmarks to a large number
   for(auto i = 0; i < 2*n; i++)
   {
@@ -465,8 +683,8 @@ void EKF::initFilter()
 
   // init measurement noise
   measurement_noise = MatrixXd::Zero(2,2);
-  measurement_noise(0,0) = 1e-5;   // r var
-  measurement_noise(1,1) = 1e-5;   // b var
+  measurement_noise(0,0) = 1e-10;   // r var
+  measurement_noise(1,1) = 1e-10;   // b var
   // std::cout << measurement_noise << std::endl;
 
   ////////////////////////////////////////////
@@ -688,20 +906,3 @@ void EKF::newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar)
 
 
 } // end namespace
-
-
-
-// kalman gain
-// MatrixXd K = MatrixXd::Zero(state_size, 2);
-// K = sigma_bar * H_vec.at(l).transpose() * Psi_vec.at(l).inverse();
-// std::cout << "kalman Gain" << std::endl;
-// std::cout << K << std::endl;
-//
-// // Update the state vector
-// state_bar += K * delta_z_vec.at(l);
-// std::cout << "state_bar" << std::endl;
-// std::cout << state_bar << std::endl;
-//
-// // Update covariance sigma bar
-// MatrixXd I = MatrixXd::Identity(state_size, state_size);
-// sigma_bar = (I - (K * H_vec.at(l))) * sigma_bar;
