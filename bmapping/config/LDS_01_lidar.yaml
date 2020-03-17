@@ -1,0 +1,11 @@
+# LDS-01 2D laser scanner parameters
+# min angular range (degrees)
+beam_min: 0
+# max angular range (degrees)
+beam_max: 360
+# resolution (deg)
+beam_delta: 1
+# min range (m)
+range_min: 0.12
+# max ranege (m)
+range_max: 3.5

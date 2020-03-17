@@ -1,0 +1,79 @@
+<launch>
+
+  <!-- run nodes on turtlebot machine -->
+  <arg name="robot" default="-1" doc="sets address for machine tag"/>
+
+
+  <!--  option to launch turtlebot in empty world -->
+  <arg name="empty_world" default="false" doc="launch turtlebot in empty world"/>
+
+
+  <!-- SLAM -->
+  <node name="slam" pkg="bmapping" type="turtle_mapping" output="screen" >
+    <rosparam command="load" file="$(find bmapping)/config/LDS_01_lidar.yaml" />
+    <param name="map_frame_id" value="map" />
+    <param name="odom_frame_id" value="odom" />
+    <param name="marker_frame_id" value="map" />
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
+
+
+
+  <!-- teleop -->
+  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
+       name="turtlebot3_teleop_keyboard" output="screen"/>
+
+
+  <!-- turtlebot3 diff drive params -->
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+
+  <!-- basic remote -->
+  <include file = "$(find nuturtle_robot)/launch/basic_remote.launch" >
+   <arg name="robot" value="$(arg robot)" />
+  </include>
+
+
+  <!-- turtlebot model in world -->
+  <group if="$(eval arg('robot') == -1)">
+    <include file = "$(find nuturtle_gazebo)/launch/diff_drive_gazebo.launch" >
+      <arg name="empty_world" value="$(arg empty_world)" />
+    </include>
+  </group>
+
+
+  <!-- load params in these are private to the node  -->
+  <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
+    <param name="odom_frame_id" value="odom" />
+    <param name="body_frame_id" value="base_link" />
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
+
+
+  <!-- Interface with turtlebot3 -->
+  <node machine="turtlebot" name="turtle_interface" pkg="nuturtle_robot" type="turtle_interface" output="screen" >
+    <param name="left_wheel_joint" value="left_wheel_axle" />
+    <param name="right_wheel_joint" value="right_wheel_axle" />
+  </node>
+
+
+  <!-- rviz  -->
+  <group if="$(eval arg('robot') != 0)">
+    <node name="rviz" pkg="rviz" type="rviz" required="true"
+     args="-d $(find bmapping)/config/bmapping.rviz"/>
+  </group>
+
+
+  <!-- load model into parameter server -->
+  <group if="$(eval arg('robot') != -1)">
+    <param name="robot_description" command="$(find xacro)/xacro '$(find nuturtle_description)/urdf/diff_drive.urdf.xacro'"/>
+  </group>
+
+
+  <!-- robot state publisher -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+
+</launch>
