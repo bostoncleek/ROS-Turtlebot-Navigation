@@ -21,8 +21,8 @@
 
 
   <!-- teleop -->
-  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard" output="screen"/>
+  <!-- <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
+       name="turtlebot3_teleop_keyboard" output="screen"/> -->
 
 
   <!-- turtlebot3 diff drive params -->

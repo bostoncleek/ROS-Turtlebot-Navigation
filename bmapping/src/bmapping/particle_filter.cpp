@@ -34,7 +34,7 @@ VectorXd sampleStandardNormal(int n)
 }
 
 
-VectorXd sampleMultivariateDistribution(const MatrixXd &cov)
+VectorXd sampleMultivariateDistribution(const Ref<MatrixXd> cov)
 {
   // must be square
   int dim = cov.cols();
@@ -47,17 +47,33 @@ VectorXd sampleMultivariateDistribution(const MatrixXd &cov)
 }
 
 
+VectorXd sampleMultivariateDistribution(const Ref<VectorXd> mu, const Ref<MatrixXd> cov)
+{
+  // must be square
+  int dim = cov.cols();
+  VectorXd rand_vec = sampleStandardNormal(dim);
+
+  // cholesky decomposition
+  MatrixXd L( cov.llt().matrixL() );
+
+  return (mu + L * rand_vec);
+}
+
+
+
 
 // public
 
 ParticleFilter::ParticleFilter(int num_particles,
                                int k,
+                               int frequency,
                                ScanAlignment &scan_matcher,
-                               const Pose &pose,
+                               const Transform2D &pose,
                                const GridMapper &mapper)
                                  : num_particles_(num_particles),
                                    k_(k),
                                    normal_sqrd_sum_(0.0),
+                                   frequency_(frequency),
                                    scan_matcher_(scan_matcher)
 {
   // initialize set of particles
@@ -68,43 +84,142 @@ ParticleFilter::ParticleFilter(int num_particles,
   motion_noise_(0,0) = 1e-10;  // theta var
   motion_noise_(1,1) = 1e-10;   // x var
   motion_noise_(2,2) = 1e-10;   // y var
+
+  // init sample range around mode
+  sample_range_ = MatrixXd::Zero(3,3);
+  sample_range_(0,0) = 1e-5;  // theta var
+  sample_range_(1,1) = 1e-3;   // x var
+  sample_range_(2,2) = 1e-3;   // y var
+
+
+  // Twist2D u;
+  // u.w = 0.0;
+  // u.vx = 1.0;
+  //
+  // Vector3d pnew(0.0, 1.0, 0.001);
+  // Vector3d pold(0.0, 0.0, 0.0001);
+  //
+  // double p = poseLikelihood(pnew, pold, u);
+  // std::cout << "pose likelihood TEST" << std::endl;
+  // std::cout << p << std::endl;
+
+  // Vector3d cur_pose(0.0, 1.1, 0.0);
+  // Vector3d prev_pose(0.0, 0.0, 0.0);
+  //
+  // Vector3d cur_odom(0.0, 1.0, 0.0);
+  // Vector3d prev_odom(0.0, 0.0, 0.0);
+  //
+  // double p = poseLikelihoodOdom(cur_pose, prev_pose, cur_odom, prev_odom);
+  // std::cout << "pose likelihood TEST" << std::endl;
+  // std::cout << p << std::endl;
 }
 
 
 
 // private
 
-void ParticleFilter::initParticleSet(const GridMapper &mapper, const Pose &pose)
+void ParticleFilter::initParticleSet(const GridMapper &mapper, const Transform2D &pose)
 {
   const auto weight = 1.0 / num_particles_;
 
   particle_set_.reserve(num_particles_);
   for(auto i = 0; i < num_particles_; i++)
   {
-    Particle particle(weight, mapper, pose);
+    TransformData2D T2d = pose.displacement();
+    Vector3d ps(T2d.theta, T2d.x, T2d.y);
+
+    Particle particle(weight, mapper, ps);
     particle_set_.push_back(particle);
   }
 }
 
 
-void ParticleFilter::SLAM(const std::vector<float> &scan, const Twist2D &u)
+void ParticleFilter::SLAM(const std::vector<float> &scan, const Twist2D &u,
+                          const Pose &cur_odom, const Pose &prev_odom)
 {
+
+  // find transform between scans
+  Transform2D Ticp;
+  // initial guess
+  Transform2D Tinit;
+
+  // ICP
+  // bool matcher_success = scan_matcher_.pclICPWrapper(Ticp, Tinit, scan);
+  scan_matcher_.pclICPWrapper(Ticp, Tinit, scan);
+  bool matcher_success = false;
+
+
   for(auto &particle: particle_set_)
   {
-    // express pose of particle as transform
-    Vector2D vec(particle.pose.x, particle.pose.y);
-    Transform2D T_pose(vec, particle.pose.theta);
+    // scan matcher fails
+    if (!matcher_success)
+    {
+      // update previous pose of particle
+      particle.prev_pose = particle.pose;
 
-    // draw new pose from distribution
-    sampleMotionModel(u, particle.pose);
+      // draw new pose from distribution
+      sampleMotionModel(u, particle.pose);
 
-    // update weight for each particle
-    const auto scan_likelihood = particle.grid.likelihoodFieldModel(scan, T_pose);
-    particle.weight *= scan_likelihood;
+      // express pose of particle as transform
+      Vector2D vec(particle.pose(1), particle.pose(2));
+      Transform2D T_pose(vec, particle.pose(0));
+
+      // update weight for each particle
+      const auto scan_likelihood = particle.grid.likelihoodFieldModel(scan, T_pose);
+      particle.weight *= scan_likelihood;
 
 
-    // update map
-    particle.grid.integrateScan(scan, T_pose);
+      // update map
+      particle.grid.integrateScan(scan, T_pose);
+
+
+      // TEST
+      // double p = poseLikelihood(particle.pose, particle.prev_pose, u);
+      // Vector3d cur_od(cur_odom.theta, cur_odom.x, cur_odom.y);
+      // Vector3d prev_od(prev_odom.theta, prev_odom.x, prev_odom.y);
+      //
+      // double p = poseLikelihoodOdom(particle.pose, particle.prev_pose, cur_od, prev_od);
+      // std::cout << "pose likelihood" << std::endl;
+      // std::cout << p << std::endl;
+    // }
+    //
+    // else
+    // {
+      // particles estimated pose based on ICP
+      // Vector2D vec(particle.pose(1), particle.pose(2));
+      Transform2D T_x = T_pose;//(vec, particle.pose(0));
+      T_x = T_x * Ticp;
+
+
+      // sample around mode
+      std::vector<Vector3d> sampled_poses;
+      sampleMode(T_x, sampled_poses);
+
+
+      // compute gaussian proposal
+      // mu (theta, x, y)
+      Vector3d mu(0.0, 0.0, 0.0);
+      // covariance
+      MatrixXd sigma = MatrixXd::Zero(3,3);
+      // normalization factor
+      auto eta = 0.0;
+
+
+      Vector3d cur_od(cur_odom.theta, cur_odom.x, cur_odom.y);
+      Vector3d prev_od(prev_odom.theta, prev_odom.x, prev_odom.y);
+
+      gaussianProposal(sampled_poses, particle, scan, cur_od, prev_od, mu, sigma, eta);
+
+      std::cout << "sample mu" << std::endl;
+      std::cout << mu << std::endl;
+
+      std::cout << "sample cov" << std::endl;
+      std::cout << sigma << std::endl;
+    }
+
+
+    // TODO: update map here
+
 
   } // end loop
 
@@ -133,10 +248,10 @@ Transform2D ParticleFilter::getRobotState()
       idx = i;
     }
   }
-  Pose pose = particle_set_.at(idx).pose;
+  Vector3d pose = particle_set_.at(idx).pose;
 
-  Vector2D vec(pose.x, pose.y);
-  Transform2D T_pose(vec, pose.theta);
+  Vector2D vec(pose(1), pose(2));
+  Transform2D T_pose(vec, pose(0));
 
   return T_pose;
 }
@@ -160,7 +275,7 @@ void ParticleFilter::newMap(std::vector<int8_t> &map)
 
 
 
-void ParticleFilter::sampleMotionModel(const Twist2D &u, Pose &pose)
+void ParticleFilter::sampleMotionModel(const Twist2D &u, Ref<Vector3d> pose)
 {
   // sample noise
   VectorXd w = sampleMultivariateDistribution(motion_noise_);
@@ -169,25 +284,148 @@ void ParticleFilter::sampleMotionModel(const Twist2D &u, Pose &pose)
   if (almost_equal(u.w, 0.0))
   {
     // update theta
-    pose.theta = normalize_angle_PI(pose.theta + w(0));
+    pose(0) = normalize_angle_PI(pose(0) + w(0));
     // update x
-    pose.x += u.vx * std::cos(pose.theta) + w(1);
+    pose(1) += u.vx * std::cos(pose(0)) + w(1);
     // update y
-    pose.y += u.vx * std::sin(pose.theta) + w(2);
+    pose(2) += u.vx * std::sin(pose(0)) + w(2);
   }
 
   else
   {
     // update theta
-    pose.theta = normalize_angle_PI(pose.theta + u.w + w(0));
+    pose(0) = normalize_angle_PI(pose(0) + u.w + w(0));
     // update x
-    pose.x += (-u.vx / u.w) * std::sin(pose.theta) + \
-                            (u.vx / u.w) * std::sin(pose.theta + u.w) + w(1);
+    pose(1) += (-u.vx / u.w) * std::sin(pose(0)) + \
+                            (u.vx / u.w) * std::sin(pose(0) + u.w) + w(1);
     // update y
-    pose.y += (u.vx / u.w) * std::cos(pose.theta) - \
-                            (u.vx / u.w) * std::cos(pose.theta + u.w) + w(2);
+    pose(2) += (u.vx / u.w) * std::cos(pose(0)) - \
+                            (u.vx / u.w) * std::cos(pose(0) + u.w) + w(2);
   }
 }
+
+
+
+double ParticleFilter::poseLikelihoodTwist(const Ref<Vector3d> cur_pose, const Ref<Vector3d> prev_pose, const Twist2D &u)
+{
+  const auto a1 = 0.1;
+  const auto a2 = 0.2;
+  const auto a3 = 0.1;
+  const auto a4 = 0.2;
+  const auto a5 = 0.1;
+  const auto a6 = 0.2;
+
+  const auto num = (prev_pose(1) - cur_pose(1))*std::cos(prev_pose(0)) + (prev_pose(2) - cur_pose(2))*std::sin(prev_pose(0));
+  const auto denom = (prev_pose(2) - cur_pose(2))*std::cos(prev_pose(0)) + (prev_pose(1) - cur_pose(1))*std::sin(prev_pose(0));
+
+  if (almost_equal(denom, 0.0))
+  {
+    throw std::invalid_argument("denom is 0 in poseLikelihood");
+  }
+
+  const auto frac = 0.5 * (num  / denom);
+
+  const auto xstar = 0.5 * (prev_pose(1) + cur_pose(1)) + frac * (prev_pose(2) - cur_pose(2));
+  const auto ystar = 0.5 * (prev_pose(2) + cur_pose(2)) + frac * (cur_pose(1) - prev_pose(1));
+
+  const auto rstar = std::sqrt(std::pow((prev_pose(1) - xstar), 2) + std::pow((prev_pose(2) - ystar), 2));
+  const auto dtheta = std::atan2(cur_pose(2) - ystar, cur_pose(1) - xstar) - std::atan2(prev_pose(2) - ystar, prev_pose(1) - xstar);
+
+  const auto v_hat = dtheta * rstar * 1.0 / static_cast<double> (frequency_);
+  const auto w_hat = dtheta * 1.0 / static_cast<double> (frequency_);
+  const auto y_hat = (cur_pose(0) - prev_pose(0)) * 1.0 / static_cast<double> (frequency_) - w_hat;
+
+  auto var1 = a1*u.vx*u.vx + a2*u.w*u.w;
+  auto var2 = a3*u.vx*u.vx + a4*u.w*u.w;
+  auto var3 = a5*u.vx*u.vx + a6*u.w*u.w;
+
+  if (almost_equal(var1, 0.0))
+  {
+    var1 = a1 + a2;
+  }
+
+  if (almost_equal(var2, 0.0))
+  {
+    var2 = a3 + a4;
+  }
+
+  if (almost_equal(var3, 0.0))
+  {
+    var3 = a5 + a6;
+  }
+
+  const auto p1 = pdfNormal(u.vx - v_hat, var1);
+  const auto p2 = pdfNormal(u.w - w_hat, var2);
+  const auto p3 = pdfNormal(y_hat, var2);
+
+  return p1*p2*p3;
+}
+
+
+
+double ParticleFilter::poseLikelihoodOdom(const Ref<Vector3d> cur_pose, const Ref<Vector3d> prev_pose,
+                          const Ref<Vector3d> cur_odom, const Ref<Vector3d> prev_odom)
+{
+  // Table 5.5 Probabilistic Robotics
+
+  const auto a1_ = 0.5;
+  const auto a2_ = 0.5;
+  const auto a3_ = 0.5;
+  const auto a4_ = 0.5;
+
+
+  // difference between odometry measurements
+  const auto rot1 = std::atan2(cur_odom(2) - prev_odom(2),
+                               cur_odom(1) - prev_odom(1)) - prev_odom(0);
+
+  const auto trans = std::sqrt(std::pow(cur_odom(1) - prev_odom(1), 2)
+                                + std::pow(cur_odom(2) - prev_odom(2), 2));
+
+  const auto rot2 = normalize_angle_PI(normalize_angle_PI(cur_odom(0)) - \
+                          normalize_angle_PI(prev_odom(0)) - rot1);
+
+
+
+
+  // difference beween pose estimates
+  const auto rot1_hat = std::atan2(cur_pose(2) - prev_pose(2),
+                                   cur_pose(1) - prev_pose(1)) - prev_pose(0);
+
+  const auto trans_hat = std::sqrt(std::pow(cur_pose(1) - prev_pose(1), 2)
+                                + std::pow(cur_pose(2) - prev_pose(2), 2));
+
+  const auto rot2_hat = normalize_angle_PI(normalize_angle_PI(cur_pose(0)) - \
+                            normalize_angle_PI(prev_pose(0)) - rot1_hat);
+
+
+
+  // temporary variables for composing probabilities
+  const auto temp1 = a1_*rot1_hat*rot1_hat + a2_*trans_hat*trans_hat;
+
+  const auto temp2 = a3_*trans_hat*trans_hat
+                     + a4_*rot1_hat*rot1_hat
+                     + a4_*rot2_hat*rot2_hat;
+
+  const auto temp3 = a1_*rot2_hat*rot2_hat + a2_*trans_hat*trans_hat;
+
+
+  // std::cout << "temp1: " << temp1 << std::endl;
+  // std::cout << "temp2: " << temp2 << std::endl;
+  // std::cout << "temp3: " << temp3 << std::endl;
+
+
+
+  // compose probabilities
+  const auto p1 = pdfNormal(normalize_angle_PI(normalize_angle_PI(rot1) - normalize_angle_PI(rot1_hat)), temp1);
+
+  const auto p2 = pdfNormal(trans - trans_hat, temp2);
+
+  const auto p3 = pdfNormal(normalize_angle_PI(normalize_angle_PI(rot2) - normalize_angle_PI(rot2_hat)), temp3);
+
+  return p1 * p2 *p3;
+}
+
+
 
 
 void ParticleFilter::normalizeWeights()
@@ -244,14 +482,141 @@ void ParticleFilter::lowVarianceResampling()
   particle_set_ = temp_particle_set;
 }
 
+
+
+void ParticleFilter::sampleMode(const Transform2D &T, std::vector<Vector3d> &sampled_poses)
+{
+  TransformData2D T2d = T.displacement();
+  Vector3d mu(T2d.theta, T2d.x, T2d.y);
+
+  for(auto i = 0; i < k_; i++)
+  {
+    Vector3d sample = sampleMultivariateDistribution(mu, sample_range_);
+    sample(0) = normalize_angle_PI(sample(0));
+    sampled_poses.push_back(sample);
+
+    // std::cout << "sample" << std::endl;
+    // std::cout << sample << std::endl;
+
+  }
+}
+
+
+void ParticleFilter::gaussianProposal(std::vector<Vector3d> &sampled_poses,
+                                        Particle &particle,
+                                        const std::vector<float> &scan,
+                                        const Ref<Vector3d> cur_odom,
+                                        const Ref<Vector3d> prev_odom,
+                                        Ref<Vector3d> mu,
+                                        Ref<MatrixXd> sigma,
+                                        double eta)
+{
+
+  std::vector<double> probabilities(k_);
+
+  for(auto i = 0; i < k_; i++)
+  {
+    Vector3d xj = sampled_poses.at(i);
+    Vector2D vec(xj(1), xj(2));
+    Transform2D Txj(vec, xj(0));
+
+
+    const Vector3d x;
+
+    const auto p_scan = particle.grid.likelihoodFieldModel(scan, Txj);
+    const auto p_pose = poseLikelihoodOdom(xj, particle.prev_pose, cur_odom, prev_odom);
+    const auto p = p_scan ;//* p_pose;
+
+
+    std::cout << "p_scan" << std::endl;
+    std::cout << p_scan << std::endl;
+
+    std::cout << "p_pose" << std::endl;
+    std::cout << p_pose << std::endl;
+
+    std::cout << "p" << std::endl;
+    std::cout << p << std::endl;
+
+
+    probabilities.push_back(p);
+
+    mu += xj * p;
+    eta += p;
+  }
+
+  std::cout << "eta: " << std::setprecision(9) << eta << std::endl;
+
+
+  if (almost_equal(eta, 0.0))
+  {
+    throw std::invalid_argument("eta is 0");
+  }
+
+
+
+  // scale mu
+  mu /= eta;
+  mu(0) = normalize_angle_PI(mu(0));
+
+
+  for(auto i = 0; i < k_; i++)
+  {
+    Vector3d xj = sampled_poses.at(i);
+    Vector2D vec(xj(1), xj(2));
+    Transform2D Txj(vec, xj(0));
+
+    Vector3d temp = xj - mu;
+
+    sigma += temp * temp.transpose() * probabilities.at(i);
+  }
+
+  // scale sigma
+  sigma /= eta;
+}
+
+
+
+
 } // end namespace
 
-
-
-
-
-
-
-
-
 // end file
+
+
+
+// // find transform from previous pose to current pose
+// // map to current pose
+// Vector2D cur_v(cur_pose(1), cur_pose(2));
+// Transform2D Tmx_prime(cur_v, cur_pose(0));
+//
+// // map to previous pose
+// Vector2D prev_v(prev_pose(1), prev_pose(2));
+// Transform2D Tmx(prev_v, prev_pose(0));
+//
+// // previous pose to current pose
+// Transform2D Txx_prime = Tmx.inv() * Tmx_prime;
+//
+//
+// // at this point assume dt = 1
+// // vb = T^-1 * T_dot
+// Transform2D Tvb = Txx_prime.inv() * Txx_prime;
+// TransformData2D T2dvb = Tvb.displacement();
+//
+// // scale by loop frequency
+// Twist2D vb;
+// vb.w = T2dvb.theta * 1.0 / static_cast<double> (frequency_);
+// vb.vx = T2dvb.x * 1.0 / static_cast<double> (frequency_);
+// vb.vy = T2dvb.y * 1.0 / static_cast<double> (frequency_); // should be 0
+//
+//
+// std::cout << "Predicted twist" << std::endl;
+// std::cout << vb << std::endl;
+//
+// std::cout << "Odom twist" << std::endl;
+// std::cout << u << std::endl;
+//
+//
+// auto var = a1*u.vx*u.vx + a2*u.w*u.w;
+// if (almost_equal(var, 0.0))
+// {
+//   var = a1 + a2;
+// }

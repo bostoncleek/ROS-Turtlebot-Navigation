@@ -237,6 +237,11 @@ int main(int argc, char** argv)
   pose.x = 0;
   pose.y = 0;
 
+  // odometry poses for SLAM pose likelihood
+  rigid2d::Pose cur_odom;
+  rigid2d::Pose prev_odom;
+  cur_odom = prev_odom = pose;
+
   // Assume pose starts at (0,0,0)
   // SLAM
   Transform2D robot_pose;
@@ -246,6 +251,12 @@ int main(int argc, char** argv)
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
   // diff drive model for SLAM
   rigid2d::DiffDrive ekf_drive(pose, wheel_base, wheel_radius);
+
+
+  // timing
+  int frequency = 60;
+  ros::Rate loop_rate(frequency);
+
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -270,13 +281,7 @@ int main(int argc, char** argv)
 
 
   // particle filter
-  TransformData2D T2d_pose = robot_pose.displacement();
-  Pose init_pose_pf;
-  init_pose_pf.theta = T2d_pose.theta;
-  init_pose_pf.x = T2d_pose.x;
-  init_pose_pf.y = T2d_pose.y;
-
-  ParticleFilter pf(100, -1, aligner, init_pose_pf, grid);
+  ParticleFilter pf(1, 5, frequency, aligner, robot_pose, grid);
 
 
   // path from odometry
@@ -343,12 +348,16 @@ int main(int argc, char** argv)
         // robot_pose = robot_pose * Tpcl;
 
         ekf_drive.updateOdometry(ekf_left, ekf_right);
+        cur_odom = drive.pose();
+
         rigid2d::WheelVelocities vel = ekf_drive.wheelVelocities();
         rigid2d::Twist2D vb = ekf_drive.wheelsToTwist(vel);
 
-        pf.SLAM(scan, vb);
+        pf.SLAM(scan, vb, cur_odom, prev_odom);
         robot_pose = pf.getRobotState();
         pf.newMap(map);
+
+        prev_odom = cur_odom;
 
         map_msg.header.stamp = ros::Time::now();
         map_msg.info.map_load_time = ros::Time::now();
@@ -456,6 +465,8 @@ int main(int argc, char** argv)
     /////////////////////////////////////////////////////////////////////////////
 
     map_pub.publish(map_msg);
+
+    loop_rate.sleep();
   }
 
   return 0;
