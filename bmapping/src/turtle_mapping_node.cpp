@@ -270,6 +270,7 @@ int main(int argc, char** argv)
   double z_rand = 1.0 - z_hit - z_max;
   double sigma_hit = 0.5;  // 0.5 also works okay, consider resolution of map
 
+//
   LaserProperties props(beam_min, beam_max, beam_delta, range_min, range_max,
                               z_hit, z_short, z_max, z_rand, sigma_hit);
 
