@@ -19,7 +19,7 @@ double pdfNormal(double a, double b)
 {
   if (rigid2d::almost_equal(b, 0.0))
   {
-    throw std::invalid_argument("Variance in probNormal is 0");
+    throw std::invalid_argument("Variance in pdfNormal is 0");
   }
 
   const auto sqrt_inv = 1.0 / std::sqrt(2.0 * rigid2d::PI * b);

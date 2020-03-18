@@ -157,17 +157,18 @@ namespace bmapping
     /// sampled_poses[out] - poses aroud mode
     void sampleMode(const Transform2D &T, std::vector<Vector3d> &sampled_poses);
 
+
     void gaussianProposal(std::vector<Vector3d> &sampled_poses,
                           Particle &particle,
+                          const Twist2D &u,
                           const std::vector<float> &scan,
                           const Ref<Vector3d> cur_odom,
                           const Ref<Vector3d> prev_odom,
                           Ref<Vector3d> mu,
                           Ref<MatrixXd> sigma,
-                          double eta);
+                          double &eta);
 
-
-
+    Transform2D icpInitGuess(const Ref<Vector3d> cur_odom, const Ref<Vector3d> prev_odom);
 
 
     int num_particles_;                               // number of particles

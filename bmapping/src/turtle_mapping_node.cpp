@@ -281,7 +281,7 @@ int main(int argc, char** argv)
 
 
   // particle filter
-  ParticleFilter pf(1, 5, frequency, aligner, robot_pose, grid);
+  ParticleFilter pf(50, 50, frequency, aligner, robot_pose, grid);
 
 
   // path from odometry
