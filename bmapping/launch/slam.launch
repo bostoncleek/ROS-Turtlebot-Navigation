@@ -16,7 +16,6 @@
     <param name="body_frame_id" value="base_link" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
     <param name="right_wheel_joint" value="right_wheel_axle" />
-    <param name="right_wheel_joint" value="right_wheel_axle" />
     <param name="num_particles" value="20" />
     <param name="num_samples_mode" value="50" />
     <param name="srr" value="0.1" />
