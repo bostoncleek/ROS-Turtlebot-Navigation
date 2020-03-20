@@ -2,6 +2,8 @@
 #define FILTER_HPP
 /// \file
 /// \brief
+#include <angles/angles.h>
+
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -29,6 +31,7 @@ namespace nuslam
   using rigid2d::normalize_angle_PI;
   using rigid2d::Transform2D;
 
+  using angles::normalize_angle;
 
 
   /// \brief Returns a random number engine
@@ -140,7 +143,8 @@ namespace nuslam
 
 
     int n;                         // max number of landmarks, determines state size
-    int N;                         // number of landmarks observed
+    int N;                         // number of landmarks in state vector
+    int L;                         // number of landmarks observed
     int state_size;                // size of state vector
 
     double md_sum;
@@ -159,11 +163,11 @@ namespace nuslam
     // // for known correspondences
     // std::vector<Vector3d> lm;
 
-    // landmark j observed
+    // landmark j in state
     std::vector<int> lm_j;
 
     // number of timers landmark j is observed
-    std::vector<int> lm_counts;
+    // std::vector<int> lm_counts;
 
 
   };
