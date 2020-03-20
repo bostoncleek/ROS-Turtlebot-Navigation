@@ -21,6 +21,8 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>rigid2d</build_depend>
+  <build_depend>tsim</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_ros</build_depend>
 

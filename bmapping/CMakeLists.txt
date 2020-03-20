@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(tsim REQUIRED)
 find_package(rigid2d REQUIRED)
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -58,9 +59,7 @@ find_package(Eigen3 REQUIRED)
 
 ## Generate messages in the 'msg' folder
 # add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
+#   PoseError.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -80,7 +79,7 @@ find_package(Eigen3 REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   std_msgs
 # )
 
 ################################################
@@ -136,6 +135,7 @@ include_directories(
 	include
   ${catkin_INCLUDE_DIRS}
 	${rigid2d_INCLUDE_DIRS}
+	${tsim_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIRS}
 )
@@ -173,6 +173,7 @@ target_link_libraries(turtle_mapping
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
+	${tsim_LIBRARIES}
 	${EIGEN3_LIBRARIES}
 	${PCL_LIBRARIES}
 )
