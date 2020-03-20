@@ -96,7 +96,20 @@ namespace bmapping
     /// \param scan_matcher - iterative closes point
     ParticleFilter(int num_particles,
                    int k,
-                   int frequency,
+                   double srr,
+                   double srt,
+                   double str,
+                   double stt,
+                   double motion_noise_theta,
+                   double motion_noise_x,
+                   double motion_noise_y,
+                   double sample_range_theta,
+                   double sample_range_x,
+                   double sample_range_y,
+                   double scan_likelihood_min,
+                   double scan_likelihood_max,
+                   double pose_likelihood_min,
+                   double pose_likelihood_max,
                    ScanAlignment &scan_matcher,
                    const Transform2D &pose,
                    const GridMapper &mapper);
@@ -127,11 +140,11 @@ namespace bmapping
     /// pose[out] updated pose
     void sampleMotionModel(const Twist2D &u, Ref<Vector3d> pose);
 
-    /// \brief Pose likelihood P(x'|x,u)
-    /// \param cur_pose - current pose
-    /// \param prev_pose - previous pose
-    /// \returns likelihood of current pose;
-    double poseLikelihoodTwist(const Ref<Vector3d> cur_pose, const Ref<Vector3d> prev_pose, const Twist2D &u);
+    // /// \brief Pose likelihood P(x'|x,u)
+    // /// \param cur_pose - current pose
+    // /// \param prev_pose - previous pose
+    // /// \returns likelihood of current pose;
+    // double poseLikelihoodTwist(const Ref<Vector3d> cur_pose, const Ref<Vector3d> prev_pose, const Twist2D &u);
 
 
     /// \brief Pose likelihood P(x'|x,u)
@@ -158,9 +171,19 @@ namespace bmapping
     void sampleMode(const Transform2D &T, std::vector<Vector3d> &sampled_poses);
 
 
+    /// \brief Compose the gaussian distribution from which to sample new
+    ///        particles pose from.
+    /// \param sampled_poses - poses sampled from the distribution around the
+    ///                        transform from ICP
+    /// \param particle - the current particle to update
+    /// \param scan - recent lidar data
+    /// \param cur_odom - recent odometry pose
+    /// \param prev_odom - previous odometry pose
+    /// \param mu - gaussian proposal mean
+    /// \param sigma - gaussian proposal covariance
+    /// \param eta - normalization factor
     void gaussianProposal(std::vector<Vector3d> &sampled_poses,
                           Particle &particle,
-                          const Twist2D &u,
                           const std::vector<float> &scan,
                           const Ref<Vector3d> cur_odom,
                           const Ref<Vector3d> prev_odom,
@@ -168,18 +191,29 @@ namespace bmapping
                           Ref<MatrixXd> sigma,
                           double &eta);
 
+    /// \brief Compose the initial guess for ICP based on odometry
+    /// \param cur_odom - recent odometry pose
+    /// \param prev_odom - previous odometry pose
+    /// /return transform of initial guess
     Transform2D icpInitGuess(const Ref<Vector3d> cur_odom, const Ref<Vector3d> prev_odom);
 
 
-    int num_particles_;                               // number of particles
-    int k_;                                           // number of samples around mode from ICP
-    int frequency_;                                   // rate of filter
-    double normal_sqrd_sum_;                          // normalized squared sum of particle weights
+    int num_particles_;                                             // number of particles
+    int k_;                                                         // number of samples around mode from ICP
 
-    ScanAlignment scan_matcher_;                      // ICP
-    std::vector<Particle> particle_set_;              // set of particles
-    MatrixXd motion_noise_;                           // noise in the motion model
-    MatrixXd sample_range_;                           // range for sampling mode of transform from ICP
+    double srr_, srt_, str_, stt_;                                  // noise parameters for pose likelihood
+    double motion_noise_theta_, motion_noise_x_, motion_noise_y_;    // motion model sampling noise
+    double sample_range_theta_, sample_range_x_, sample_range_y_;    // sample range for ICP distribution
+
+    double scan_likelihood_min_, scan_likelihood_max_;              // limits on scan likelihood
+    double pose_likelihood_min_, pose_likelihood_max_;              // limits on pose likelihood
+
+    double normal_sqrd_sum_;                                        // normalized squared sum of particle weights
+
+    ScanAlignment scan_matcher_;                                    // ICP
+    std::vector<Particle> particle_set_;                            // set of particles
+    MatrixXd motion_noise_;                                         // noise in the motion model
+    MatrixXd sample_range_;                                         // range for sampling mode of transform from ICP
 
   };
 
