@@ -245,7 +245,11 @@ namespace bmapping
 
   };
 
+  /// \brief output a 2 dimensional grid coordinates
+  /// os - stream to output to
+  /// gc - grid coordinates
   std::ostream & operator<<(std::ostream & os, const GridCoordinates & gc);
 
 } // end namespace
+
 #endif

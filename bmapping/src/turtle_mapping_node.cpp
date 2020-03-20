@@ -1,16 +1,57 @@
 /// \file
-/// \brief publishes odometry messages and broadcasts a tf from odom to base link frame
+/// \brief Rao-blackwellized particle filter SLAM
 ///
 /// \author Boston Cleek
 /// \date 3/16/20
 ///
+/// PARAMETERS:
+///   map_frame_id - map frame
+///   odom_frame_id - odometry frame
+///   body_frame_id - base link frame
+///   left_wheel_joint - name of left wheel joint
+///   right_wheel_joint - name of right wheel joint
+///   num_particles - number of initial particles
+///   num_samples_mode - number of samples around mode
+///   srr - pose likelihood estimated rotation noise
+///   srt - pose likelihood estimated rotation then translation noise
+///   str - pose likelihood estimated translation then rotation noise
+///   stt - pose likelihood estimated translation  noise
+///   motion_noise_theta - motion model rotation noise
+///   motion_noise_x - motion model x translation noise
+///   motion_noise_y - motion model y translation noise
+///   sample_range_theta - sample ICP transform rotation distribution range
+///   sample_range_x - sample ICP transform x translation distribution range
+///   sample_range_y - sample ICP transform x translation distribution range
+///   scan_likelihood_min - min scan likelihood
+///   scan_likelihood_max - max scan likelihood
+///   pose_likelihood_min - min pose likelihood
+///   pose_likelihood_max - max pose likelihood
+///   z_hit - probability laser hits obstacle
+///   z_short - probability laser end short of obstacle
+///   z_max - probability laser is at its max range
+///   z_rand - probability laser hit is random
+///   sigma_hit - varinace of the distance between nearest obstacle in occupancy grid and laser end point
+///   map_min - lower map bound
+///   map_max - upper map bound
+///   map_resolution - map resolution
+///   beam_min - starting angle of lidar (degrees)
+///   beam_max - ending angle of lidar (degrees)
+///   beam_delta - change in angle between laser measurements
+///   range_min - min range of lidar
+///   range_max - max range of lidar
 /// PUBLISHES:
 ///   odom (nav_msgs/Odometry): Pose of robot in odom frame and twist in body frame
-///
+///   slam_path (nav_msgs/Path): trajectory from RBPG slam
+///   odom_path (nav_msgs/Path): trajectory from odometry
+///   gazebo_path (nav_msgs/Path): trajectory from gazebo
+///   map (nav_msgs/OccupancyGrid): 2D occupancy grid map
+///   odom (nav_msgs/Odometry): pose and twist from odometry
+///   odom_error (tsim/PoseError): pose error between gazebo and odometry
+///   slam_error (tsim/PoseError): pose error between gazebo and RBPF slam
 /// SUBSCRIBES:
+///   scan (sensor_msgs/LaserScan): Lidar scan
+///   /gazebo/model_states (gazebo_msgs/ModelStates): model states from grazebo
 ///   joint_states (sensor_msgs/JointState): angular wheel positions
-///
-/// SERVICES:
 ///
 
 
@@ -71,21 +112,21 @@ using bmapping::ParticleFilter;
 using bmapping::GridMapper;
 
 
-static std::string left_wheel_joint, right_wheel_joint;    // joint names
-static double left, right;                                 // wheel angular positions for odometry
-static double pf_left, pf_right;                         // wheel angular positions for SLAM
-static bool wheel_odom_flag;                               // odometry update
+static std::string left_wheel_joint, right_wheel_joint;         // joint names
+static double left, right;                                      // wheel angular positions for odometry
+static double pf_left, pf_right;                                // wheel angular positions for SLAM
+static bool wheel_odom_flag;                                    // odometry update
 
-static std::vector<float> scan;
-static bool scan_update;
+static std::vector<float> scan;                                 // lidar scan
+static bool scan_update;                                        // scan update flag
 
-static geometry_msgs::PoseStamped gazebo_robot_pose;
+static geometry_msgs::PoseStamped gazebo_robot_pose;            // gazebo robot pose
 
 
-
+/// \brief Update the scan
+/// \param msg -lidar scan
 void scanCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
-  // std::cout << "scan callback" << std::endl;
   scan = msg->ranges;
   scan_update = true;
 }
@@ -128,6 +169,8 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
 }
 
 
+/// \brief  Retreive gazebo robot pose
+/// \param model_data - model states in world
 void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
 {
   // store names of all items in gazebo

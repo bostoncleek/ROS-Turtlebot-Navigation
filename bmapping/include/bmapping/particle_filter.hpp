@@ -92,8 +92,23 @@ namespace bmapping
     /// \brief Initialize the filter
     /// \param num_particles - number of initial particles
     /// \param k - number of samples around mode
-    /// \param pose_init - initial pose
+    /// \param srr - pose likelihood estimated rotation noise
+    /// \param srt - pose likelihood estimated rotation then translation noise
+    /// \param str - pose likelihood estimated translation then rotation noise
+    /// \param stt - pose likelihood estimated translation  noise
+    /// \param motion_noise_theta - motion model rotation noise
+    /// \param motion_noise_x - motion model x translation noise
+    /// \param motion_noise_y - motion model y translation noise
+    /// \param sample_range_theta - sample ICP transform rotation distribution range
+    /// \param sample_range_x - sample ICP transform x translation distribution range
+    /// \param sample_range_y - sample ICP transform x translation distribution range
+    /// \param scan_likelihood_min - min scan likelihood
+    /// \param scan_likelihood_max - max scan likelihood 
+    /// \param pose_likelihood_min - min pose likelihood
+    /// \param pose_likelihood_max - max pose likelihood
     /// \param scan_matcher - iterative closes point
+    /// \param pose - initial pose
+    /// \param mapper - occupancy grid mapper and scan likelihood
     ParticleFilter(int num_particles,
                    int k,
                    double srr,
