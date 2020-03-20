@@ -1,7 +1,7 @@
 <launch>
 
   <!-- run nodes on turtlebot machine -->
-  <arg name="robot" default="-1" doc="sets address for machine tag"/>
+    <arg name="robot" default="-1" doc="sets address for machine tag"/>
 
 
   <!--  option to launch turtlebot in empty world -->
@@ -20,18 +20,13 @@
 
 
 
-  <!-- teleop -->
-  <!-- <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard" output="screen"/> -->
-
-
   <!-- turtlebot3 diff drive params -->
   <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
 
   <!-- basic remote -->
   <include file = "$(find nuturtle_robot)/launch/basic_remote.launch" >
-   <arg name="robot" value="$(arg robot)" />
+    <arg name="robot" value="$(arg robot)" />
   </include>
 
 
@@ -44,12 +39,12 @@
 
 
   <!-- load params in these are private to the node  -->
-  <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
+  <!-- <node machine="turtlebot" name="odometer" pkg="rigid2d" type="odometer" output="screen" >
     <param name="odom_frame_id" value="odom" />
     <param name="body_frame_id" value="base_link" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
     <param name="right_wheel_joint" value="right_wheel_axle" />
-  </node>
+  </node> -->
 
 
   <!-- Interface with turtlebot3 -->
@@ -59,11 +54,11 @@
   </node>
 
 
-  <!-- rviz  -->
+  <!-- rviz -->
   <group if="$(eval arg('robot') != 0)">
-    <node name="rviz" pkg="rviz" type="rviz" required="true"
-     args="-d $(find bmapping)/config/bmapping.rviz"/>
-  </group>
+  <node name="rviz" pkg="rviz" type="rviz" required="true"
+   args="-d $(find bmapping)/config/bmapping.rviz"/>
+ </group>
 
 
   <!-- load model into parameter server -->

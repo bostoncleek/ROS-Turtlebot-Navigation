@@ -82,8 +82,8 @@ ParticleFilter::ParticleFilter(int num_particles,
   // init motion noise
   motion_noise_ = MatrixXd::Zero(3,3);
   motion_noise_(0,0) = 1e-10;  // theta var
-  motion_noise_(1,1) = 1e-5;   // x var
-  motion_noise_(2,2) = 1e-5;   // y var
+  motion_noise_(1,1) = 1e-10;   // x var
+  motion_noise_(2,2) = 1e-10;   // y var
 
   // init sample range around mode
   sample_range_ = MatrixXd::Zero(3,3);
@@ -599,8 +599,14 @@ void ParticleFilter::gaussianProposal(std::vector<Vector3d> &sampled_poses,
     // auto p_pose = poseLikelihoodTwist(xj, particle.prev_pose, u);
 
 
+    // std::cout << "p_scan" << std::endl;
+    // std::cout << p_scan << std::endl;
+    //
+    // std::cout << "p_pose" << std::endl;
+    // std::cout << p_pose << std::endl;
+
     p_scan = std::clamp(p_scan, 1.0, 20.0);
-    p_pose = std::clamp(p_pose, 1.0, 20.0);
+    p_pose = std::clamp(p_pose, 1.0, 10.0);
 
 
 

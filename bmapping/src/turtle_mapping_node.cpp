@@ -70,7 +70,7 @@ using bmapping::GridMapper;
 
 static std::string left_wheel_joint, right_wheel_joint;    // joint names
 static double left, right;                                 // wheel angular positions for odometry
-static double ekf_left, ekf_right;                         // wheel angular positions for SLAM
+static double pf_left, pf_right;                         // wheel angular positions for SLAM
 static bool wheel_odom_flag;                               // odometry update
 
 static std::vector<float> scan;
@@ -120,9 +120,6 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
-  ekf_left += left;
-  ekf_right += right;
-
 
   wheel_odom_flag = true;
 }
@@ -169,10 +166,11 @@ int main(int argc, char** argv)
   ros::Subscriber joint_sub = node_handle.subscribe("joint_states", 1, jointStatesCallback);
   ros::Subscriber model_sub = nh.subscribe("/gazebo/model_states", 1, modelCallBack);
 
-  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 1);
-  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
-  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 1);
-  ros::Publisher map_pub = node_handle.advertise<nav_msgs::OccupancyGrid>("map", 1);
+  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 10);
+  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 10);
+  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 10);
+  ros::Publisher map_pub = node_handle.advertise<nav_msgs::OccupancyGrid>("map", 10);
+  ros::Publisher odom_pub = node_handle.advertise<nav_msgs::Odometry>("odom", 1);
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -225,6 +223,7 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////////////////////
 
   tf2_ros::TransformBroadcaster slam_broadcaster;
+  tf2_ros::TransformBroadcaster odom_broadcaster;
 
   wheel_odom_flag = false;
   scan_update = false;
@@ -250,12 +249,12 @@ int main(int argc, char** argv)
   // diff drive model for odometry
   rigid2d::DiffDrive drive(pose, wheel_base, wheel_radius);
   // diff drive model for SLAM
-  rigid2d::DiffDrive ekf_drive(pose, wheel_base, wheel_radius);
+  rigid2d::DiffDrive pf_drive(pose, wheel_base, wheel_radius);
 
 
   // timing
   int frequency = 60;
-  ros::Rate loop_rate(frequency);
+  // ros::Rate loop_rate(frequency);
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -282,7 +281,7 @@ int main(int argc, char** argv)
 
 
   // particle filter
-  ParticleFilter pf(50, 50, frequency, aligner, robot_pose, grid);
+  ParticleFilter pf(20, 50, frequency, aligner, robot_pose, grid);
 
 
   // path from odometry
@@ -330,6 +329,9 @@ int main(int argc, char** argv)
       drive.updateOdometry(left, right);
       pose = drive.pose();
 
+      pf_left = left;
+      pf_right = right;
+
       // update ekf with odometry and sensor measurements
       if (scan_update)
       {
@@ -348,25 +350,19 @@ int main(int argc, char** argv)
         // aligner.pclICPWrapper(Tpcl, T_init, scan);
         // robot_pose = robot_pose * Tpcl;
 
-        ekf_drive.updateOdometry(ekf_left, ekf_right);
-        cur_odom = drive.pose();
-
-        rigid2d::WheelVelocities vel = ekf_drive.wheelVelocities();
-        rigid2d::Twist2D vb = ekf_drive.wheelsToTwist(vel);
+        pf_drive.updateOdometry(pf_left, pf_right);
+        cur_odom = pf_drive.pose();
+        rigid2d::WheelVelocities vel = pf_drive.wheelVelocities();
+        rigid2d::Twist2D vb = pf_drive.wheelsToTwist(vel);
 
         pf.SLAM(scan, vb, cur_odom, prev_odom);
-        robot_pose = pf.getRobotState();
-        pf.newMap(map);
-
-        prev_odom = cur_odom;
 
         map_msg.header.stamp = ros::Time::now();
         map_msg.info.map_load_time = ros::Time::now();
         map_msg.data = map;
+        pf.newMap(map);
 
-
-        ekf_left = 0.0;
-        ekf_right = 0.0;
+        prev_odom = cur_odom;
 
         scan_update = false;
       }
@@ -378,7 +374,9 @@ int main(int argc, char** argv)
 
     // braodcast transform from map to odom
     // transform from map to robot
-    Transform2D Tmr = robot_pose;/* = ekf.getRobotState();*/
+    // Transform2D Tmr = robot_pose;
+    Transform2D Tmr = pf.getRobotState();;
+
 
     // transform from odom to robot
     Vector2D vor(pose.x, pose.y);
@@ -466,8 +464,52 @@ int main(int argc, char** argv)
     /////////////////////////////////////////////////////////////////////////////
 
     map_pub.publish(map_msg);
+    // loop_rate.sleep();
 
-    loop_rate.sleep();
+    rigid2d::WheelVelocities vel = drive.wheelVelocities();
+    rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
+
+
+    // convert yaw to Quaternion
+    tf2::Quaternion q;
+    q.setRPY(0, 0, pose.theta);
+    geometry_msgs::Quaternion odom_quat;
+    odom_quat = tf2::toMsg(q);
+
+
+    // broadcast transform between odom and body
+    geometry_msgs::TransformStamped odom_tf;
+    odom_tf.header.stamp = ros::Time::now();
+    odom_tf.header.frame_id = odom_frame_id;
+    odom_tf.child_frame_id = "base_link";
+
+    odom_tf.transform.translation.x = pose.x;
+    odom_tf.transform.translation.y = pose.y;
+    odom_tf.transform.translation.z = 0.0;
+    odom_tf.transform.rotation = odom_quat;
+
+    odom_broadcaster.sendTransform(odom_tf);
+
+
+    // publish odom message over ros
+    nav_msgs::Odometry odom;
+    odom.header.stamp = ros::Time::now();
+    odom.header.frame_id = odom_frame_id;
+    odom.child_frame_id = "base_link";
+
+
+    // pose in odom frame
+    odom.pose.pose.position.x = pose.x;
+    odom.pose.pose.position.y = pose.y;
+    odom.pose.pose.position.z = 0.0;
+    odom.pose.pose.orientation = odom_quat;
+
+    // velocity in body frame
+    odom.twist.twist.linear.x = vb.vx;
+    odom.twist.twist.linear.y = 0.0;
+    odom.twist.twist.angular.z = vb.w;
+
+    odom_pub.publish(odom);
   }
 
   return 0;
