@@ -55,11 +55,6 @@ static double ekf_left, ekf_right;                         // wheel angular posi
 
 static bool wheel_odom_flag;                               // odometry update
 
-// static bool message;                                       // callback flag
-// static rigid2d::Pose pose_srv;                             // pose set by srv
-// static bool srv_active;                                    // set pose srv activated
-
-
 static std::vector<Vector2D> meas;
 static bool map_flag;
 
@@ -115,29 +110,6 @@ void mapCallBack(const nuslam::TurtleMap::ConstPtr &map_msg)
 }
 
 
-/// \brief service sets the pose of the robot
-/// \param req - service request pose
-/// \param res - service pose result
-// bool setPoseService(rigid2d::set_pose::Request &req,
-//                     rigid2d::set_pose::Response &res)
-// {
-//   // the requested pose
-//   pose_srv.theta = req.theta;
-//   pose_srv.x = req.x;
-//   pose_srv.y = req.y;
-//
-//   ROS_INFO("pose %f %f %f", pose_srv.theta, pose_srv.x, pose_srv.y);
-//   // set response
-//   res.set_pose_state = true;
-//
-//   // service flag has been activated
-//   srv_active = true;
-//
-//   ROS_INFO("Set Pose service activated");
-//
-//   return true;
-// }
-
 
 /// \brief updates the wheel encoder angles
 /// \param msg - contains the encoder readings and joint names
@@ -171,9 +143,6 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
-  ekf_left += left;
-  ekf_right += right;
-
 
   wheel_odom_flag = true;
 }
@@ -195,12 +164,10 @@ int main(int argc, char** argv)
   ros::Subscriber map_sub = node_handle.subscribe("landmarks", 1, mapCallBack);
   ros::Subscriber scan_sub = nh.subscribe("/gazebo/model_states", 1, modelCallBack);
 
-  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 1);
-  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
-  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 1);
-  ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 100);
-
-  // ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
+  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 10);
+  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 10);
+  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 10);
+  ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 10);
 
   /////////////////////////////////////////////////////////////////////////////
   // load in real landmark data
@@ -251,10 +218,9 @@ int main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////////////////
 
-  tf2_ros::TransformBroadcaster odom_broadcaster;
+  tf2_ros::TransformBroadcaster map_odom_broadcaster;
   map_flag = false;
   wheel_odom_flag = false;
-  // srv_active = false;
 
 
   // Assume pose starts at (0,0,0)
@@ -273,8 +239,8 @@ int main(int argc, char** argv)
 
   // number of landmarks in model
   int n = 12;
-  double md_max = 100; // currently not used
-  double md_min = 2.00;
+  double md_max = 1e7;//0.30;
+  double md_min = 20000.0;//0.05;
   nuslam::EKF ekf(n, md_max, md_min);
   // ekf.setKnownLandamrks(landmarks);
 
@@ -300,21 +266,19 @@ int main(int argc, char** argv)
   {
     ros::spinOnce();
 
-    // set pose service flag
-    // if (srv_active)
-    // {
-    //   drive.reset(pose_srv);
-    //
-    //   srv_active = false;
-    // }
-
     /////////////////////////////////////////////////////////////////////////////
+
 
     if (wheel_odom_flag)
     {
       // most recent odom update
       drive.updateOdometry(left, right);
       pose = drive.pose();
+
+
+      // IMPORTANT: set ekf wheel encoder to current odometry encoders
+      ekf_left = left;
+      ekf_right = right;
 
       // update ekf with odometry and sensor measurements
       if (map_flag)
@@ -326,14 +290,12 @@ int main(int argc, char** argv)
         // ekf.knownCorrespondenceSLAM(meas, vb);
         ekf.SLAM(meas, vb);
 
-        ekf_left = 0.0;
-        ekf_right = 0.0;
-
         map_flag = false;
       }
 
       wheel_odom_flag = false;
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -371,7 +333,7 @@ int main(int argc, char** argv)
     tf_mo.transform.translation.z = 0.0;
     tf_mo.transform.rotation = quat_mo;
 
-    odom_broadcaster.sendTransform(tf_mo);
+    map_odom_broadcaster.sendTransform(tf_mo);
 
     /////////////////////////////////////////////////////////////////////////////
 
