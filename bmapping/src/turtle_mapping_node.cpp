@@ -47,6 +47,7 @@
 #include "bmapping/sensor_model.hpp"
 #include "bmapping/grid_mapper.hpp"
 #include "bmapping/particle_filter.hpp"
+#include "tsim/PoseError.h"
 
 
 using Eigen::MatrixXd;
@@ -60,6 +61,8 @@ using rigid2d::Pose;
 using rigid2d::Transform2D;
 using rigid2d::TransformData2D;
 using rigid2d::deg2rad;
+using rigid2d::normalize_angle_PI;
+
 
 using bmapping::LaserProperties;
 using bmapping::LaserScanner;
@@ -172,27 +175,81 @@ int main(int argc, char** argv)
   ros::Publisher map_pub = node_handle.advertise<nav_msgs::OccupancyGrid>("map", 10);
   ros::Publisher odom_pub = node_handle.advertise<nav_msgs::Odometry>("odom", 1);
 
+  ros::Publisher odom_error_pub = node_handle.advertise<tsim::PoseError>("odom_error", 1);
+  ros::Publisher slam_error_pub = node_handle.advertise<tsim::PoseError>("slam_error", 1);
+
   /////////////////////////////////////////////////////////////////////////////
 
-  std::string map_frame_id, odom_frame_id, marker_frame_id;
-  auto wheel_base = 0.0, wheel_radius = 0.0;
+  // frame IDs
+  // robots chassis parameters
+  std::string map_frame_id, odom_frame_id, body_frame_id;
+  double wheel_base = 0.0, wheel_radius = 0.0;
 
   // lidar specs
   double beam_min = 0.0, beam_max = 0.0, beam_delta = 0.0;
   double range_min = 0.0, range_max = 0.0;
+
+  // scan likelihood parameters
+  double z_hit = 0.0, z_short = 0.0, z_max = 0.0, z_rand = 0.0, sigma_hit = 0.0;
+
+  // particle filter parameters
+  int num_particles = 0, num_samples_mode = 0;
+
+  double srr = 0.0, srt = 0.0, str = 0.0, stt = 0.0;
+  double motion_noise_theta = 0.0, motion_noise_x = 0.0, motion_noise_y = 0.0;
+  double sample_range_theta = 0.0, sample_range_x = 0.0, sample_range_y = 0.0;
+  double scan_likelihood_min = 0.0, scan_likelihood_max = 0.0;
+  double pose_likelihood_min = 0.0, pose_likelihood_max = 0.0;
+
+  // occupancy grid parameters
+  double map_min = 0.0, map_max = 0.0, map_resolution = 0.0;
+
 
   nh.getParam("left_wheel_joint", left_wheel_joint);
   nh.getParam("right_wheel_joint", right_wheel_joint);
 
   nh.getParam("map_frame_id", map_frame_id);
   nh.getParam("odom_frame_id", odom_frame_id);
-  nh.getParam("marker_frame_id", marker_frame_id);
+  nh.getParam("body_frame_id", body_frame_id);
 
   nh.getParam("beam_min", beam_min);
   nh.getParam("beam_max", beam_max);
   nh.getParam("beam_delta", beam_delta);
   nh.getParam("range_min", range_min);
   nh.getParam("range_max", range_max);
+
+  nh.getParam("z_hit", z_hit);
+  nh.getParam("z_short", z_short);
+  nh.getParam("z_max", z_max);
+  nh.getParam("z_rand", z_rand);
+  nh.getParam("sigma_hit", sigma_hit);
+
+  nh.getParam("num_particles", num_particles);
+  nh.getParam("num_samples_mode", num_samples_mode);
+
+  nh.getParam("srr", srr);
+  nh.getParam("srt", srt);
+  nh.getParam("str", str);
+  nh.getParam("stt", stt);
+
+  nh.getParam("motion_noise_theta", motion_noise_theta);
+  nh.getParam("motion_noise_x", motion_noise_x);
+  nh.getParam("motion_noise_y", motion_noise_y);
+
+  nh.getParam("sample_range_theta", sample_range_theta);
+  nh.getParam("sample_range_x", sample_range_x);
+  nh.getParam("sample_range_y", sample_range_y);
+
+  nh.getParam("scan_likelihood_min", scan_likelihood_min);
+  nh.getParam("scan_likelihood_max", scan_likelihood_max);
+
+  nh.getParam("pose_likelihood_min", pose_likelihood_min);
+  nh.getParam("pose_likelihood_max", pose_likelihood_max);
+
+  nh.getParam("map_min", map_min);
+  nh.getParam("map_max", map_max);
+  nh.getParam("map_resolution", map_resolution);
+
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
@@ -207,10 +264,41 @@ int main(int argc, char** argv)
   ROS_INFO("range_min %f", range_min);
   ROS_INFO("range_max %f", range_max);
 
+  ROS_INFO("z_hit %f", z_hit);
+  ROS_INFO("z_short %f", z_short);
+  ROS_INFO("z_max %f", z_max);
+  ROS_INFO("z_rand %f", z_rand);
+  ROS_INFO("sigma_hit %f", sigma_hit);
 
-  ROS_WARN("map_frame_id %s", map_frame_id.c_str());
-  ROS_WARN("odom_frame_id %s", odom_frame_id.c_str());
-  ROS_WARN("marker_frame_id %s", marker_frame_id.c_str());
+  ROS_INFO("num_particles %d", num_particles);
+  ROS_INFO("num_samples_mode %d", num_samples_mode);
+
+  ROS_INFO("srr %f", srr);
+  ROS_INFO("srt %f", srt);
+  ROS_INFO("str %f", str);
+  ROS_INFO("stt %f", stt);
+
+  ROS_INFO("motion_noise_theta %.15f", motion_noise_theta);
+  ROS_INFO("motion_noise_x %.15f", motion_noise_x);
+  ROS_INFO("motion_noise_y %.15f", motion_noise_y);
+
+  ROS_INFO("sample_range_theta %.15f", sample_range_theta);
+  ROS_INFO("sample_range_x %.15f", sample_range_x);
+  ROS_INFO("sample_range_y %.15f", sample_range_y);
+
+  ROS_INFO("scan_likelihood_min %f", scan_likelihood_min);
+  ROS_INFO("scan_likelihood_max %f", scan_likelihood_max);
+
+  ROS_INFO("pose_likelihood_min %f", pose_likelihood_min);
+  ROS_INFO("pose_likelihood_max %f", pose_likelihood_max);
+
+  ROS_INFO("map_min %f", map_min);
+  ROS_INFO("map_max %f", map_max);
+  ROS_INFO("map_resolution %f", map_resolution);
+
+  ROS_INFO("map_frame_id %s", map_frame_id.c_str());
+  ROS_INFO("odom_frame_id %s", odom_frame_id.c_str());
+  ROS_INFO("body_frame_id %s", body_frame_id.c_str());
 
   ROS_INFO("left_wheel_joint %s", left_wheel_joint.c_str());
   ROS_INFO("right_wheel_joint %s", right_wheel_joint.c_str());
@@ -252,36 +340,31 @@ int main(int argc, char** argv)
   rigid2d::DiffDrive pf_drive(pose, wheel_base, wheel_radius);
 
 
-  // timing
-  int frequency = 60;
-  // ros::Rate loop_rate(frequency);
-
-
   /////////////////////////////////////////////////////////////////////////////
 
   // transform robot to lidar
   Transform2D Trs;
 
   // lidar properties
-  double z_hit = 0.95;
-  double z_short = 0.00; // not used in model
-  double z_max = 1.0 / 25.0;
-  double z_rand = 1.0 - z_hit - z_max;
-  double sigma_hit = 0.5;  // 0.5 also works okay, consider resolution of map
-
-//
   LaserProperties props(beam_min, beam_max, beam_delta, range_min, range_max,
                               z_hit, z_short, z_max, z_rand, sigma_hit);
 
   // grid mapping
-  GridMapper grid(0.05, -2, 2, -2, 2, props, Trs);
+  // set map as square
+  GridMapper grid(map_resolution, map_min, map_max, map_min, map_max, props, Trs);
 
   // pcl ICP
   ScanAlignment aligner(props, Trs);
 
 
   // particle filter
-  ParticleFilter pf(20, 50, frequency, aligner, robot_pose, grid);
+  ParticleFilter pf(num_particles, num_samples_mode,
+                    srr, srt, str, stt,
+                    motion_noise_theta, motion_noise_x, motion_noise_y,
+                    sample_range_theta, sample_range_x, sample_range_y,
+                    scan_likelihood_min, scan_likelihood_max,
+                    pose_likelihood_min, pose_likelihood_max,
+                    aligner, robot_pose, grid);
 
 
   // path from odometry
@@ -293,14 +376,18 @@ int main(int argc, char** argv)
   // path from gazebo
   nav_msgs::Path gazebo_path;
 
+  // error in pose
+  tsim::PoseError odom_error_msg;
+  tsim::PoseError slam_error_msg;
+
   /////////////////////////////////////////////////////////////////////////////
 
   // the map
   std::vector<int8_t> map;
 
   geometry_msgs::Pose map_pose;
-  map_pose.position.x = -2;
-  map_pose.position.y = -2;
+  map_pose.position.x = map_min;
+  map_pose.position.y = map_min;
   map_pose.position.z = 0;
   map_pose.orientation.x = 0;
   map_pose.orientation.y = 0;
@@ -310,9 +397,9 @@ int main(int argc, char** argv)
 
   nav_msgs::OccupancyGrid map_msg;
   map_msg.header.frame_id = map_frame_id;
-  map_msg.info.resolution = 0.05;
-  map_msg.info.width = 80;
-  map_msg.info.height = 80;
+  map_msg.info.resolution = map_resolution;
+  map_msg.info.width = static_cast<int> ((map_max - map_min) / map_resolution);
+  map_msg.info.height = static_cast<int> ((map_max - map_min) / map_resolution);;
 
   map_msg.info.origin = map_pose;
 
@@ -336,20 +423,6 @@ int main(int argc, char** argv)
       if (scan_update)
       {
         // do the slam
-        // grid.integrateScan(scan, robot_pose);
-        // grid.gridMap(map);
-        //
-        // std::cout << "P(z|m,x) " << std::endl;
-        // std::cout << grid.likelihoodFieldModel(scan, robot_pose) << std::endl;
-        //
-        // // find transform between scans
-        // Transform2D Tpcl;
-        // // initial guess
-        // Transform2D T_init;
-        //
-        // aligner.pclICPWrapper(Tpcl, T_init, scan);
-        // robot_pose = robot_pose * Tpcl;
-
         pf_drive.updateOdometry(pf_left, pf_right);
         cur_odom = pf_drive.pose();
         rigid2d::WheelVelocities vel = pf_drive.wheelVelocities();
@@ -411,6 +484,56 @@ int main(int argc, char** argv)
 
     /////////////////////////////////////////////////////////////////////////////
 
+    // broadcast transform from odom to base_link
+    // publish twist in odom message
+    rigid2d::WheelVelocities vel = drive.wheelVelocities();
+    rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
+
+
+    // convert yaw to Quaternion
+    tf2::Quaternion q;
+    q.setRPY(0, 0, pose.theta);
+    geometry_msgs::Quaternion odom_quat;
+    odom_quat = tf2::toMsg(q);
+
+
+    // broadcast transform between odom and body
+    geometry_msgs::TransformStamped odom_tf;
+    odom_tf.header.stamp = ros::Time::now();
+    odom_tf.header.frame_id = odom_frame_id;
+    odom_tf.child_frame_id = body_frame_id;
+
+    odom_tf.transform.translation.x = pose.x;
+    odom_tf.transform.translation.y = pose.y;
+    odom_tf.transform.translation.z = 0.0;
+    odom_tf.transform.rotation = odom_quat;
+
+    odom_broadcaster.sendTransform(odom_tf);
+
+
+    // publish odom message over ros
+    nav_msgs::Odometry odom;
+    odom.header.stamp = ros::Time::now();
+    odom.header.frame_id = odom_frame_id;
+    odom.child_frame_id = body_frame_id;
+
+
+    // pose in odom frame
+    odom.pose.pose.position.x = pose.x;
+    odom.pose.pose.position.y = pose.y;
+    odom.pose.pose.position.z = 0.0;
+    odom.pose.pose.orientation = odom_quat;
+
+    // velocity in body frame
+    odom.twist.twist.linear.x = vb.vx;
+    odom.twist.twist.linear.y = 0.0;
+    odom.twist.twist.angular.z = vb.w;
+
+    odom_pub.publish(odom);
+
+
+    /////////////////////////////////////////////////////////////////////////////
+
     // path from SLAM
     geometry_msgs::PoseStamped slam_pose;
     TransformData2D pose_map_robot = Tmr.displacement();
@@ -463,53 +586,40 @@ int main(int argc, char** argv)
 
     /////////////////////////////////////////////////////////////////////////////
 
+    // publish the map
     map_pub.publish(map_msg);
-    // loop_rate.sleep();
 
-    rigid2d::WheelVelocities vel = drive.wheelVelocities();
-    rigid2d::Twist2D vb = drive.wheelsToTwist(vel);
+    /////////////////////////////////////////////////////////////////////////////
 
+    // ground truth robot heading
+    tf2::Quaternion gazebo_robot_quat(gazebo_robot_pose.pose.orientation.x,
+                               gazebo_robot_pose.pose.orientation.y,
+                               gazebo_robot_pose.pose.orientation.z,
+                               gazebo_robot_pose.pose.orientation.w);
 
-    // convert yaw to Quaternion
-    tf2::Quaternion q;
-    q.setRPY(0, 0, pose.theta);
-    geometry_msgs::Quaternion odom_quat;
-    odom_quat = tf2::toMsg(q);
-
-
-    // broadcast transform between odom and body
-    geometry_msgs::TransformStamped odom_tf;
-    odom_tf.header.stamp = ros::Time::now();
-    odom_tf.header.frame_id = odom_frame_id;
-    odom_tf.child_frame_id = "base_link";
-
-    odom_tf.transform.translation.x = pose.x;
-    odom_tf.transform.translation.y = pose.y;
-    odom_tf.transform.translation.z = 0.0;
-    odom_tf.transform.rotation = odom_quat;
-
-    odom_broadcaster.sendTransform(odom_tf);
+    tf2::Matrix3x3 mat(gazebo_robot_quat);
+    auto roll = 0.0, pitch = 0.0 , yaw = 0.0;
+    mat.getRPY(roll, pitch, yaw);
 
 
-    // publish odom message over ros
-    nav_msgs::Odometry odom;
-    odom.header.stamp = ros::Time::now();
-    odom.header.frame_id = odom_frame_id;
-    odom.child_frame_id = "base_link";
+    // odometry error
+    odom_error_msg.x_error = gazebo_robot_pose.pose.position.x - pose.x;
+    odom_error_msg.y_error = gazebo_robot_pose.pose.position.y - pose.y;
 
+    odom_error_msg.theta_error = normalize_angle_PI(normalize_angle_PI(yaw) - \
+                                                     normalize_angle_PI(pose.theta));
 
-    // pose in odom frame
-    odom.pose.pose.position.x = pose.x;
-    odom.pose.pose.position.y = pose.y;
-    odom.pose.pose.position.z = 0.0;
-    odom.pose.pose.orientation = odom_quat;
+    // slam error
+    TransformData2D Trd_mr = Tmr.displacement();
 
-    // velocity in body frame
-    odom.twist.twist.linear.x = vb.vx;
-    odom.twist.twist.linear.y = 0.0;
-    odom.twist.twist.angular.z = vb.w;
+    slam_error_msg.x_error = gazebo_robot_pose.pose.position.x - Trd_mr.x;
+    slam_error_msg.y_error = gazebo_robot_pose.pose.position.y - Trd_mr.y;
 
-    odom_pub.publish(odom);
+    slam_error_msg.theta_error = normalize_angle_PI(normalize_angle_PI(yaw) - \
+                                                     normalize_angle_PI(Trd_mr.theta));
+
+    odom_error_pub.publish(odom_error_msg);
+    slam_error_pub.publish(slam_error_msg);
   }
 
   return 0;
