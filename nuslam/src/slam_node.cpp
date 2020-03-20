@@ -251,7 +251,7 @@ int main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////////////////
 
-  tf2_ros::TransformBroadcaster odom_broadcaster;
+  tf2_ros::TransformBroadcaster slam_broadcaster;
   map_flag = false;
   wheel_odom_flag = false;
   // srv_active = false;
@@ -371,7 +371,7 @@ int main(int argc, char** argv)
     tf_mo.transform.translation.z = 0.0;
     tf_mo.transform.rotation = quat_mo;
 
-    odom_broadcaster.sendTransform(tf_mo);
+    slam_broadcaster.sendTransform(tf_mo);
 
     /////////////////////////////////////////////////////////////////////////////
 
