@@ -1,6 +1,6 @@
 - git:
     local-name: turtle-nav-stack
-    uri: https://github.com/ME495-Navigation/main-assignment-bostoncleek.git
+    uri: https://https://github.com/ME495-Navigation/main-assignment-bostoncleek/tree/feature/bmapping
 - git:
     local-name: nuturtlebot
     uri: https://github.com/ME495-Navigation/nuturtlebot.git
