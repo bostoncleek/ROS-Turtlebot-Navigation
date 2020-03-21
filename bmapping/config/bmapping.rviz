@@ -101,22 +101,12 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_body:
-          Value: false
         base_link:
           Value: true
-        base_scan:
-          Value: true
-        caster:
-          Value: false
-        left_wheel:
-          Value: false
         map:
           Value: true
         odom:
           Value: true
-        right_wheel:
-          Value: false
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
@@ -126,15 +116,7 @@ Visualization Manager:
         map:
           odom:
             base_link:
-              base_body:
-                base_scan:
-                  {}
-                caster:
-                  {}
-                left_wheel:
-                  {}
-                right_wheel:
-                  {}
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -293,10 +275,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4797964096069336
+      Pitch: 1.544796347618103
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.1354126930236816
+      Yaw: 3.1404130458831787
     Saved: ~
 Window Geometry:
   Displays:
@@ -314,5 +296,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1430
-  X: 2410
+  X: 1947
   Y: 0
