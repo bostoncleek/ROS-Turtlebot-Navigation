@@ -44,8 +44,12 @@ The final error in the pose relative to gazebo is given bellow. The map was crea
 
 <figure align="center">
   <img src="/images/slam_map.jpg" width="300" height="300"/>
-  <img src="/images/slam_path.jpg" width="300" height="300"/>
+  <!-- <img src="/images/slam_path.jpg" width="300" height="300"/> -->
 </figure>
+
+
+<img src="images/slam_map.jpg" width="100" />
+
 
 # Algorithms
 * The Rao-Blackwellized Particle Filter Algorithm from ["Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters"](http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti07tro.pdf)
