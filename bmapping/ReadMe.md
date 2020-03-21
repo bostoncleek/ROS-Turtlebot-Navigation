@@ -1,5 +1,3 @@
-FORMAT: 1A
-HOST: http://www.google.com
 
 Boston Cleek
 
@@ -44,10 +42,10 @@ The final error in the pose relative to gazebo is given bellow. The map was crea
 
 <center>
 
-              |          |      X Error (cm)      |  Y Error (cm) |  Yaw Error  (degrees) |
-              |----------|:-----------------:|---------:|-----------:|
-              |  Odometry  |  19.5     |   -10.5    |     2.62      |
-              | RBPF SLAM   |     -1.04      |   3.81    |     1.98       |
+|          |      X Error (cm)      |  Y Error (cm) |  Yaw Error  (degrees) |
+|----------|:-----------------:|---------:|-----------:|
+|  Odometry  |  19.5     |   -10.5    |     2.62      |
+| RBPF SLAM   |     -1.04      |   3.81    |     1.98       |
 
 </center>
 
