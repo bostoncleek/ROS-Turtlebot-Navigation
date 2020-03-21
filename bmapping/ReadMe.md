@@ -65,7 +65,7 @@ The final error in the pose relative to gazebo is given bellow. The map was crea
 # Algorithms
 * The Rao-Blackwellized Particle Filter Algorithm from ["Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters"](http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti07tro.pdf)
 * Fast Marching Method - Creates [Euclidean Signed Distance Field](https://en.wikipedia.org/wiki/Signed_distance_function) (required for the scan likelihood)
-* Iterative Closest Point - Point Cloud Library ICP solver
+* Iterative Closest Point - Point Cloud Library [ICP](http://ais.informatik.uni-freiburg.de/teaching/ss11/robotics/slides/17-icp.pdf) solver
 * Occupancy Grid Mapping - Probabilistic Robotics Table 9.1
 * Updated the Occupancy Grid using Raycasting [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
 * Pose Likelihood - Probabilistic Robotics Table 5.5
