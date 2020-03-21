@@ -16,7 +16,7 @@
     <param name="body_frame_id" value="base_link" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
     <param name="right_wheel_joint" value="right_wheel_axle" />
-    <param name="num_particles" value="20" />
+    <param name="num_particles" value="40" />
     <param name="num_samples_mode" value="50" />
     <param name="srr" value="0.1" />
     <param name="srt" value="0.2" />
@@ -42,6 +42,11 @@
     <param name="map_resolution" value="0.05" />
   </node>
 
+  <!-- teleop -->
+  <group if="$(eval arg('robot') != 0)">
+    <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
+       name="turtlebot3_teleop_keyboard"  output="screen" />
+  </group>
 
 
   <!-- turtlebot3 diff drive params -->
