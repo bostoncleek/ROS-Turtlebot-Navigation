@@ -43,7 +43,7 @@ The final error in the pose relative to gazebo is given bellow. The map was crea
 | RBPF SLAM   |     -1.04      |   3.81    |     1.98       |
 
 <figure align="center">
-  <img src="/images/slam_map.jpg" width="300" height="300"/>
+  <img src="images/slam_map.jpg" width="300" height="300"/>
   <!-- <img src="/images/slam_path.jpg" width="300" height="300"/> -->
 </figure>
 
