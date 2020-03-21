@@ -35,7 +35,7 @@ The `slam` node performs odometry and SLAM by subscribing to `scan`, `joint_stat
 # Results
 <figure align="center">
   <img src="/images/slam/rbpf_paths.jpg" width="550" height="550"/>
-  <img src="/public/images/slam/rbpf_map.jpg" width="550" height="550"/>
+  <img src="/images/slam/rbpf_map.jpg" width="550" height="550"/>
 </figure>
 
 # Algorithms
