@@ -39,6 +39,10 @@ The ground truth path from gazebo is orange, SLAM is blue, and odometry is green
 The final error in the pose relative to gazebo is given bellow. The map was created using 40 particles.
 
 
+ [![Watch the video](images/rbpf_slam_map.jpg)](https://youtu.be/HRo5VI21qYo)
+
+
+
 
 <center>
 
