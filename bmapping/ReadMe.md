@@ -33,9 +33,18 @@ The `slam` node performs odometry and SLAM by subscribing to `scan`, `joint_stat
 
 
 # Results
+
+The ground truth path from gazebo is orange, SLAM is blue, and odometry is green.
+The final error in the pose relative to gazebo is given bellow. The map was created using 40 particles.
+
+|          |      X Error (cm)      |  Y Error (cm) |  Yaw Error  (degrees) |
+|----------|:-----------------:|---------:|-----------:|
+|  Odometry  |  19.5     |   -10.5    |     2.62      |
+| RBPF SLAM   |     -1.04      |   3.81    |     1.98       |
+
 <figure align="center">
-  <img src="/images/rbpf_paths.jpg" width="300" height="300"/>
   <img src="/images/rbpf_map.jpg" width="300" height="300"/>
+  <img src="/images/rbpf_path.jpg" width="300" height="300"/>
 </figure>
 
 # Algorithms
