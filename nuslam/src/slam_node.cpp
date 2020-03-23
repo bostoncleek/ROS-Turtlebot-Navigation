@@ -12,6 +12,7 @@
 ///   right_wheel_joint - name of right wheel joint
 ///   wheel_base - distance between wheels
 ///   wheel_radius - radius of wheels
+///   known_data_association - EKF runs with or without know data association
 /// PUBLISHES:
 ///   slam_path (nav_msgs/Path): trajectory from EKF slam
 ///   odom_path (nav_msgs/Path): trajectory from odometry
@@ -73,6 +74,7 @@ static bool wheel_odom_flag;                               // odometry update
 static std::vector<Vector2D> meas;                         // x/y locations of cylinders relative to robot
 static bool map_flag;                                      // map update flag
 
+static bool known_data_association;                        // EKF runs with or without know data association
 static geometry_msgs::PoseStamped gazebo_robot_pose;       // pose of robot in gazebo
 
 
@@ -196,6 +198,8 @@ int main(int argc, char** argv)
   nh.getParam("odom_frame_id", odom_frame_id);
   nh.getParam("marker_frame_id", marker_frame_id);
 
+  nh.getParam("known_data_association", known_data_association);
+
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
@@ -210,6 +214,9 @@ int main(int argc, char** argv)
 
   ROS_INFO("wheel_base %f", wheel_base);
   ROS_INFO("wheel_radius %f", wheel_radius);
+
+  ROS_INFO("known_data_association %d", known_data_association);
+
 
   ROS_INFO("Successfully launched slam node");
 
@@ -281,8 +288,15 @@ int main(int argc, char** argv)
         rigid2d::WheelVelocities vel = ekf_drive.wheelVelocities();
         rigid2d::Twist2D vb = ekf_drive.wheelsToTwist(vel);
 
-        // ekf.knownCorrespondenceSLAM(meas, vb);
-        ekf.SLAM(meas, vb);
+        if (known_data_association)
+        {
+          ekf.knownCorrespondenceSLAM(meas, vb);
+        }
+
+        else
+        {
+          ekf.SLAM(meas, vb);
+        }
 
         map_flag = false;
       }
