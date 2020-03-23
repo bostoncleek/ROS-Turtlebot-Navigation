@@ -1,7 +1,7 @@
 #ifndef FILTER_HPP
 #define FILTER_HPP
 /// \file
-/// \brief
+/// \brief EKF SLAM with known and unknown correspondence
 #include <angles/angles.h>
 
 
@@ -47,20 +47,30 @@ namespace nuslam
   /// \returns - random samples
   VectorXd sampleMultivariateDistribution(const MatrixXd &cov);
 
-
+  /// \brief Compose distance from 1.0 to the next largest double-precision number
+  /// \param x - the double to query
+  /// returns - the distance
   double eps(double x);
 
+  /// \brief Determine whether A is symmetric positive definite
+  /// \param A - matrix to test
+  /// \returns true is A is SPD
   bool isSPD(const Ref<MatrixXd> A);
 
+  /// \brief Compose nearest SPD matrix to A
+  /// \param A - covariance matrix that may not be SPD
+  /// A_hat[out] - nearest SPD matrix to A
   void nearestSPD(const Ref<MatrixXd> A, Ref<MatrixXd> A_hat);
 
 
-
+  /// \brief Stores data for a landmark
   struct LM
   {
+    // x/y location in map frame
     double x = 0.0;
     double y = 0.0;
 
+    // range and bearing relative to robot
     double r = 0.0;
     double b = 0.0;
   };
@@ -70,11 +80,11 @@ namespace nuslam
   class EKF
   {
   public:
+    /// \brief Construct EKF
+    /// \param num_lm - number of landmarks used in filter
+    /// \param md_max - mahalanobis distance threshold for adding new landmark
+    /// \param md_min - mahalanobis distance threshold for updating landmark
     EKF(int num_lm, double md_max, double md_min);
-
-    /// \brief Set known landmarks
-    /// \param lm - (x,y,id) in map for landmarks
-    // void setKnownLandamrks(const std::vector<Vector3d> &landmarks);
 
     /// \brief Updates the stated vector
     /// \param meas - x/y coordinates of landmarks in the robot frame
@@ -140,15 +150,10 @@ namespace nuslam
     /// state_bar[out] - estimated state vector
     void newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar);
 
-
-
     int n;                         // max number of landmarks, determines state size
     int N;                         // number of landmarks in state vector
     int L;                         // number of landmarks observed
     int state_size;                // size of state vector
-
-    double md_sum;
-    int count;
 
     double dmax, dmin;             // max and min mahalanobis distance thresholds
 
@@ -160,21 +165,12 @@ namespace nuslam
     MatrixXd measurement_noise;    // noise in measurement model
     MatrixXd process_noise;        // process noise matrix
 
-    // // for known correspondences
-    // std::vector<Vector3d> lm;
-
     // landmark j in state
     std::vector<int> lm_j;
 
-    // number of timers landmark j is observed
-    // std::vector<int> lm_counts;
 
 
   };
-
-
-
-
 
 } // end namespace
 

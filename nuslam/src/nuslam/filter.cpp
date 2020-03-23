@@ -140,23 +140,8 @@ EKF::EKF(int num_lm, double md_max, double md_min)
   // total state vector size robot plus landmarks
   state_size = 3 + 2 * n;
 
-  // for(auto i = 0; i < n; i++)
-  // {
-  //   lm_counts.push_back(0);
-  // }
-
-  count = 0;
-  md_sum = 0.0;
-
   initFilter();
 }
-
-
-// void EKF::setKnownLandamrks(const std::vector<Vector3d> &landmarks)
-// {
-//   lm = landmarks;
-// }
-
 
 
 /// \brief Updates the stated vector
@@ -312,7 +297,7 @@ void EKF::SLAM(const std::vector<Vector2D> &meas, const Twist2D &u)
     // find index of d* (min mahalanobis distance)
     auto j = std::min_element(distances.begin(), distances.end()) - distances.begin();
     const auto dstar = distances.at(j);
-    std::cout << "Min mahalanobis distance: " << dstar << std::endl;
+    // std::cout << "Min mahalanobis distance: " << dstar << std::endl;
 
 
 
