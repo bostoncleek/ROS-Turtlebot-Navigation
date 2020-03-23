@@ -28,6 +28,13 @@ std::mt19937_64 &getTwister()
 }
 
 
+double sampleNormalDistribution(const double mu, const double sigma)
+{
+  std::normal_distribution<double> dis(mu, sigma);
+  return dis(getTwister());
+}
+
+
 VectorXd sampleStandardNormal(int n)
 {
   VectorXd rand_vec = VectorXd::Zero(n);
