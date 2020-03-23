@@ -27,7 +27,7 @@
 
 
   <!-- teleop -->
-  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard" />
+  <!-- <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
+       name="turtlebot3_teleop_keyboard" /> -->
 
 </launch>
