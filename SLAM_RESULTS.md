@@ -19,7 +19,7 @@ sensor noise: mean = 0.0 sigma = 0.00001
 </p>
 
 
-# L.002 SLAM Unknown Data Association
+# L.003 SLAM Unknown Data Association
 
 landmark radius: 0.6 m
 sensor noise: mean = 0.0 sigma = 0.01
