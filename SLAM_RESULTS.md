@@ -15,7 +15,7 @@ sensor noise: mean = 0.0 sigma = 0.00001
 | EKF SLAM   |     0.000      |   0.000    |     0.008       |
 
 <p align="center">
-  <img src="media/ekf_known.png" width="350" height="350"/>
+  <img src="nuslam/media/ekf_known.png" width="350" height="350"/>
 </p>
 
 
@@ -31,5 +31,5 @@ sensor noise: mean = 0.0 sigma = 0.01
 
 
 <p align="center">
-  <img src="images/ekf_unknown.png" width="350" height="350"/>
+  <img src="nuslam/images/ekf_unknown.png" width="350" height="350"/>
 </p>
