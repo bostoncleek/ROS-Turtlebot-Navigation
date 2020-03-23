@@ -11,9 +11,12 @@
   <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>angles</build_depend>
+
   <!-- <build_depend>message_runtime</build_depend> -->
   <build_depend>std_msgs</build_depend>
   <build_depend>rigid2d</build_depend>
+  <build_depend>tsim</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>tf2</build_depend>
@@ -24,6 +27,7 @@
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>gazebo_ros</build_export_depend>
   <build_export_depend>tf2</build_export_depend>
+  <build_export_depend>angles</build_export_depend>
 
 
   <exec_depend>roscpp</exec_depend>

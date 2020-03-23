@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	angles
 	gazebo_ros
 	geometry_msgs
 	message_generation
@@ -24,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(tsim REQUIRED)
 find_package(rigid2d REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -115,6 +117,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
+ 	 angles
  	 gazebo_ros
  	 geometry_msgs
  	 message_runtime
@@ -135,6 +138,7 @@ catkin_package(
 include_directories(
 	include
   ${catkin_INCLUDE_DIRS}
+	${tsim_INCLUDE_DIRS}
 	${rigid2d_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIRS}
 )
@@ -198,6 +202,7 @@ target_link_libraries(landmarks
 target_link_libraries(slam
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
+	${tsim_LIBRARIES}
 	${rigid2d_LIBRARIES}
 	${EIGEN3_LIBRARIES}
 )
