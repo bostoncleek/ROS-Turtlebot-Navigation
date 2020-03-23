@@ -46,6 +46,9 @@
   <group ns="real">
     <node machine="turtlebot" name="analysis" pkg="nuslam" type="analysis" output="screen" >
       <param name="radius" value="0.6" />
+      <param name="noise" value="true" />
+      <param name="noise_mean" value="0.0" />
+      <param name="noise_var" value="0.00001" />
       <param name="frame_id" value="base_scan" />
     </node>
   </group>
