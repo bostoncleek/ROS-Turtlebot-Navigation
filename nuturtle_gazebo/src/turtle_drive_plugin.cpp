@@ -75,7 +75,7 @@ namespace gazebo
         else
         {
           left_wheel_joint = _sdf->GetElement("left_wheel_joint")->Get<std::string>();
-          ROS_WARN("%s", left_wheel_joint.c_str());
+          ROS_INFO("%s", left_wheel_joint.c_str());
         }
 
         // right_joint_name
@@ -87,7 +87,7 @@ namespace gazebo
         else
         {
           right_wheel_joint = _sdf->GetElement("right_wheel_joint")->Get<std::string>();
-          ROS_WARN("%s", right_wheel_joint.c_str());
+          ROS_INFO("%s", right_wheel_joint.c_str());
         }
 
         // encoder_tics_per_rev
