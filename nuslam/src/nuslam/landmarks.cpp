@@ -51,7 +51,7 @@ Landmarks::Landmarks(const LaserProperties &props, double epsilon)
                             range_min(props.range_min),
                             range_max(props.range_max),
                             epsilon(epsilon),
-                            radius_thresh(0.07),
+                            radius_thresh(0.05),
                             angle_std(0.30),
                             mu_min(90.0),
                             mux_max(135.0),
@@ -249,94 +249,6 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
   }
 
 }
-
-
-
-
-// void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
-// {
-//   // TODO: fixed the edge case where the scan starts in the center of
-//   //        a cluster. This is was causing a segfault during testing.
-//
-//
-//   // clear current landmarks
-//   lm.clear();
-//
-//   // store points in temp vector
-//   std::vector<Vector2D> temp_points;
-//
-//   // compare previous and current points
-//   Vector2D curr_point, prev_point;
-//   curr_point = end_points.at(0);
-//   prev_point = curr_point;
-//
-//   for(unsigned int i = 0; i < end_points.size(); i++)
-//   {
-//     curr_point = end_points.at(i);
-//
-//     const auto dist = pointDistance(curr_point, prev_point);
-//
-//     // std::cout << "----------------" << std::endl;
-//     // std::cout << curr_point;
-//     // std::cout << prev_point;
-//     // std::cout << dist << std::endl;
-//     // std::cout << "----------------" << std::endl;
-//
-//     if (dist <= epsilon)
-//     {
-//       // std::cout << "in cluster" << std::endl;
-//       temp_points.push_back(end_points.at(i));
-//     }
-//
-//
-//     else if (dist > epsilon)
-//     {
-//       // check if temp as less than three points
-//       if (temp_points.size() >= 4)
-//       {
-//         // std::cout << "new cluster" << std::endl;
-//
-//         // create new cluster
-//         // and add cluster to landmarks
-//         Cluster cluster(temp_points);
-//         lm.push_back(cluster);
-//       }
-//
-//       // clear temp list
-//       temp_points.clear();
-//     }
-//
-//     prev_point = curr_point;
-//
-//   } // end loop
-//
-//   // std::cout << temp_points.size() << std::endl;
-//   // possibly there is only one cluster to add
-//   if (lm.empty() and temp_points.size() >= 4)
-//   {
-//     // std::cout << "one cluster" << std::endl;
-//     Cluster cluster(temp_points);
-//     lm.push_back(cluster);
-//   }
-//
-//
-//   // compare last point to first point
-//   // check if they are within the same cluster
-//   // if (lm.size() > 1)
-//   // {
-//   //   const auto dist = pointDistance(end_points.front(), end_points.back());
-//   //
-//   //   if (dist <= epsilon)
-//   //   {
-//   //     // std::cout << "scan in center of cluster" << std::endl;
-//   //     lm.front().points.insert(lm.front().points.end(),
-//   //                              lm.back().points.begin(),
-//   //                              lm.back().points.end());
-//   //
-//   //     lm.pop_back();
-//   //   }
-//   // }
-// }
 
 
 void Landmarks::centroid(Cluster &cluster)
@@ -604,28 +516,5 @@ bool Landmarks::classifyCircles(const Cluster &cluster)
 
 
 } // end namespace
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // end file
