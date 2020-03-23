@@ -1,14 +1,17 @@
 /// \file
-/// \brief
+/// \brief Publish the model states in gazebo within a specified radius
 ///
 /// \author Boston Cleek
 /// \date 3/5/20
 ///
+/// PARAMETERS:
+///   frame_id - frame the models are in
+///   radius - distance away from the robot to look for cylinders
 /// PUBLISHES:
-///
+///   landmarks (nuslam::TurtleMap): center and radius of all cylinders
+///   robot_pose (geometry_msgs::Pose): pose of robot in gazebo
 /// SUBSCRIBES:
-///
-/// SERVICES:
+///   /gazebo/model_states (gazebo_msgs/ModelStates): model states from grazebo
 
 
 #include <ros/ros.h>
@@ -32,14 +35,17 @@ using rigid2d::TransformData2D;
 
 using nuslam::pointDistance;
 
-static double radius_circles;
-static double radius;
-static std::string frame_id;
-static geometry_msgs::Pose robot_pose;
-static nuslam::TurtleMap map;
-static bool model_update;
+static double radius_circles;               // radius of cylinders in gazebo
+static double radius;                       // search radius
+static std::string frame_id;                // frame to publish models in
+static geometry_msgs::Pose robot_pose;      // pose of robot in gazebo
+static nuslam::TurtleMap map;               // map of cylinders
+static bool model_update;                   // model states update flag
 
 
+
+/// \brief  Retreive gazebo robot pose
+/// \param model_data - model states in world
 void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
 {
   // store names of all items in gazebo
@@ -166,14 +172,16 @@ int main(int argc, char** argv)
   nh.getParam("radius", radius);
   nh.getParam("frame_id", frame_id);
 
-  ROS_WARN("search radius %f\n", radius);
-  ROS_WARN("frame_id %s\n", frame_id.c_str());
+  ROS_INFO("search radius %f\n", radius);
+  ROS_INFO("frame_id %s\n", frame_id.c_str());
 
   ROS_INFO("Successfully launched analysis node");
 
   // hard code radius of circles to publish in map
   radius_circles = 0.05;
 
+  // int frequency = 5;
+  // ros::Rate loop_rate(frequency);
 
   while(node_handle.ok())
   {
@@ -189,35 +197,12 @@ int main(int argc, char** argv)
 
       model_update = false;
     }
+    // loop_rate.sleep();
+
   }
 
 return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // end file

@@ -1,14 +1,15 @@
 /// \file
-/// \brief
+/// \brief Detects and extracts circular features in laser scan
 ///
 /// \author Boston Cleek
 /// \date 2/27/20
 ///
+/// PARAMETERS:
+///   frame_id - frame the circles are in
 /// PUBLISHES:
-///
+///   landmarks (nuslam::TurtleMap): center and radius of all circles detected
 /// SUBSCRIBES:
-///
-/// SERVICES:
+///   scan (sensor_msgs/LaserScan): Lidar scan
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -31,27 +32,12 @@ using rigid2d::Vector2D;
 using rigid2d::deg2rad;
 
 
-static std::vector<float> scan;
-static bool scan_update;
+static std::vector<float> scan;         // lidar scan
+static bool scan_update;                // scan update flag
 
 
-
-
-void pointCloud(const std::vector<Vector2D> &end_points,
-                sensor_msgs::PointCloud &point_cloud)
-{
-  for(const auto &point : end_points)
-  {
-    geometry_msgs::Point32 p;
-    p.x = point.x;
-    p.y = point.y;
-    p.z = 0.05;
-
-    point_cloud.points.push_back(p);
-  }
-}
-
-
+/// \brief Update the scan
+/// \param msg -lidar scan
 void scanCallback(const sensor_msgs::LaserScan::ConstPtr &msg)
 {
   scan = msg->ranges;
@@ -69,15 +55,11 @@ int main(int argc, char** argv)
   ros::Subscriber scan_sub = node_handle.subscribe("scan", 1, scanCallback);
   ros::Publisher circle_pub = node_handle.advertise<nuslam::TurtleMap>("landmarks", 1);
 
-
-  ros::Publisher cloud_pub = node_handle.advertise<sensor_msgs::PointCloud>("point_cloud_test", 100);
-
-
   // frame id
   std::string frame_id;
   nh.getParam("frame_id", frame_id);
 
-  ROS_WARN("frame_id %s\n", frame_id.c_str());
+  ROS_INFO("frame_id %s\n", frame_id.c_str());
 
   ROS_INFO("Successfully launched landmarks node");
 
@@ -118,49 +100,14 @@ int main(int argc, char** argv)
         map.cy.push_back(landmarks.lm.at(i).y_hat);
         map.r.push_back(landmarks.lm.at(i).radius);
 
-
-
-
-        // std::cout << "radius: " << landmarks.lm.at(i).radius <<
-        //              " cx: " << landmarks.lm.at(i).x_hat <<
-        //              " cy: " << landmarks.lm.at(i).y_hat << std::endl;
-
-
       }
       circle_pub.publish(map);
       scan_update = false;
-
-
-
-      // point cloud for testing
-      // std::vector<Vector2D> end_points;
-      // landmarks.laserEndPoints(end_points, scan);
-
-      // sensor_msgs::PointCloud point_cloud;
-      // point_cloud.header.stamp = ros::Time::now();
-      // point_cloud.header.frame_id = "base_scan";
-      // pointCloud(end_points, point_cloud);
-
-      // if (!landmarks.lm.empty())
-      // {
-      //   for(unsigned int i = 0; i < landmarks.lm.size(); i++)
-      //   {
-      //     pointCloud(landmarks.lm.at(i).points, point_cloud);
-      //     cloud_pub.publish(point_cloud);
-      //   }
-      // }
 
     }
   }
   return 0;
 }
-
-
-
-
-
-
-
 
 
 // end file
