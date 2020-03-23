@@ -9,7 +9,7 @@ The orange path is gazebo, the green path is odometry, and the blue path is EKF 
 landmark radius: 0.6 m
 sensor noise: mean = 0.0 sigma = 0.00001
 
-|          |      X Error (cm)      |  Y Error (cm) |  Yaw Error  (degrees) |
+|          |      X Error (m)      |  Y Error (m) |  Yaw Error  (degrees) |
 |----------|:-----------------:|---------:|-----------:|
 |  Odometry  |  0.030     |   0.099    |     -7.964      |
 | EKF SLAM   |     0.000      |   0.000    |     0.008       |
@@ -24,7 +24,7 @@ sensor noise: mean = 0.0 sigma = 0.00001
 landmark radius: 0.6 m
 sensor noise: mean = 0.0 sigma = 0.01
 
-|          |      X Error (cm)      |  Y Error (cm) |  Yaw Error  (degrees) |
+|          |      X Error (m)      |  Y Error (m) |  Yaw Error  (degrees) |
 |----------|:-----------------:|---------:|-----------:|
 |  Odometry  |  0.015     |   0.084   |     -6.975      |
 | EKF SLAM   |     -0.008      |   0.038    |     -1.633      |
