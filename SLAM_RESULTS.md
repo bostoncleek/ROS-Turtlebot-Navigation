@@ -31,5 +31,5 @@ sensor noise: mean = 0.0 sigma = 0.01
 
 
 <p align="center">
-  <img src="nuslam/images/ekf_unknown.png" width="350" height="350"/>
+  <img src="nuslam/media/ekf_unknown.png" width="350" height="350"/>
 </p>
