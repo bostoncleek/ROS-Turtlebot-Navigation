@@ -22,6 +22,7 @@
     <param name="marker_frame_id" value="map" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
     <param name="right_wheel_joint" value="right_wheel_axle" />
+    <param name="known_data_association" value="false" />
   </node>
 
 
