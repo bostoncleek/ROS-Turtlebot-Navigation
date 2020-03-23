@@ -7,6 +7,8 @@
 /// PARAMETERS:
 ///   frame_id - frame the models are in
 ///   radius - distance away from the robot to look for cylinders
+///   noise_mean - mean of the gaussian noise added to gazebo states
+///   noise_var - variance of the gaussian noise added to gazebo states
 /// PUBLISHES:
 ///   landmarks (nuslam::TurtleMap): center and radius of all cylinders
 ///   robot_pose (geometry_msgs::Pose): pose of robot in gazebo
@@ -20,6 +22,7 @@
 #include <geometry_msgs/Pose.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <string>
 #include <vector>
@@ -27,6 +30,7 @@
 
 #include <rigid2d/rigid2d.hpp>
 #include "nuslam/landmarks.hpp"
+#include "nuslam/filter.hpp"
 #include "nuslam/TurtleMap.h"
 
 using rigid2d::Vector2D;
@@ -34,6 +38,7 @@ using rigid2d::Transform2D;
 using rigid2d::TransformData2D;
 
 using nuslam::pointDistance;
+using nuslam::sampleNormalDistribution;
 
 static double radius_circles;               // radius of cylinders in gazebo
 static double radius;                       // search radius
@@ -41,7 +46,9 @@ static std::string frame_id;                // frame to publish models in
 static geometry_msgs::Pose robot_pose;      // pose of robot in gazebo
 static nuslam::TurtleMap map;               // map of cylinders
 static bool model_update;                   // model states update flag
-
+static double noise_mean;                   // noise to add to model states
+static double noise_var;                    // variance of noise to add to model states
+static bool noise;                          // decide whether or not to add noise
 
 
 /// \brief  Retreive gazebo robot pose
@@ -77,6 +84,9 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
   } // end loop
 
 
+
+
+
   // pose of robot
   robot_pose.position = model_data->pose[robot_index].position;
   robot_pose.orientation = model_data->pose[robot_index].orientation;
@@ -89,6 +99,7 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
   tf2::Matrix3x3 mat(robot_quat);
   auto roll = 0.0, pitch = 0.0 , yaw = 0.0;
   mat.getRPY(roll, pitch, yaw);
+
 
 
 
@@ -128,8 +139,16 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
     // note: use relative position of landmarks
     if (pointDistance(p1, p2) <= radius)
     {
-      map.cx.push_back(plr.x);
-      map.cy.push_back(plr.y);
+      if (noise)
+      {
+        map.cx.push_back(plr.x + sampleNormalDistribution(noise_mean, noise_var));
+        map.cy.push_back(plr.y + sampleNormalDistribution(noise_mean, noise_var));
+      }
+      else
+      {
+        map.cx.push_back(plr.x);
+        map.cy.push_back(plr.y);
+      }
 
       // hard code radius of circle
       map.r.push_back(radius_circles);
@@ -144,6 +163,18 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
       // hard code radius of circle
       map.r.push_back(radius_circles);
     }
+  }
+
+
+  if (noise)
+  {
+    robot_pose.position.x += sampleNormalDistribution(noise_mean, noise_var);
+    robot_pose.position.y += sampleNormalDistribution(noise_mean, noise_var);
+
+    yaw += sampleNormalDistribution(noise_mean, noise_var);
+    tf2::Quaternion robot_noise_quat;
+    robot_noise_quat.setRPY(yaw, 0.0, 0.0);
+    robot_pose.orientation = tf2::toMsg(robot_noise_quat);
   }
 
 
@@ -172,8 +203,19 @@ int main(int argc, char** argv)
   nh.getParam("radius", radius);
   nh.getParam("frame_id", frame_id);
 
+  nh.getParam("noise", noise);
+
+
+  nh.getParam("noise_mean", noise_mean);
+  nh.getParam("noise_var", noise_var);
+
+
   ROS_INFO("search radius %f\n", radius);
+  ROS_INFO("noise_mean %f\n", noise_mean);
+  ROS_INFO("noise_var %f\n", noise_var);
+
   ROS_INFO("frame_id %s\n", frame_id.c_str());
+  ROS_INFO("noise %d\n", noise);
 
   ROS_INFO("Successfully launched analysis node");
 
