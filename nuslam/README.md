@@ -1,6 +1,6 @@
 Boston Cleek
 
-# How to run;
+# How to run
 To run with ground truth data from gazebo:
 
 `roslaunch nulsam slam.launch debug:=true`
