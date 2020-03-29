@@ -25,10 +25,4 @@
     <param name="known_data_association" value="false" />
   </node>
 
-
-
-  <!-- teleop -->
-  <!-- <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard" /> -->
-
 </launch>
