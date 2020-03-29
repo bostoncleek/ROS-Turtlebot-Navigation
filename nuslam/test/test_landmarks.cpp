@@ -6,8 +6,8 @@
 #include <sstream>
 #include <cmath>
 
+#include <rigid2d/rigid2d.hpp>
 #include "nuslam/landmarks.hpp"
-#include "rigid2d/rigid2d.hpp"
 
 
 TEST(CircleFitting, FitCircle1)
@@ -46,9 +46,9 @@ TEST(CircleFitting, FitCircle1)
   cluster.points.push_back(v5);
   cluster.points.push_back(v6);
 
-  landmarks.centroid(cluster);
-  landmarks.shiftCentroidToOrigin(cluster);
-  landmarks.composeCircle(cluster);
+  centroid(cluster);
+  shiftCentroidToOrigin(cluster);
+  composeCircle(cluster);
 
 
 
@@ -92,11 +92,9 @@ TEST(CircleFitting, FitCircle2)
   cluster.points.push_back(v4);
 
 
-
-  landmarks.centroid(cluster);
-  landmarks.shiftCentroidToOrigin(cluster);
-  landmarks.composeCircle(cluster);
-
+  centroid(cluster);
+  shiftCentroidToOrigin(cluster);
+  composeCircle(cluster);
 
 
   ASSERT_NEAR(cluster.x_hat, 0.4908357, 1e-4);
