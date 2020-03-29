@@ -118,7 +118,7 @@ namespace nuslam
     /// \param end_points - 2D point cloud
     /// \param beam_length - laser scan
     void laserEndPoints(std::vector<Vector2D> &end_points,
-                       const std::vector<float> &beam_length);
+                       const std::vector<float> &beam_length) const;
 
     /// \brief Groups the laser scan into clusters
     /// \param end_points - 2D point cloud
@@ -126,9 +126,9 @@ namespace nuslam
 
     /// \brief Classifies a cluster as a circle or not
     /// \param cluster - group of candidate points
-    bool classifyCircles(const Cluster &cluster);
+    bool classifyCircles(const Cluster &cluster) const;
 
-    
+
 
     double beam_min, beam_max, beam_delta;    // beam angles
     double range_min, range_max;              // range limits

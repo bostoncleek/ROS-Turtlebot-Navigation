@@ -312,7 +312,7 @@ void Landmarks::featureDetection(const std::vector<float> &beam_length)
 
 
 void Landmarks::laserEndPoints(std::vector<Vector2D> &end_points,
-                                  const std::vector<float> &beam_length)
+                                  const std::vector<float> &beam_length) const
 {
 
   auto beam_angle = beam_min;
@@ -445,7 +445,7 @@ void Landmarks::clusterScan(const std::vector<Vector2D> &end_points)
 
 }
 
-bool Landmarks::classifyCircles(const Cluster &cluster)
+bool Landmarks::classifyCircles(const Cluster &cluster) const
 {
   const Vector2D p_start = cluster.points.front();
   const Vector2D p_end = cluster.points.back();
