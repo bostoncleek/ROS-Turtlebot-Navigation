@@ -12,7 +12,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-	angles
 	gazebo_ros
 	geometry_msgs
 	message_generation
@@ -117,7 +116,6 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
- 	 angles
  	 gazebo_ros
  	 geometry_msgs
  	 message_runtime
@@ -145,7 +143,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-	src/${PROJECT_NAME}/filter.cpp
+	src/${PROJECT_NAME}/ekf_filter.cpp
   src/${PROJECT_NAME}/landmarks.cpp
 )
 
@@ -263,7 +261,11 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(${PROJECT_NAME}_test test/test_landmarks.cpp)
-    target_link_libraries(${PROJECT_NAME}_test ${catkin_Libraries} ${PROJECT_NAME} gtest_main)
+    target_link_libraries(${PROJECT_NAME}_test
+													${catkin_Libraries}
+													${PROJECT_NAME}
+													${rigid2d_LIBRARIES}
+ 													gtest_main)
 endif()
 
 ## Add folders to be run by python nosetests
