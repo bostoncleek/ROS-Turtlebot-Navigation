@@ -2,17 +2,13 @@
 #define FILTER_HPP
 /// \file
 /// \brief EKF SLAM with known and unknown correspondence
-#include <angles/angles.h>
-
-
 #include <Eigen/Dense>
-#include <Eigen/Core>
 
 #include <cmath>
 #include <iosfwd>
 #include <vector>
-#include <random>
 
+#include <rigid2d/utilities.hpp>
 #include <rigid2d/rigid2d.hpp>
 #include "nuslam/landmarks.hpp"
 
@@ -30,28 +26,8 @@ namespace nuslam
   using rigid2d::almost_equal;
   using rigid2d::normalize_angle_PI;
   using rigid2d::Transform2D;
+  using rigid2d::sampleMultivariateDistribution;
 
-  using angles::normalize_angle;
-
-
-  /// \brief Returns a random number engine
-  std::mt19937_64 &getTwister();
-
-  /// \brief Samples a normal distribution with a specified mean and variance
-  /// \param mu - mean of distribution
-  /// \param sigma - variance of distribution
-  /// \returns a random sample
-  double sampleNormalDistribution(const double mu, const double sigma);
-
-  /// \brief samples a standard normal distribution
-  /// \param n - number of samples
-  /// \returns - random sample
-  VectorXd sampleStandardNormal(int n);
-
-  /// \brief samples a multivariate standard normal distribution
-  /// \param cov - covariance noise matrix
-  /// \returns - random samples
-  VectorXd sampleMultivariateDistribution(const MatrixXd &cov);
 
   /// \brief Compose distance from 1.0 to the next largest double-precision number
   /// \param x - the double to query
@@ -104,13 +80,13 @@ namespace nuslam
 
     /// \brief Get currnet Robot stated
     /// \returns Transform from map to robot
-    Transform2D getRobotState();
+    Transform2D getRobotState() const;
 
     /// \brief Get the estimates (x,y) of each landmark
     ///        Does not return landmarks at (0,0) because we assume that the
     ///        robot starts there
     /// map[out] - vector of landmarks position
-    void getMap(std::vector<Vector2D> &map);
+    void getMap(std::vector<Vector2D> &map) const;
 
 
   private:
@@ -125,7 +101,7 @@ namespace nuslam
     /// \brief Estimates the robot pose based on odometry
     /// \param u - twist from odometry given wheel velocities (dtheta, dx, dy=0)
     /// state_bar[out] - estimated state vector
-    void motionUpdate(const Twist2D &u, Ref<VectorXd> state_bar);
+    void motionUpdate(const Twist2D &u, Ref<VectorXd> state_bar) const;
 
     /// \brief Update the uncertainty in the robots pose
     ///        and for the landmark locations
@@ -154,7 +130,7 @@ namespace nuslam
     /// \param m - measurement of a landmark in the map frame
     /// \param j - correspondence id
     /// state_bar[out] - estimated state vector
-    void newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar);
+    void newLandmark(const LM &m, const int j, Ref<VectorXd> state_bar) const;
 
     int n;                         // max number of landmarks, determines state size
     int N;                         // number of landmarks in state vector
