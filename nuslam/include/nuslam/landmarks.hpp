@@ -14,6 +14,9 @@ namespace nuslam
 {
   using rigid2d::Vector2D;
 
+  struct Cluster;
+
+
   /// \brief convert laser range measurements to cartesian coordinates
   /// \param range - range measurement
   /// \param bean_angle - angle of lidar beam
@@ -32,6 +35,18 @@ namespace nuslam
   /// reutrns - angle between sides a (1) and c (3)
   double lawCosines(const double a, const double b, const double c);
 
+
+  /// \brief Compose centroid of cluster
+  /// cluster[out] - group of candidate points
+  void centroid(Cluster &cluster);
+
+  /// \brief shifts the centorid of the cluster to the center
+  /// cluster[out] - group of candidate points
+  void shiftCentroidToOrigin(Cluster &cluster);
+
+  /// \brief Fite a circle to the cluster
+  /// cluster[out] - group of candidate points
+  void composeCircle(Cluster &cluster);
 
   /// \brief stores laser range finder limits and properties
   struct LaserProperties
@@ -94,6 +109,7 @@ namespace nuslam
     /// \param beam_length - laser scan
     void featureDetection(const std::vector<float> &beam_length);
 
+
     // list of landmarks
     std::vector<Cluster> lm;
 
@@ -108,22 +124,11 @@ namespace nuslam
     /// \param end_points - 2D point cloud
     void clusterScan(const std::vector<Vector2D> &end_points);
 
-    /// \brief Compose centroid of cluster
-    /// \param cluster - group of candidate points
-    void centroid(Cluster &cluster);
-
-    /// \brief shifts the centorid of the cluster to the center
-    /// \param cluster - group of candidate points
-    void shiftCentroidToOrigin(Cluster &cluster);
-
-    /// \brief Fite a circle to the cluster
-    /// \param cluster - group of candidate points
-    void composeCircle(Cluster &cluster);
-
     /// \brief Classifies a cluster as a circle or not
     /// \param cluster - group of candidate points
     bool classifyCircles(const Cluster &cluster);
 
+    
 
     double beam_min, beam_max, beam_delta;    // beam angles
     double range_min, range_max;              // range limits
