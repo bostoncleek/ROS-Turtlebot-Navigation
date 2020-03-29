@@ -29,16 +29,16 @@
 #include <iostream>
 
 #include <rigid2d/rigid2d.hpp>
+#include <rigid2d/utilities.hpp>
 #include "nuslam/landmarks.hpp"
-#include "nuslam/filter.hpp"
 #include "nuslam/TurtleMap.h"
 
 using rigid2d::Vector2D;
 using rigid2d::Transform2D;
 using rigid2d::TransformData2D;
+using rigid2d::sampleNormalDistribution;
 
 using nuslam::pointDistance;
-using nuslam::sampleNormalDistribution;
 
 static double radius_circles;               // radius of cylinders in gazebo
 static double radius;                       // search radius

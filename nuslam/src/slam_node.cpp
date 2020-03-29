@@ -48,7 +48,7 @@
 
 
 #include <rigid2d/diff_drive.hpp>
-#include "nuslam/filter.hpp"
+#include "nuslam/ekf_filter.hpp"
 #include "nuslam/TurtleMap.h"
 #include "tsim/PoseError.h"
 
