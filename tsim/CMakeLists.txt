@@ -7,6 +7,7 @@ add_compile_options(-Wall -Wextra -Wno-psabi)
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
 # don't use gnu extensions
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
@@ -15,6 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
 	message_generation
+  rigid2d
   roscpp
 	std_msgs
   std_srvs
@@ -22,7 +24,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(rigid2d REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -125,7 +126,6 @@ catkin_package(
 include_directories(
   #include
   ${catkin_INCLUDE_DIRS}
-	${rigid2d_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
