@@ -7,10 +7,6 @@
 #include <stdexcept>
 #include <iomanip>
 
-
-#include <eigen3/Eigen/SVD>
-#include <Eigen/Eigenvalues>
-
 #include "nuslam/ekf_filter.hpp"
 
 

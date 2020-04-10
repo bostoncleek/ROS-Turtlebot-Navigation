@@ -2,7 +2,7 @@
 #define FILTER_HPP
 /// \file
 /// \brief EKF SLAM with known and unknown correspondence
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include <cmath>
 #include <iosfwd>
