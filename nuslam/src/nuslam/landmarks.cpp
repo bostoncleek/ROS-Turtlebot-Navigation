@@ -5,7 +5,7 @@
 #include <functional>
 #include <numeric>
 #include <iomanip>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include "nuslam/landmarks.hpp"
 
