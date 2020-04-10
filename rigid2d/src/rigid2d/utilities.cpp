@@ -24,6 +24,13 @@ double sampleNormalDistribution(const double mu, const double sigma)
 }
 
 
+double sampleUniformDistribution(const double min, const double max)
+{
+  std::uniform_real_distribution<double> dis(min, max);
+  return dis(getTwister());
+}
+
+
 VectorXd sampleStandardNormal(int n)
 {
   VectorXd rand_vec = VectorXd::Zero(n);
@@ -49,6 +56,12 @@ VectorXd sampleMultivariateDistribution(MatrixXd cov)
 }
 
 
+double euclideanDistance(double x0, double y0, double x1, double y1)
+{
+  const auto dx = x0 - x1;
+  const auto dy = y0 - y1;
+  return std::sqrt(dx*dx + dy*dy);
+}
 
 
 }
