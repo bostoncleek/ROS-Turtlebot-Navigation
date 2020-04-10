@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 
 
   // landmark classifier
-  double epsilon = 0.05;
+  double epsilon = 0.075;
   Landmarks landmarks(props, epsilon);
 
 

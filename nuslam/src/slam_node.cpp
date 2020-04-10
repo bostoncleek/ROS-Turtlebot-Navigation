@@ -44,7 +44,6 @@
 #include <vector>
 #include <iostream>
 #include <exception>
-#include <Eigen/Core>
 
 
 #include <rigid2d/diff_drive.hpp>
@@ -53,10 +52,6 @@
 #include "tsim/PoseError.h"
 
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using Eigen::Vector2d;
-using Eigen::Vector3d;
 using rigid2d::Twist2D;
 using rigid2d::Vector2D;
 using rigid2d::Pose;
