@@ -7,6 +7,7 @@ add_compile_options(-Wall -Wextra -Wno-psabi)
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
 # don't use gnu extensions
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
@@ -17,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	message_runtime
 	nav_msgs
+	nuturtlebot
+	rigid2d
 	roscpp
 	sensor_msgs
 	std_srvs
@@ -25,9 +28,6 @@ find_package(catkin REQUIRED COMPONENTS
 	visualization_msgs
 	)
 
-
-find_package(nuturtlebot REQUIRED)
-find_package(rigid2d REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -141,8 +141,6 @@ catkin_package(
 include_directories(
 # include
 	${catkin_INCLUDE_DIRS}
-	${nuturtlebot_INCLUDE_DIRS}
-	${rigid2d_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
