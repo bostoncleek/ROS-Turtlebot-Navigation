@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "planner/road_map.hpp"
 
 
 namespace planner
