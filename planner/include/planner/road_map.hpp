@@ -28,7 +28,7 @@ namespace planner
   struct Edge
   {
     int id = -1;                    // id of node edge connects to
-    double distance = 0.0;          // length of edge
+    double d = 0.0;                 // length of edge
   };
 
 
@@ -55,9 +55,62 @@ namespace planner
   class RoadMap
   {
   public:
+    /// \brief Compose road map
+    /// \param xmin - lower x world bound
+    /// \param xmax - upper x world bound
+    /// \param ymin - lower y world bound
+    /// \param ymax - upper y world bound
+    /// \param bnd_rad - bounding radius around robot
+    /// \param neighbors - number of closest neighbors examine for each configuration
+    /// \param num_nodes - number of nodes to put in road map
+    RoadMap(double xmin, double xmax,
+            double ymin, double ymax,
+            double bnd_rad,
+            unsigned int neighbors, unsigned int num_nodes);
+
+
+    /// \brief Retreive the graph
+    /// roadmap[out] - the graph
+    void getRoadMap(std::vector<Node> &roadmap);
+
+    /// \brief Print road map
+    void printRoadMap();
+
+    /// \brief Counts number of edges
+    /// \returns - number of edges 
+    int numEdges();
+
+    /// \brief Construct the roadmap
+    /// \param start - start configuration
+    /// \param goal - goal configuration
+    void constructRoadMap(const Vector2D &start, const Vector2D &goal);
 
 
   private:
+    /// \brief Finds K nearest neighbors in roadmap
+    /// \param query - query node
+    /// neighbors[out] - index on neighbors
+    void nearestNeighbors(const Node &query, std::vector<int> &neighbors);
+
+    /// \brief Insert a node into roadmap
+    /// \param q - the (x, y) location of a node
+    void addNode(const Vector2D &q);
+
+    /// \brief Add edge between two nodes
+    /// \param id1 - key of first node
+    /// \param id2 - key of second node
+    void addEdge(int id1, int id2);
+
+
+
+    /// \brief Generate random point in world
+    Vector2D randomPoint();
+
+
+    double xmin, xmax, ymin, ymax;      // bounds of the world
+    double bnd_rad;                     // distance threshold between nodes/path from obstacles
+    unsigned int k, n;                  // number of closest neighbors, number of nodes
+    std::vector<Node> nodes;            // graph representation of road map
 
   };
 
