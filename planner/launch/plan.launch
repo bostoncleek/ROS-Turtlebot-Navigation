@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- draw the continous space map -->
+  <node name="draw_cont_map" pkg="planner" type="draw_cont_map" output="screen" >
+    <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
+    <param name="frame_id" value="map" />
+  </node>
+
+
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/prm.rviz"/>
+
+
+
+</launch>
