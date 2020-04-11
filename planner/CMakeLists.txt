@@ -13,8 +13,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	geometry_msgs
 	rigid2d
   roscpp
+	visualization_msgs
+	xmlrpcpp
 )
 
 ## System dependencies are found with CMake's conventions
@@ -110,7 +113,9 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
+ 	geometry_msgs
 	roscpp
+	visualization_msgs
 #  DEPENDS system_lib
 )
 
