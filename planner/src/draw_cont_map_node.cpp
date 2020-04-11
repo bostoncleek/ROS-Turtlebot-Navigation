@@ -1,18 +1,16 @@
 /// \file
-/// \brief Draw the landmarks usig a marker array
+/// \brief Draw the obstacles and map boundary usig a marker array
 ///
 /// \author Boston Cleek
 /// \date 4/10/20
 ///
 /// PUBLISHES:
-///   map (visualization_msgs::MarkerArray): continous Cspace
-/// SUBSCRIBES:
-///
+///   obstacle_vertices (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
+///   obstacle_edges (visualization_msgs::MarkerArray): obstacle and boundary edges in continous Cspace
 
 
 #include <ros/ros.h>
 #include <ros/console.h>
-// #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/Point.h>
 #include <xmlrpcpp/XmlRpcValue.h>
@@ -21,8 +19,6 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
-#include "planner/road_map.hpp"
 
 
 
@@ -64,8 +60,8 @@ int main(int argc, char** argv)
 
   visualization_msgs::MarkerArray obs_edges;
   visualization_msgs::MarkerArray obs_vertices;
-  obs_edges.markers.resize(obs_total + 1);
-  obs_vertices.markers.resize(obs_total_vertices + 4);
+  obs_edges.markers.resize(obs_total + 1); // account for perimeter
+  obs_vertices.markers.resize(obs_total_vertices + 4); // account for corners at parimeter
 
   auto vertex_num = 0;
 
