@@ -21,7 +21,7 @@ namespace planner
 
 
   typedef std::vector<Vector2D> polygon;    // convex polygon, vertices counter-clockwise
-  typedef std::vector<polygon> obs_map;     // constain all polygons in Cspace
+  typedef std::vector<polygon> obstacle_map;     // constain all polygons in Cspace
 
 
   /// \brief Egde connecting two nodes
@@ -50,8 +50,39 @@ namespace planner
     }
   };
 
+  /// \brief Compose shortest distance from linesegment to a point
+  ///        p1 and p2 are the bounds of the line segment
+  ///        and p3 is the point.
+  ///        Checks if the min distance is on the line segment
+  /// \param p1 - first bound of line segment
+  /// \param p1 - second bound of line segment
+  /// \param p3 - point to compose distance to
+  /// distance[out] - min distance between line and a point
+  /// \returns - true if the closest distance lies on the line segment
+  bool minDistLineSegPt(double &distance,
+                        const Vector2D &p1,
+                        const Vector2D &p2,
+                        const Vector2D &p3);
+
+  /// \brief Compose shortest distance from linesegment to a point
+  ///        p1 and p2 are the bounds of the line segment
+  ///        and p3 is the point.
+  ///        Does not check if the min distance is on the line segment
+  /// \param p1 - first bound of line segment
+  /// \param p1 - second bound of line segment
+  /// \param p3 - point to compose distance to
+  /// \returns - min distance between line and a point
+  double minDistLineSegPt(const Vector2D &p1,
+                          const Vector2D &p2,
+                          const Vector2D &p3);
+
+  double minDist(const Vector2D &p1,
+                          const Vector2D &p2,
+                          const Vector2D &p3);
 
 
+
+   /// \brief Compose graph for global planning
   class RoadMap
   {
   public:
@@ -66,19 +97,16 @@ namespace planner
     RoadMap(double xmin, double xmax,
             double ymin, double ymax,
             double bnd_rad,
-            unsigned int neighbors, unsigned int num_nodes);
+            unsigned int neighbors, unsigned int num_nodes,
+            obstacle_map obs_map);
 
 
     /// \brief Retreive the graph
     /// roadmap[out] - the graph
-    void getRoadMap(std::vector<Node> &roadmap);
+    void getRoadMap(std::vector<Node> &roadmap) const;
 
     /// \brief Print road map
-    void printRoadMap();
-
-    /// \brief Counts number of edges
-    /// \returns - number of edges 
-    int numEdges();
+    void printRoadMap() const;
 
     /// \brief Construct the roadmap
     /// \param start - start configuration
@@ -86,11 +114,24 @@ namespace planner
     void constructRoadMap(const Vector2D &start, const Vector2D &goal);
 
 
+    /// \brief Check whether a point is in free space
+    /// \param q - random configuration
+    /// \return - true if free space
+    bool isFreeSpace(const Vector2D &q) const;
+
+
+
   private:
     /// \brief Finds K nearest neighbors in roadmap
     /// \param query - query node
     /// neighbors[out] - index on neighbors
-    void nearestNeighbors(const Node &query, std::vector<int> &neighbors);
+    void nearestNeighbors(const Node &query, std::vector<int> &neighbors) const;
+
+
+    /// \brief Check if node collides with boundaries of map
+    /// \param q - the (x, y) location of a node
+    /// \returns - true if q collides with boundary
+    bool collideWalls(const Vector2D &q) const;
 
     /// \brief Insert a node into roadmap
     /// \param q - the (x, y) location of a node
@@ -101,15 +142,14 @@ namespace planner
     /// \param id2 - key of second node
     void addEdge(int id1, int id2);
 
-
-
     /// \brief Generate random point in world
-    Vector2D randomPoint();
+    Vector2D randomPoint() const;
 
 
     double xmin, xmax, ymin, ymax;      // bounds of the world
     double bnd_rad;                     // distance threshold between nodes/path from obstacles
     unsigned int k, n;                  // number of closest neighbors, number of nodes
+    obstacle_map obs_map;               // collection of all the polygons
     std::vector<Node> nodes;            // graph representation of road map
 
   };

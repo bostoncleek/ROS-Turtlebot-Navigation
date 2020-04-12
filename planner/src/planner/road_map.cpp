@@ -11,17 +11,81 @@
 namespace planner
 {
 
+bool minDistLineSegPt(double &distance,
+                      const Vector2D &p1,
+                      const Vector2D &p2,
+                      const Vector2D &p3)
+{
+  // source http://paulbourke.net/geometry/pointlineplane/
+
+  const auto dx = p2.x - p1.x;
+  const auto dy = p2.y - p1.y;
+
+  const auto num = (p3.x - p1.x)*dx + (p3.y - p1.y)*dy;
+  const auto denom = dx*dx + dy*dy;
+  const auto u = num / denom;
+
+  // std::cout << u << std::endl;
+
+  // location of point (P) on line (not necessarily on the line segment)
+  const auto px = p1.x + u * dx;
+  const auto py = p1.y + u * dy;
+
+  // min distance
+  distance = euclideanDistance(px, py, p3.x, p3.y);
+
+  if (rigid2d::almost_equal(u, 0.0) or rigid2d::almost_equal(u, 1.0))
+  {
+    return true;
+  }
+
+  else if (u > 0.0 and u < 1.0)
+  {
+    return true;
+  }
+
+  // return (u >= 0.0 and u <= 1.0) ? true : false;
+  return false;
+}
+
+
+double minDistLineSegPt(const Vector2D &p1,
+                        const Vector2D &p2,
+                        const Vector2D &p3)
+{
+  return (p3.x - p1.x)*(p2.y - p1.y) - (p3.y - p1.y)*(p2.x - p1.x);
+  // return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x);
+}
+
+
+double minDist(const Vector2D &p1,
+                        const Vector2D &p2,
+                        const Vector2D &p3)
+{
+  const auto dx = p2.x - p1.x;
+  const auto dy = p2.y - p1.y;
+
+  const auto num = std::fabs(dy*p3.x - dx*p3.y + p2.x*p1.y - p2.y*p1.x);
+  const auto denom = std::sqrt(dx*dx + dy*dy);
+
+  return num / denom;
+}
+
+
+
 RoadMap::RoadMap(double xmin, double xmax,
                  double ymin, double ymax,
                  double bnd_rad,
-                 unsigned int neighbors, unsigned int num_nodes)
+                 unsigned int neighbors, unsigned int num_nodes,
+                 obstacle_map obs_map)
                     : xmin(xmin),
                       xmax(xmax),
                       ymin(ymin),
                       ymax(ymax),
                       bnd_rad(bnd_rad),
                       k(neighbors),
-                      n(num_nodes)
+                      n(num_nodes),
+                      obs_map(obs_map)
 {
   if (n <= k)
   {
@@ -30,13 +94,13 @@ RoadMap::RoadMap(double xmin, double xmax,
 }
 
 
-void RoadMap::getRoadMap(std::vector<Node> &roadmap)
+void RoadMap::getRoadMap(std::vector<Node> &roadmap) const
 {
   roadmap = nodes;
 }
 
 
-void RoadMap::printRoadMap()
+void RoadMap::printRoadMap() const
 {
   for(const auto &nd : nodes)
   {
@@ -53,16 +117,6 @@ void RoadMap::printRoadMap()
 }
 
 
-int RoadMap::numEdges()
-{
-  auto num = 0;
-  for(const auto &nd : nodes)
-  {
-    num += nd.edges.size();
-  }
-  return num;
-}
-
 
 void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 {
@@ -78,7 +132,7 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
   {
     Vector2D q = randomPoint();
 
-    // if(isFreeSpace(map, q))
+    if(!collideWalls(q) and isFreeSpace(q))
     {
       addNode(q);
     }
@@ -86,26 +140,26 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 
 
   // add edges
-  for(auto &nd : nodes)
-  {
-    // find kNN
-    std::vector<int> neighbors;
-    nearestNeighbors(nd, neighbors);
-
-    for(const auto neighbor_id : neighbors)
-    {
-      // adds edge from nd to neighbor
-      // and from neighbor to nd
-      addEdge(nd.id, neighbor_id);
-
-    } // end inner loop
-  } // end outer loop
+  // for(auto &nd : nodes)
+  // {
+  //   // find kNN
+  //   std::vector<int> neighbors;
+  //   nearestNeighbors(nd, neighbors);
+  //
+  //   for(const auto neighbor_id : neighbors)
+  //   {
+  //     // adds edge from nd to neighbor
+  //     // and from neighbor to nd
+  //     addEdge(nd.id, neighbor_id);
+  //
+  //   } // end inner loop
+  // } // end outer loop
 
 
 }
 
 
-void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors)
+void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors) const
 {
   // // TODO: find better method than searching all neighbors i.e kd trees
 
@@ -151,6 +205,121 @@ void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors)
     distances.pop_back();
   } // end loop
 
+}
+
+
+bool RoadMap::isFreeSpace(const Vector2D &q) const
+{
+  // check if q is on the left side of all edges
+  // for a polygon
+  // if on the right side check if it is within
+  // the bounding radius theshold
+
+  for(const auto &poly : obs_map)
+  {
+    // std::cout << "---------------------" << std::endl;
+
+    // loop over all vertices
+    bool collision = true;
+    for(unsigned int i = 0; i < poly.size(); i++)
+    {
+      Vector2D p1, p2;
+
+      if (i != poly.size()-1)
+      {
+        p1 = poly.at(i);
+        p2 = poly.at(i+1);
+      }
+
+      // at last vertex, compare with first to get edge
+      else
+      {
+        p1 = poly.back();
+        p2 = poly.at(0);
+      }
+
+
+      // min distance to line
+      auto dist = minDistLineSegPt(p1, p2, q);
+      // std::cout << dist << std::endl;
+
+      auto dist2 = 0.0;
+      minDistLineSegPt(dist2, p1, p2, q);
+
+      auto dist3 = minDist(p1, p2, q);
+
+      std::cout << dist << " " << dist2 << " " << dist3 << std::endl;
+
+
+
+      // if (minDistLineSegPt(dist2, p1, p2, q))
+      // {
+      //   std::cout << dist << " " << dist2 << std::endl;
+      // }
+
+
+
+      // // right side is outisde of polygon
+      if (dist > 0.0)
+      {
+        // check that q is outside radius threshold
+        // distance from segment to q
+        // also checking that this distance is on the segment
+        // auto dfs = 0.0;
+        // if (minDistLineSegPt(dfs, p1, p2, q) and dfs < bnd_rad)
+        // if (dist < bnd_rad)
+        // {
+        //   collision = true;
+        // }
+        //
+        // else
+        // {
+          collision = false;
+        // }
+      }
+
+
+
+    } // end inner loop
+
+    if (collision)
+    {
+      std::cout << "inside polygon" << std::endl;
+      return false;
+    }
+
+    // std::cout << "---------------------" << std::endl;
+
+
+  } // end  outer loop
+
+  std::cout << "outisde polygons" << std::endl;
+
+  return true;
+}
+
+
+
+bool RoadMap::collideWalls(const Vector2D &q) const
+{
+  Vector2D v1(xmin, ymin);
+  Vector2D v2(xmax, ymin);
+  Vector2D v3(xmax, ymax);
+  Vector2D v4(xmin, ymax);
+
+  std::vector<Vector2D> bounds = {v1, v2, v3, v4, v1};
+
+  for(unsigned int i = 0; i < bounds.size()-1; i++)
+  {
+    auto dist = 0.0;
+    if (minDistLineSegPt(dist, bounds.at(i), bounds.at(i+1), q) and dist < bnd_rad)
+    {
+      // std::cout << "node to close to wall" << std::endl;
+      return true;
+    }
+  } // end loop
+
+  return false;
 }
 
 
@@ -201,10 +370,7 @@ void RoadMap::addEdge(int id1, int id2)
 }
 
 
-
-
-
-Vector2D RoadMap::randomPoint()
+Vector2D RoadMap::randomPoint() const
 {
   Vector2D v;
   v.x = sampleUniformDistribution(xmin, xmax);
