@@ -119,6 +119,11 @@ namespace planner
     /// \return - true if free space
     bool isFreeSpace(const Vector2D &q) const;
 
+    /// \brief Check whether a point isnside or close to a polygon
+    /// \param poly - plygon to examine
+    /// \param q - random configuration
+    /// \return - true if inside or close to polygon
+    bool ptInsidePolygon(const polygon &poly, const Vector2D &q) const;
 
 
   private:

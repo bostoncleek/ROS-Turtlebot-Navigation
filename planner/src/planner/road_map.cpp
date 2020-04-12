@@ -53,8 +53,30 @@ double minDistLineSegPt(const Vector2D &p1,
                         const Vector2D &p2,
                         const Vector2D &p3)
 {
-  return (p3.x - p1.x)*(p2.y - p1.y) - (p3.y - p1.y)*(p2.x - p1.x);
+  // return (p3.x - p1.x)*(p2.y - p1.y) - (p3.y - p1.y)*(p2.x - p1.x);
   // return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x);
+
+  // vector from p1 to p2 (v)
+  const auto vx = p2.x - p1.x;
+  const auto vy = p2.y - p1.y;
+
+  // leftward normal vector (u)
+  const auto ux = -vy;
+  const auto uy = vx;
+
+  // magnitude of u
+  const auto unorm = std::sqrt(ux*ux + uy*uy);
+
+  // leftward normal vector
+  const auto nx = ux / unorm;
+  const auto ny = uy / unorm;
+
+  // vector from p1 to p3
+  const auto dx = p3.x - p1.x;
+  const auto dy = p3.y - p1.y;
+
+  // signed distance is the dot product (d and n)
+  return dx*nx + dy*ny;
 }
 
 
@@ -123,21 +145,62 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 
   // TODO: check if nodes are away from perimater walls
 
+  // Vector2D q1(2.9 + 0.01, 3.2 - 0.01);
+  // // Vector2D q2(0.3, 0.6);
+  // // Vector2D q1(0.8, 0.8);
+  // // Vector2D q4(0.3, 2.6);
+  //
+  //  // std::cout << isFreeSpace(q1) << std::endl;
+  //
+  //  std::cout << ptInsidePolygon(obs_map.at(2), q1) << std::endl;
+  //
+  //
+  // // isFreeSpace(q2);
+  // // isFreeSpace(q3);
+  // // isFreeSpace(q4);
+  // //
+  // addNode(q1);
+
+  // addNode(q2);
+  // addNode(q3);
+  // addNode(q4);
+
+
+  // Vector2D q5(0.4, 3.2);
+  // Vector2D q6(0.6, 3.0);
+  // Vector2D q7(0.5, 3.1-0.01);
+  //
+  // // isFreeSpace(q5);
+  // // isFreeSpace(q6);
+  // isFreeSpace(q7);
+  //
+  // // addNode(q5);
+  // // addNode(q6);
+  // addNode(q7);
+
+
 
   // clear prvious graph
   nodes.clear();
 
+  // int timeout = 1000;
+  // int i = 0;
   // add nodes
   while(nodes.size() < n)
   {
     Vector2D q = randomPoint();
 
     if(!collideWalls(q) and isFreeSpace(q))
+    // if(isFreeSpace(q))
     {
       addNode(q);
     }
+
+    // if (i == timeout) break;
+    // i++;
   } // end while loop
 
+  // std::cout << "nodes added: " << nodes.size() << std::endl;
 
   // add edges
   // for(auto &nd : nodes)
@@ -215,88 +278,132 @@ bool RoadMap::isFreeSpace(const Vector2D &q) const
   // if on the right side check if it is within
   // the bounding radius theshold
 
+  // const auto poly = obs_map.at(3);
+  // bool collision = ptInsidePolygon(poly, q);
+  //
+  //   if (collision)
+  //   {
+  //     std::cout << "inside polygon" << std::endl;
+  //     return false;
+  //   }
+
   for(const auto &poly : obs_map)
   {
     // std::cout << "---------------------" << std::endl;
 
-    // loop over all vertices
-    bool collision = true;
-    for(unsigned int i = 0; i < poly.size(); i++)
+    // is not Cfree
+    if (ptInsidePolygon(poly, q))
     {
-      Vector2D p1, p2;
-
-      if (i != poly.size()-1)
-      {
-        p1 = poly.at(i);
-        p2 = poly.at(i+1);
-      }
-
-      // at last vertex, compare with first to get edge
-      else
-      {
-        p1 = poly.back();
-        p2 = poly.at(0);
-      }
-
-
-      // min distance to line
-      auto dist = minDistLineSegPt(p1, p2, q);
-      // std::cout << dist << std::endl;
-
-      auto dist2 = 0.0;
-      minDistLineSegPt(dist2, p1, p2, q);
-
-      auto dist3 = minDist(p1, p2, q);
-
-      std::cout << dist << " " << dist2 << " " << dist3 << std::endl;
-
-
-
-      // if (minDistLineSegPt(dist2, p1, p2, q))
-      // {
-      //   std::cout << dist << " " << dist2 << std::endl;
-      // }
-
-
-
-      // // right side is outisde of polygon
-      if (dist > 0.0)
-      {
-        // check that q is outside radius threshold
-        // distance from segment to q
-        // also checking that this distance is on the segment
-        // auto dfs = 0.0;
-        // if (minDistLineSegPt(dfs, p1, p2, q) and dfs < bnd_rad)
-        // if (dist < bnd_rad)
-        // {
-        //   collision = true;
-        // }
-        //
-        // else
-        // {
-          collision = false;
-        // }
-      }
-
-
-
-    } // end inner loop
-
-    if (collision)
-    {
-      std::cout << "inside polygon" << std::endl;
+      // std::cout << "inside polygon" << std::endl;
       return false;
     }
 
     // std::cout << "---------------------" << std::endl;
-
-
   } // end  outer loop
 
-  std::cout << "outisde polygons" << std::endl;
+  // std::cout << "outisde polygons" << std::endl;
+  // is Cfree
+  return true;
+}
+
+
+
+bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
+{
+  for(unsigned int i = 0; i < poly.size(); i++)
+  {
+    Vector2D p1, p2;
+
+    if (i != poly.size()-1)
+    {
+      p1 = poly.at(i);
+      p2 = poly.at(i+1);
+    }
+
+    // at last vertex, compare with first to get edge
+    else
+    {
+      p1 = poly.back();
+      p2 = poly.at(0);
+    }
+
+    // std::cout << "=>" << std::endl;
+    // std::cout << p1 << std::endl;
+    // std::cout << p2 << std::endl;
+    // std::cout << "=>" << std::endl;
+
+
+    // min distance to line
+    auto dist = minDistLineSegPt(p1, p2, q);
+    // std::cout << "min signed d: " << dist << std::endl;
+
+    // auto dist2 = 0.0;
+    // // minDistLineSegPt(dist2, p1, p2, q);
+    // if (minDistLineSegPt(dist2, p1, p2, q))
+    // {
+    //   std::cout << "abs d: " << dist2 << std::endl;
+    // }
+
+
+    // if (rigid2d::almost_equal(dist, 0.0))
+    // {
+    //   std::cout << "edge"<< std::endl;
+    // }
+
+    // just need to be on the right side of one edge and we are good
+    if (dist < 0.0 and !rigid2d::almost_equal(dist, 0.0))
+    // else if (dist < 0.0)
+    {
+
+      // if on the segment the edge exists make sure it is
+      // outside the threshold
+      auto dfs = 0.0;
+      if (minDistLineSegPt(dfs, p1, p2, q))
+      {
+        if (dfs > bnd_rad)
+        {
+          // std::cout << "safe range: " << dfs << std::endl;
+          // flag = false;
+          return false;
+        }
+
+        // near edge segment
+        else
+        {
+          // std::cout << "too close: " << dfs << std::endl;
+          return true;
+        }
+      }
+
+      // min distance is not on the edge segment
+      // check distance from ends of segment to
+      // ensure q is not near
+      else
+      {
+        const auto d1 = euclideanDistance(p1.x, p1.y, q.x, q.y);
+        const auto d2 = euclideanDistance(p2.x, p2.y, q.x, q.y);
+
+        if((d1 > bnd_rad) and (d2 > bnd_rad))
+        {
+          // std::cout << "not on segment and far away" << std::endl;
+          return false;
+        }
+
+        else
+        {
+          // std::cout << "not on segment but still to close" << std::endl;
+          return true;
+        }
+      }
+    }
+
+  } // end loop
 
   return true;
 }
+
+
+
 
 
 
