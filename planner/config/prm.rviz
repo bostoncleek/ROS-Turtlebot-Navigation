@@ -8,7 +8,6 @@ Panels:
         - /Status1
         - /MarkerArray1
         - /MarkerArray2
-        - /MarkerArray2/Status1
         - /Axes1
       Splitter Ratio: 0.3478260934352875
     Tree Height: 549
@@ -61,7 +60,7 @@ Visualization Manager:
       Marker Topic: /obstacle_edges
       Name: MarkerArray
       Namespaces:
-        {}
+        obstacle_edges: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -69,7 +68,7 @@ Visualization Manager:
       Marker Topic: /obstacle_vertices
       Name: MarkerArray
       Namespaces:
-        marker: true
+        obstacle_vertices: true
       Queue Size: 100
       Value: true
     - Class: rviz/Axes
@@ -78,6 +77,22 @@ Visualization Manager:
       Name: Axes
       Radius: 0.009999999776482582
       Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /prm_nodes
+      Name: MarkerArray
+      Namespaces:
+        prm_nodes: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /prm_edges
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -107,25 +122,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.910597324371338
+      Distance: 7.202261447906494
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.7728967666625977
-        Y: 2.066518783569336
-        Z: -0.48263049125671387
+        X: 1.8522217273712158
+        Y: 2.421553373336792
+        Z: -0.4698328971862793
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9902034997940063
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.688582897186279
+      Yaw: 4.713583469390869
     Saved: ~
 Window Geometry:
   Displays:
@@ -144,4 +159,4 @@ Window Geometry:
     collapsed: false
   Width: 1720
   X: 2092
-  Y: 4
+  Y: 0
