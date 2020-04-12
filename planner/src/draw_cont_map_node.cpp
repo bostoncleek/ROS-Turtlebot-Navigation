@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 
   for(auto i = 0; i < obstacles.size(); i++)
   {
-    std::cout << "Obstacle: " << i << std::endl;
+    // std::cout << "Obstacle: " << i << std::endl;
 
     obs_edges.markers[i].header.frame_id = frame_id;
     obs_edges.markers[i].header.stamp = ros::Time::now();
@@ -239,12 +239,8 @@ int main(int argc, char** argv)
 
   while(node_handle.ok())
   {
-
-
-
     line_pub.publish(obs_edges);
     vertex_pub.publish(obs_vertices);
-
   }
 
 

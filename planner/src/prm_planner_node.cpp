@@ -67,9 +67,9 @@ void fillMarkerArray(const std::vector<planner::Node> &nodes,
     nodes_array.markers[i].pose.orientation.z = 0.0;
     nodes_array.markers[i].pose.orientation.w = 1.0;
 
-    nodes_array.markers[i].scale.x = 0.02;
-    nodes_array.markers[i].scale.y = 0.02;
-    nodes_array.markers[i].scale.z = 0.02;
+    nodes_array.markers[i].scale.x = 0.04;
+    nodes_array.markers[i].scale.y = 0.04;
+    nodes_array.markers[i].scale.z = 0.04;
 
     nodes_array.markers[i].color.r = 0.0f;
     nodes_array.markers[i].color.g = 1.0f;
@@ -137,13 +137,13 @@ int main(int argc, char** argv)
   XmlRpc::XmlRpcValue map_bound;          // boundaries of map
   XmlRpc::XmlRpcValue obstacles;          // triple nested vector for obstacle coordinates
 
-  auto bouding_radius = 0.0;              // bounding radius around robot for collisions
+  auto bounding_radius = 0.0;              // bounding radius around robot for collisions
   auto nearest_neighbors = 0;             // number of NN in PRM
   auto num_nodes = 0;                     // number of nodes in PRM
 
 
   nh.getParam("frame_id", frame_id);
-  nh.getParam("bouding_radius", bouding_radius);
+  nh.getParam("bounding_radius", bounding_radius);
   nh.getParam("nearest_neighbors", nearest_neighbors);
   nh.getParam("num_nodes", num_nodes);
 
@@ -164,11 +164,28 @@ int main(int argc, char** argv)
 
   /////////////////////////////////////////////////////////////////////////////
 
+  planner::obstacle_map obs_map;
+
+  for(auto i = 0; i < obstacles.size(); i++)
+  {
+    planner::polygon poly;
+    for(auto j = 0; j < obstacles[i].size(); j++)
+    {
+      Vector2D p;
+      p.x = static_cast<double> (obstacles[i][j][0]) * resolution;
+      p.y = static_cast<double> (obstacles[i][j][1]) * resolution;
+      poly.push_back(p);
+    }
+    obs_map.push_back(poly);
+  }
+
+
   planner::RoadMap prm(xmin, xmax,
                        ymin, ymax,
-                       bouding_radius,
+                       bounding_radius,
                        nearest_neighbors,
-                       num_nodes);
+                       num_nodes,
+                       obs_map);
 
 
   Vector2D start(0.2, 0.2);
@@ -176,7 +193,10 @@ int main(int argc, char** argv)
 
   prm.constructRoadMap(start, goal);
 
-  prm.printRoadMap();
+  // Vector2D test(0.2, 0.8);
+  // prm.isFreeSpace(test);
+
+  // prm.printRoadMap();
 
 
   std::vector<planner::Node> nodes;
@@ -194,7 +214,7 @@ int main(int argc, char** argv)
    {
 
      node_pub.publish(nodes_array);
-     edge_pub.publish(edges_array);
+     // edge_pub.publish(edges_array);
    }
 
 
