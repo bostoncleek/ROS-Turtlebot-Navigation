@@ -7,6 +7,17 @@
   </node>
 
 
+  <!-- probabilisitc road maps -->
+  <node name="prm_global_planner" pkg="planner" type="prm_planner" output="screen" >
+    <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
+    <param name="frame_id" value="map" />
+    <param name="bounding_radius" value="0.1" />
+    <param name="nearest_neighbors" value="5" />
+    <param name="num_nodes" value="500" />
+  </node>
+
+
+
   <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/prm.rviz"/>
 
 
