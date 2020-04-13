@@ -214,7 +214,7 @@ int main(int argc, char** argv)
    {
 
      node_pub.publish(nodes_array);
-     // edge_pub.publish(edges_array);
+     edge_pub.publish(edges_array);
    }
 
 
