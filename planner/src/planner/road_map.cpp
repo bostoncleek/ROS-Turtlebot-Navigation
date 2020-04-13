@@ -53,8 +53,6 @@ double minDistLineSegPt(const Vector2D &p1,
                         const Vector2D &p2,
                         const Vector2D &p3)
 {
-  // return (p3.x - p1.x)*(p2.y - p1.y) - (p3.y - p1.y)*(p2.x - p1.x);
-  // return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x);
 
   // vector from p1 to p2 (v)
   const auto vx = p2.x - p1.x;
@@ -145,78 +143,62 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 
   // TODO: check if nodes are away from perimater walls
 
-  // Vector2D q1(2.9 + 0.01, 3.2 - 0.01);
-  // // Vector2D q2(0.3, 0.6);
-  // // Vector2D q1(0.8, 0.8);
-  // // Vector2D q4(0.3, 2.6);
+  // Vector2D q1(2.0, 2.8);
+  // Vector2D q2(2.0, 1.0);
   //
-  //  // std::cout << isFreeSpace(q1) << std::endl;
+  // // Vector2D q2(0.2, 0.4);
+  // // Vector2D q1(0.6, 1.2);
   //
-  //  std::cout << ptInsidePolygon(obs_map.at(2), q1) << std::endl;
+  // // for(int i = 0; i < obs_map.size(); i++)
+  // // {
+  // //   bool status = lnSegIntersectPolygon(obs_map.at(i), q1, q2);
+  // //   std::cout << "Poly: " << i << "| intersection: " << status << std::endl;
+  // // }
+  //
+  // bool status = lnSegIntersectPolygon(obs_map.at(2), q1, q2);
+  // std::cout << "intersection: " << status << std::endl;
   //
   //
-  // // isFreeSpace(q2);
-  // // isFreeSpace(q3);
-  // // isFreeSpace(q4);
-  // //
+  //
+  // // bool status = straightLinePath(q1, q2);
+  // // std::cout << "path can go: " << status << std::endl;
+  //
   // addNode(q1);
-
   // addNode(q2);
-  // addNode(q3);
-  // addNode(q4);
-
-
-  // Vector2D q5(0.4, 3.2);
-  // Vector2D q6(0.6, 3.0);
-  // Vector2D q7(0.5, 3.1-0.01);
   //
-  // // isFreeSpace(q5);
-  // // isFreeSpace(q6);
-  // isFreeSpace(q7);
-  //
-  // // addNode(q5);
-  // // addNode(q6);
-  // addNode(q7);
-
-
+  // addEdge(0,1);
 
   // clear prvious graph
   nodes.clear();
 
-  // int timeout = 1000;
-  // int i = 0;
-  // add nodes
   while(nodes.size() < n)
   {
     Vector2D q = randomPoint();
 
     if(!collideWalls(q) and isFreeSpace(q))
-    // if(isFreeSpace(q))
     {
       addNode(q);
     }
-
-    // if (i == timeout) break;
-    // i++;
   } // end while loop
 
-  // std::cout << "nodes added: " << nodes.size() << std::endl;
 
   // add edges
-  // for(auto &nd : nodes)
-  // {
-  //   // find kNN
-  //   std::vector<int> neighbors;
-  //   nearestNeighbors(nd, neighbors);
-  //
-  //   for(const auto neighbor_id : neighbors)
-  //   {
-  //     // adds edge from nd to neighbor
-  //     // and from neighbor to nd
-  //     addEdge(nd.id, neighbor_id);
-  //
-  //   } // end inner loop
-  // } // end outer loop
+  for(auto &nd : nodes)
+  {
+    // find kNN
+    std::vector<int> neighbors;
+    nearestNeighbors(nd, neighbors);
+
+    for(const auto neighbor_id : neighbors)
+    {
+      // adds edge from nd to neighbor
+      // and from neighbor to nd
+      if(straightLinePath(nd.point, nodes.at(neighbor_id).point))
+      {
+        addEdge(nd.id, neighbor_id);
+      }
+    } // end inner loop
+  } // end outer loop
 
 
 }
@@ -278,33 +260,45 @@ bool RoadMap::isFreeSpace(const Vector2D &q) const
   // if on the right side check if it is within
   // the bounding radius theshold
 
-  // const auto poly = obs_map.at(3);
-  // bool collision = ptInsidePolygon(poly, q);
-  //
-  //   if (collision)
-  //   {
-  //     std::cout << "inside polygon" << std::endl;
-  //     return false;
-  //   }
-
   for(const auto &poly : obs_map)
   {
-    // std::cout << "---------------------" << std::endl;
-
     // is not Cfree
     if (ptInsidePolygon(poly, q))
     {
       // std::cout << "inside polygon" << std::endl;
       return false;
     }
-
-    // std::cout << "---------------------" << std::endl;
   } // end  outer loop
 
   // std::cout << "outisde polygons" << std::endl;
   // is Cfree
   return true;
 }
+
+
+bool RoadMap::straightLinePath(const Vector2D &p1, const Vector2D &p2) const
+{
+  int i = 0;
+
+  std::cout << "---------------------" << std::endl;
+  for(const auto &poly : obs_map)
+  {
+    std::cout << "Checking Polygon: " << i << std::endl;
+
+    if (lnSegIntersectPolygon(poly, p1, p2))
+    {
+      // std::cout << "inside polygon" << std::endl;
+      return false;
+    }
+
+    i++;
+  } // end  outer loop
+  std::cout << "---------------------" << std::endl;
+
+  // std::cout << "outisde polygons" << std::endl;
+  return true;
+}
+
 
 
 
@@ -327,32 +321,13 @@ bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
       p2 = poly.at(0);
     }
 
-    // std::cout << "=>" << std::endl;
-    // std::cout << p1 << std::endl;
-    // std::cout << p2 << std::endl;
-    // std::cout << "=>" << std::endl;
-
 
     // min distance to line
     auto dist = minDistLineSegPt(p1, p2, q);
-    // std::cout << "min signed d: " << dist << std::endl;
 
-    // auto dist2 = 0.0;
-    // // minDistLineSegPt(dist2, p1, p2, q);
-    // if (minDistLineSegPt(dist2, p1, p2, q))
-    // {
-    //   std::cout << "abs d: " << dist2 << std::endl;
-    // }
-
-
-    // if (rigid2d::almost_equal(dist, 0.0))
-    // {
-    //   std::cout << "edge"<< std::endl;
-    // }
 
     // just need to be on the right side of one edge and we are good
     if (dist < 0.0 and !rigid2d::almost_equal(dist, 0.0))
-    // else if (dist < 0.0)
     {
 
       // if on the segment the edge exists make sure it is
@@ -403,6 +378,132 @@ bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
 }
 
 
+bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
+                                    const Vector2D &p1,
+                                    const Vector2D &p2) const
+{
+  // http://geomalgorithms.com/a13-_intersect-4.html
+
+  // TODO: check p1 == p2
+
+  auto tE = 0.0;                    // the maximum entering segment parameter
+  auto tL = 1.0;                    // the minimum leaving segment parameter
+  auto t = 0.0, N = 0.0, D = 0.0;   // intersect parameter t = N / D
+
+  const Vector2D dS = p2 - p1;             // line segment from p1 -> p2
+
+
+  for(unsigned int i = 0; i < poly.size(); i++)
+  {
+    std::cout << "----------------------" << std::endl;
+
+    std::cout << "checking edge: " << i << std::endl;
+
+    // vertices on polygon (CCW)
+    Vector2D v1, v2;
+
+    if (i != poly.size()-1)
+    {
+      v1 = poly.at(i);
+      v2 = poly.at(i+1);
+    }
+
+    // at last vertex, compare with first to get edge
+    else
+    {
+      v1 = poly.back();
+      v2 = poly.at(0);
+    }
+
+    // edge v1 => v2
+    const Vector2D e = v2 - v1;
+    // const auto ex = v2.x - v1.x;
+    // const auto ey = v2.y - v1.y;
+
+    // outward normal to edge
+    const Vector2D ne(e.y, -e.x);
+    // const auto nex = ey;
+    // const auto ney = -ex;
+
+    // vector from v1 => p1
+    const Vector2D pv = p1 - v1;
+    // const auto pvx = p1.x - v1.x;
+    // const auto pvy = p1.y - v1.y;
+
+    // -dot((P1-V1), ne)
+    N = -(pv.x*ne.x + pv.y*ne.y);
+    // N = -(pvx*nex + pvy*ney);
+
+    // dot(dS, ne)
+    D = dS.x*ne.x + dS.y*ne.y;
+    // D = dS.x*nex + dS.y*ney;
+
+    // time of intersection if it happend
+    t = N / D;
+
+    // dS is parallel to e
+    if (rigid2d::almost_equal(D, 0.0))
+    {
+      // p1 is outside e
+      // therefore so is dS
+      if (N < 0.0)
+      {
+        std::cout << "ds parallel to e and p1 is outside of e" << std::endl;
+        std::cout << "No I" << std::endl;
+        return false;
+      }
+
+      // keep cheking the other edges
+      else
+      {
+        std::cout << "check the other edges" << std::endl;
+        continue;
+      }
+    }
+
+    // dS enters polygon
+    if (D < 0.0)
+    {
+      std::cout << "enters" << std::endl;
+      if (t > tE)
+      {
+        tE = t;
+        std::cout << "tE = t" << std::endl;
+        // enters after leaving, not possible
+        if (tE > tL)
+        {
+          std::cout << "enters after leaving" << std::endl;
+          std::cout << "No I" << std::endl;
+          return false;
+        }
+      }
+    }
+
+    // dS is leaving polygon
+    else
+    {
+      std::cout << "leaves" << std::endl;
+      if (t < tL)
+      {
+        tL = t;
+        std::cout << "tL = t" << std::endl;
+        // leaves before entering, not possible
+        if (tL < tE)
+        {
+          std::cout << "leaves before entering" << std::endl;
+          std::cout << "No I" << std::endl;
+          return false;
+        }
+      }
+    }
+    std::cout << "----------------------" << std::endl;
+  } // end loop
+
+
+  std::cout << "I !!" << std::endl;
+
+  return true;
+}
 
 
 
