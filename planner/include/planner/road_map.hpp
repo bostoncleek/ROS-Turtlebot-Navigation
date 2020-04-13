@@ -50,6 +50,18 @@ namespace planner
     }
   };
 
+
+  /// \brief Useful information for determining the closest point to
+  ///        a line segment
+  struct ClosePoint
+  {
+    double t = 0.0;           // if t [0, 1] then the min distance is on the line segment
+    double sign_d = 0.0;      // signed distance from line to p, d > 0 if on left side in direction p1 => p2
+    Vector2D p;               // closest point to line
+    bool on_seg = false;      // true if min distance to p is on the segment
+  };
+
+
   /// \brief Compose shortest distance from linesegment to a point
   ///        p1 and p2 are the bounds of the line segment
   ///        and p3 is the point.
@@ -76,9 +88,23 @@ namespace planner
                           const Vector2D &p2,
                           const Vector2D &p3);
 
-  double minDist(const Vector2D &p1,
-                          const Vector2D &p2,
-                          const Vector2D &p3);
+  /// \brief Compose shortest distance from linesegment to a point
+  ///        p1 and p2 are the bounds of the line segment
+  ///        and p3 is the point.
+  ///        Checks if the min distance is on the line segment
+  /// \param p1 - first bound of line segment
+  /// \param p1 - second bound of line segment
+  /// \param p3 - point to compose distance to
+  /// \returns - data regarding the state of the min distance
+  ///            from a point to the line segment
+  ClosePoint signMinDist2Line(const Vector2D &p1,
+                              const Vector2D &p2,
+                              const Vector2D &p3);
+
+
+  // double minDist(const Vector2D &p1,
+  //                         const Vector2D &p2,
+  //                         const Vector2D &p3);
 
 
 
@@ -147,11 +173,20 @@ namespace planner
     /// neighbors[out] - index on neighbors
     void nearestNeighbors(const Node &query, std::vector<int> &neighbors) const;
 
-
     /// \brief Check if node collides with boundaries of map
     /// \param q - the (x, y) location of a node
     /// \returns - true if q collides with boundary
     bool collideWalls(const Vector2D &q) const;
+
+    /// \brief Check whether line segment comes within
+    ///        a distance theshold of a polygon
+    /// \param poly - plygon to examine
+    /// \param p1 - first bound of line segment
+    /// \param p1 - second bound of line segment
+    /// \return - true if line segment is within tolerance of a polygon
+    bool lnSegClose2Polygon(const polygon &poly,
+                            const Vector2D &p1,
+                            const Vector2D &p2) const;
 
     /// \brief Insert a node into roadmap
     /// \param q - the (x, y) location of a node

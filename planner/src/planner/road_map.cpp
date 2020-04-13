@@ -78,18 +78,74 @@ double minDistLineSegPt(const Vector2D &p1,
 }
 
 
-double minDist(const Vector2D &p1,
-                        const Vector2D &p2,
-                        const Vector2D &p3)
+ClosePoint signMinDist2Line(const Vector2D &p1,
+                            const Vector2D &p2,
+                            const Vector2D &p3)
 {
-  const auto dx = p2.x - p1.x;
-  const auto dy = p2.y - p1.y;
+  ClosePoint clpt;
 
-  const auto num = std::fabs(dy*p3.x - dx*p3.y + p2.x*p1.y - p2.y*p1.x);
-  const auto denom = std::sqrt(dx*dx + dy*dy);
+  // vector from p1 to p2 (v)
+  const auto vx = p2.x - p1.x;
+  const auto vy = p2.y - p1.y;
 
-  return num / denom;
+  // leftward normal vector (u)
+  const auto ux = -vy;
+  const auto uy = vx;
+
+  // magnitude of u
+  const auto unorm = std::sqrt(ux*ux + uy*uy);
+
+  // leftward normal vector (n)
+  const auto nx = ux / unorm;
+  const auto ny = uy / unorm;
+
+  // vector from p1 to p3 (d)
+  const auto dx = p3.x - p1.x;
+  const auto dy = p3.y - p1.y;
+
+  // parameteize line (t)
+  const auto num = (p3.x - p1.x)*vx + (p3.y - p1.y)*vy;
+  const auto denom = vx*vx + vy*vy;
+
+  clpt.t = num / denom;
+
+  // signed distance is the dot product (d and n)
+  clpt.sign_d = dx*nx + dy*ny;
+
+  // location of point (P) on line (not necessarily on the line segment)
+  clpt.p.x = p1.x + clpt.t * vx;
+  clpt.p.y = p1.y + clpt.t * vy;
+
+  // check if  P is on segment p1 => p2
+  if ((clpt.t > 0.0 and clpt.t < 1.0) or \
+       rigid2d::almost_equal(clpt.t, 0.0) or \
+       rigid2d::almost_equal(clpt.t, 1.0))
+  {
+    clpt.on_seg = true;
+  }
+
+  else
+  {
+    clpt.on_seg = false;
+  }
+
+  return clpt;
 }
+
+
+
+// double minDist(const Vector2D &p1,
+//                         const Vector2D &p2,
+//                         const Vector2D &p3)
+// {
+//   const auto dx = p2.x - p1.x;
+//   const auto dy = p2.y - p1.y;
+//
+//   const auto num = std::fabs(dy*p3.x - dx*p3.y + p2.x*p1.y - p2.y*p1.x);
+//   const auto denom = std::sqrt(dx*dx + dy*dy);
+//
+//   return num / denom;
+// }
 
 
 
@@ -141,32 +197,26 @@ void RoadMap::printRoadMap() const
 void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 {
 
-  // TODO: check if nodes are away from perimater walls
 
-  // Vector2D q1(2.0, 2.8);
-  // Vector2D q2(2.0, 1.0);
+  // Vector2D q1(0.1, 0.5);
+  // Vector2D q2(0.35, 0.5);
   //
-  // // Vector2D q2(0.2, 0.4);
-  // // Vector2D q1(0.6, 1.2);
+  // // Vector2D q3(1.0, 1.2);
+  // //
+  // // ClosePoint clpt = signMinDist2Line(q1, q2, q3);
+  // //
+  // // std::cout << clpt.t << std::endl;
+  // // std::cout << clpt.sign_d << std::endl;
+  // // std::cout << clpt.p << std::endl;
+  // // std::cout << clpt.on_seg << std::endl;
   //
-  // // for(int i = 0; i < obs_map.size(); i++)
-  // // {
-  // //   bool status = lnSegIntersectPolygon(obs_map.at(i), q1, q2);
-  // //   std::cout << "Poly: " << i << "| intersection: " << status << std::endl;
-  // // }
-  //
-  // bool status = lnSegIntersectPolygon(obs_map.at(2), q1, q2);
-  // std::cout << "intersection: " << status << std::endl;
-  //
-  //
-  //
-  // // bool status = straightLinePath(q1, q2);
-  // // std::cout << "path can go: " << status << std::endl;
+  // // bool res = lnSegClose2Polygon(obs_map.at(3), q1, q2);
+  // bool res = straightLinePath(q1, q1);
+  // std::cout << res << std::endl;
   //
   // addNode(q1);
   // addNode(q2);
-  //
-  // addEdge(0,1);
+
 
   // clear prvious graph
   nodes.clear();
@@ -278,22 +328,14 @@ bool RoadMap::isFreeSpace(const Vector2D &q) const
 
 bool RoadMap::straightLinePath(const Vector2D &p1, const Vector2D &p2) const
 {
-  int i = 0;
-
-  std::cout << "---------------------" << std::endl;
   for(const auto &poly : obs_map)
   {
-    std::cout << "Checking Polygon: " << i << std::endl;
-
-    if (lnSegIntersectPolygon(poly, p1, p2))
+    if (lnSegIntersectPolygon(poly, p1, p2) or lnSegClose2Polygon(poly, p1, p2))
     {
       // std::cout << "inside polygon" << std::endl;
       return false;
     }
-
-    i++;
   } // end  outer loop
-  std::cout << "---------------------" << std::endl;
 
   // std::cout << "outisde polygons" << std::endl;
   return true;
@@ -353,6 +395,8 @@ bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
       // min distance is not on the edge segment
       // check distance from ends of segment to
       // ensure q is not near
+      // both ends are checked b/c we do not know which
+      // endpoint is closest to q
       else
       {
         const auto d1 = euclideanDistance(p1.x, p1.y, q.x, q.y);
@@ -384,7 +428,13 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
 {
   // http://geomalgorithms.com/a13-_intersect-4.html
 
-  // TODO: check p1 == p2
+  // check p1 == p2
+  // dp1p2 = euclideanDistance(p1.x, p1.y, p2.x, p2.y);
+  // if (rigid2d::almost_equal(dp1p2, 0.0))
+  // {
+  //   return false;
+  // }
+
 
   auto tE = 0.0;                    // the maximum entering segment parameter
   auto tL = 1.0;                    // the minimum leaving segment parameter
@@ -395,10 +445,6 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
 
   for(unsigned int i = 0; i < poly.size(); i++)
   {
-    std::cout << "----------------------" << std::endl;
-
-    std::cout << "checking edge: " << i << std::endl;
-
     // vertices on polygon (CCW)
     Vector2D v1, v2;
 
@@ -448,15 +494,12 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
       // therefore so is dS
       if (N < 0.0)
       {
-        std::cout << "ds parallel to e and p1 is outside of e" << std::endl;
-        std::cout << "No I" << std::endl;
         return false;
       }
 
       // keep cheking the other edges
       else
       {
-        std::cout << "check the other edges" << std::endl;
         continue;
       }
     }
@@ -464,16 +507,12 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
     // dS enters polygon
     if (D < 0.0)
     {
-      std::cout << "enters" << std::endl;
       if (t > tE)
       {
         tE = t;
-        std::cout << "tE = t" << std::endl;
         // enters after leaving, not possible
         if (tE > tL)
         {
-          std::cout << "enters after leaving" << std::endl;
-          std::cout << "No I" << std::endl;
           return false;
         }
       }
@@ -482,25 +521,17 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
     // dS is leaving polygon
     else
     {
-      std::cout << "leaves" << std::endl;
       if (t < tL)
       {
         tL = t;
-        std::cout << "tL = t" << std::endl;
         // leaves before entering, not possible
         if (tL < tE)
         {
-          std::cout << "leaves before entering" << std::endl;
-          std::cout << "No I" << std::endl;
           return false;
         }
       }
     }
-    std::cout << "----------------------" << std::endl;
   } // end loop
-
-
-  std::cout << "I !!" << std::endl;
 
   return true;
 }
@@ -529,6 +560,74 @@ bool RoadMap::collideWalls(const Vector2D &q) const
 
   return false;
 }
+
+
+bool RoadMap::lnSegClose2Polygon(const polygon &poly,
+                        const Vector2D &p1,
+                        const Vector2D &p2) const
+{
+  // case 1: check dist from corners (p3) of polygon to p1 => p2
+
+  // NOTE: case 2 is covered in the free space search
+  // case 2: either one or maybe both of the bounds of the line segment
+  //         p1  and/or p2 are the closest points to the edge v1 => v2
+  //         of the polygon
+
+
+
+  for(unsigned int i = 0; i < poly.size(); i++)
+  {
+    // vertices on polygon (CCW)
+    Vector2D v1, v2;
+
+    if (i != poly.size()-1)
+    {
+      v1 = poly.at(i);
+      v2 = poly.at(i+1);
+    }
+
+    else
+    {
+      v1 = poly.back();
+      v2 = poly.at(0);
+    }
+
+    // case 1:
+    ClosePoint clpt = signMinDist2Line(p1, p2, v1);
+
+    // on line segment p1 => p2 and within radius there is a collision
+    if (clpt.on_seg and std::fabs(clpt.sign_d) < bnd_rad)
+    {
+      // std::cout << "corner of polygon" << std::endl;
+      return true;
+    }
+
+    // // case 2:
+    // // check p1: closest point on edge v1 => v2 to p1
+    // ClosePoint clpt_p1 = signMinDist2Line(v1, v2, p1);
+    //
+    // if (clpt_p1.on_seg and std::fabs(clpt_p1.sign_d) < bnd_rad)
+    // {
+    //   std::cout << "p1 too close" << std::endl;
+    //   return true;
+    // }
+    //
+    // // check p2: closest point on edge v1 => v2 to p2
+    // ClosePoint clpt_p2 = signMinDist2Line(v1, v2, p2);
+    //
+    // if (clpt_p2.on_seg and std::fabs(clpt_p2.sign_d) < bnd_rad)
+    // {
+    //   std::cout << "p2 too close" << std::endl;
+    //   return true;
+    // }
+
+
+  } // end loop
+
+  return false;
+}
+
+
 
 
 void RoadMap::addNode(const Vector2D &q)
