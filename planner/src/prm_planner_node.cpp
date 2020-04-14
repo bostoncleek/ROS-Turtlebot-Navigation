@@ -209,7 +209,6 @@ int main(int argc, char** argv)
 
   fillMarkerArray(nodes, nodes_array, edges_array);
 
-
    while(node_handle.ok())
    {
 
