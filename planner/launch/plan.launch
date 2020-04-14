@@ -12,7 +12,7 @@
     <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
     <param name="frame_id" value="map" />
     <param name="bounding_radius" value="0.1" />
-    <param name="nearest_neighbors" value="5" />
+    <param name="nearest_neighbors" value="10" />
     <param name="num_nodes" value="500" />
   </node>
 
