@@ -463,26 +463,18 @@ bool RoadMap::lnSegIntersectPolygon(const polygon &poly,
 
     // edge v1 => v2
     const Vector2D e = v2 - v1;
-    // const auto ex = v2.x - v1.x;
-    // const auto ey = v2.y - v1.y;
 
     // outward normal to edge
     const Vector2D ne(e.y, -e.x);
-    // const auto nex = ey;
-    // const auto ney = -ex;
 
     // vector from v1 => p1
     const Vector2D pv = p1 - v1;
-    // const auto pvx = p1.x - v1.x;
-    // const auto pvy = p1.y - v1.y;
 
     // -dot((P1-V1), ne)
     N = -(pv.x*ne.x + pv.y*ne.y);
-    // N = -(pvx*nex + pvy*ney);
 
     // dot(dS, ne)
     D = dS.x*ne.x + dS.y*ne.y;
-    // D = dS.x*nex + dS.y*ney;
 
     // time of intersection if it happend
     t = N / D;
