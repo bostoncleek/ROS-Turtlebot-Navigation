@@ -101,11 +101,14 @@ namespace planner
                               const Vector2D &p2,
                               const Vector2D &p3);
 
-
-  // double minDist(const Vector2D &p1,
-  //                         const Vector2D &p2,
-  //                         const Vector2D &p3);
-
+  /// \brief Check whether line segment intersects a polygon
+  /// \param poly - plygon to examine
+  /// \param p1 - first bound of line segment
+  /// \param p1 - second bound of line segment
+  /// \return - true if intersects polygon
+  bool lnSegIntersectPolygon(const polygon &poly,
+                             const Vector2D &p1,
+                             const Vector2D &p2);
 
 
    /// \brief Compose graph for global planning
@@ -126,7 +129,6 @@ namespace planner
             unsigned int neighbors, unsigned int num_nodes,
             obstacle_map obs_map);
 
-
     /// \brief Retreive the graph
     /// roadmap[out] - the graph
     void getRoadMap(std::vector<Node> &roadmap) const;
@@ -139,34 +141,6 @@ namespace planner
     /// \param goal - goal configuration
     void constructRoadMap(const Vector2D &start, const Vector2D &goal);
 
-    /// \brief Check whether a point is in free space
-    /// \param q - random configuration
-    /// \return - true if free space
-    bool isFreeSpace(const Vector2D &q) const;
-
-    /// \brief Check whether an edge between two nodes is feasible
-    /// \param p1 - first bound of edge
-    /// \param p1 - second bound of edge
-    /// \return - true no collision between edge on polygons
-    bool straightLinePath(const Vector2D &p1, const Vector2D &p2) const;
-
-
-    /// \brief Check whether a point isnside or close to a polygon
-    /// \param poly - plygon to examine
-    /// \param q - random configuration
-    /// \return - true if inside or close to polygon
-    bool ptInsidePolygon(const polygon &poly, const Vector2D &q) const;
-
-    /// \brief Check whether line segment intersects a polygon
-    /// \param poly - plygon to examine
-    /// \param p1 - first bound of line segment
-    /// \param p1 - second bound of line segment
-    /// \return - true if intersects polygon
-    bool lnSegIntersectPolygon(const polygon &poly,
-                               const Vector2D &p1,
-                               const Vector2D &p2) const;
-
-
   private:
     /// \brief Finds K nearest neighbors in roadmap
     /// \param query - query node
@@ -177,6 +151,23 @@ namespace planner
     /// \param q - the (x, y) location of a node
     /// \returns - true if q collides with boundary
     bool collideWalls(const Vector2D &q) const;
+
+    /// \brief Check whether a point is in free space
+    /// \param q - random configuration
+    /// \return - true if free space
+    bool isFreeSpace(const Vector2D &q) const;
+
+    /// \brief Check whether an edge between two nodes is feasible
+    /// \param p1 - first bound of edge
+    /// \param p1 - second bound of edge
+    /// \return - true no collision between edge on polygons
+    bool stlnPathCollision(const Vector2D &p1, const Vector2D &p2) const;
+
+    /// \brief Check whether a point isnside or close to a polygon
+    /// \param poly - plygon to examine
+    /// \param q - random configuration
+    /// \return - true if inside or close to polygon
+    bool ptInsidePolygon(const polygon &poly, const Vector2D &q) const;
 
     /// \brief Check whether line segment comes within
     ///        a distance theshold of a polygon
@@ -209,13 +200,7 @@ namespace planner
 
   };
 
-
-
-
-
 } // end namespace
-
-
 
 
 #endif
