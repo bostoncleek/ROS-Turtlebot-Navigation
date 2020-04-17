@@ -14,6 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
+	nav_msgs
 	rigid2d
   roscpp
 	visualization_msgs
@@ -114,6 +115,7 @@ catkin_package(
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
  	geometry_msgs
+	nav_msgs
 	roscpp
 	visualization_msgs
 #  DEPENDS system_lib
@@ -132,6 +134,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
+	src/${PROJECT_NAME}/grid_map.cpp
   src/${PROJECT_NAME}/road_map.cpp
 )
 
@@ -145,6 +148,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(draw_cont_map src/draw_cont_map_node.cpp)
 add_executable(prm_${PROJECT_NAME} src/prm_${PROJECT_NAME}_node.cpp)
+add_executable(grid_${PROJECT_NAME} src/grid_${PROJECT_NAME}_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -155,6 +159,7 @@ add_executable(prm_${PROJECT_NAME} src/prm_${PROJECT_NAME}_node.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(draw_cont_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(grid_${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(prm_${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -163,6 +168,12 @@ target_link_libraries(draw_cont_map
 	${rigid2d_LIBRARIES}
 )
 
+
+target_link_libraries(grid_${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+	${PROJECT_NAME}
+	${rigid2d_LIBRARIES}
+)
 
 target_link_libraries(prm_${PROJECT_NAME}
   ${catkin_LIBRARIES}
@@ -189,7 +200,7 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS draw_cont_map prm_${PROJECT_NAME}
+install(TARGETS draw_cont_map grid_${PROJECT_NAME} prm_${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

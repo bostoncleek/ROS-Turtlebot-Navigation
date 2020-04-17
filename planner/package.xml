@@ -13,11 +13,13 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>rigid2d</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>xmlrpcpp</build_depend>
 
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>nav_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
 
   <exec_depend>roscpp</exec_depend>
