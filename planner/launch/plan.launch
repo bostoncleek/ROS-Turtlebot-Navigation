@@ -1,24 +1,37 @@
 <launch>
 
   <!-- draw the continous space map -->
-  <node name="draw_cont_map" pkg="planner" type="draw_cont_map" output="screen" >
+  <!-- <node name="draw_cont_map" pkg="planner" type="draw_cont_map" output="screen" >
     <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
     <param name="frame_id" value="map" />
-  </node>
+  </node> -->
 
 
   <!-- probabilisitc road maps -->
-  <node name="prm_global_planner" pkg="planner" type="prm_planner" output="screen" >
+  <!-- <node name="prm_global_planner" pkg="planner" type="prm_planner" output="screen" >
     <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
     <param name="frame_id" value="map" />
     <param name="bounding_radius" value="0.1" />
     <param name="nearest_neighbors" value="10" />
     <param name="num_nodes" value="500" />
+  </node> -->
+
+
+  <!-- rviz for probabilisitc road maps -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/prm.rviz"/> -->
+
+
+  <node name="grid_planner" pkg="planner" type="grid_planner" output="screen" >
+    <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
+    <param name="frame_id" value="map" />
+    <param name="bounding_radius" value="0.1" />
   </node>
 
 
+  <!-- rviz for grid based planners -->
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/grid_planner.rviz"/>
 
-  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/prm.rviz"/>
+  <!-- <node pkg="tf" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0 1 world map 10"/> -->
 
 
 
