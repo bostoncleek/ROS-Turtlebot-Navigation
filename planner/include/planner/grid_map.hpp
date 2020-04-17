@@ -16,6 +16,14 @@ namespace planner
   using rigid2d::Vector2D;
   using rigid2d::euclideanDistance;
 
+  /// \brief coordinated in the grid
+  struct GridCoordinates
+  {
+    int i = -1; // row
+    int j = -1; // column
+  };
+
+
   /// \brief Grid cell
   struct Cell
   {
@@ -63,6 +71,13 @@ namespace planner
     /// map[out] a map in row major order
     void getGrid(std::vector<int8_t> &map) const;
 
+  private:
+    /// \brief Coverts the real-world coordinates of the obstacles into
+    ///        grid cell coordinates/ Finds the (x,y) grid coordinates
+    ///        of a cell's center that correspond to the vertex of an obstacle.
+    /// obs_map[out] - coordinates of vertices of all obstalces
+    void preProcessObstacles(obstacle_map &obs_map);
+
     /// \brief Converts grid indices to word coordinates (x, y)
     /// \param i - row in the grid
     /// \param j - column in the grid
@@ -73,16 +88,13 @@ namespace planner
     /// \param x - x position in world
     /// \param y - y position in world
     /// \returns the grid index in row major order
-    unsigned int world2RowMajor(double x, double y) const;
+    GridCoordinates world2Grid(double x, double y) const;
 
     /// \brief Converts grid indices to row major oreder index
     /// \param i - row in the grid
     /// \param j - column in the grid
     /// \returns the grid index in row major order
     unsigned int grid2RowMajor(int i, int j) const;
-
-  private:
-
 
     double xmin, xmax, ymin, ymax;               // map dims
     double resolution;                           // map resolution
@@ -96,15 +108,10 @@ namespace planner
   };
 
 
-
-
-
-
-
-
-
-
-
+  /// \brief output a 2 dimensional grid coordinates
+  /// os - stream to output to
+  /// gc - grid coordinates
+  std::ostream & operator<<(std::ostream & os, const GridCoordinates & gc);
 
 
 
