@@ -11,6 +11,7 @@
 namespace planner
 {
 
+
 bool minDistLineSegPt(double &distance,
                       const Vector2D &p1,
                       const Vector2D &p2,

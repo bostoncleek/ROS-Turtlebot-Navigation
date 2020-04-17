@@ -20,8 +20,8 @@ namespace planner
   using rigid2d::euclideanDistance;
 
 
-  typedef std::vector<Vector2D> polygon;    // convex polygon, vertices counter-clockwise
-  typedef std::vector<polygon> obstacle_map;     // constain all polygons in Cspace
+  typedef std::vector<Vector2D> polygon;      // convex polygon, vertices counter-clockwise
+  typedef std::vector<polygon> obstacle_map;  // constain all polygons in Cspace
 
 
   /// \brief Egde connecting two nodes
