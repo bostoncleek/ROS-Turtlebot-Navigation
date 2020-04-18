@@ -371,7 +371,29 @@ void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors) c
     // std::cout << umap.at(distances.back()) << std::endl;
     distances.pop_back();
   } // end loop
+}
 
+
+bool RoadMap::collideWalls(const Vector2D &q) const
+{
+  Vector2D v1(xmin, ymin);
+  Vector2D v2(xmax, ymin);
+  Vector2D v3(xmax, ymax);
+  Vector2D v4(xmin, ymax);
+
+  std::vector<Vector2D> bounds = {v1, v2, v3, v4, v1};
+
+  for(unsigned int i = 0; i < bounds.size()-1; i++)
+  {
+    auto dist = 0.0;
+    if (minDistLineSegPt(dist, bounds.at(i), bounds.at(i+1), q) and dist < bnd_rad)
+    {
+      // std::cout << "node to close to wall" << std::endl;
+      return true;
+    }
+  } // end loop
+
+  return false;
 }
 
 
@@ -490,35 +512,12 @@ bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
             return true;
           }
         }
-      }
+      } 
 
-    } // end on right side
+    } // end if (right side)
   } // end loop
 
   return true;
-}
-
-
-bool RoadMap::collideWalls(const Vector2D &q) const
-{
-  Vector2D v1(xmin, ymin);
-  Vector2D v2(xmax, ymin);
-  Vector2D v3(xmax, ymax);
-  Vector2D v4(xmin, ymax);
-
-  std::vector<Vector2D> bounds = {v1, v2, v3, v4, v1};
-
-  for(unsigned int i = 0; i < bounds.size()-1; i++)
-  {
-    auto dist = 0.0;
-    if (minDistLineSegPt(dist, bounds.at(i), bounds.at(i+1), q) and dist < bnd_rad)
-    {
-      // std::cout << "node to close to wall" << std::endl;
-      return true;
-    }
-  } // end loop
-
-  return false;
 }
 
 
