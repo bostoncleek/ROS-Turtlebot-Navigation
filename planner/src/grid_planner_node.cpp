@@ -32,7 +32,8 @@ int main(int argc, char** argv)
   ros::Publisher map_pub = node_handle.advertise<nav_msgs::OccupancyGrid>("map", 1);
 
 
-  auto resolution = 0.0;                  // resolution of map coordinates
+  auto obs_resolution = 0.0;              // resolution of obstacle coordinates
+  auto grid_resolution = 0.0;             // resolution of grid cell (cell side length)
   std::string frame_id;                   // frame of grid
   XmlRpc::XmlRpcValue map_bound;          // boundaries of map
   XmlRpc::XmlRpcValue obstacles;          // triple nested vector for obstacle coordinates
@@ -40,17 +41,19 @@ int main(int argc, char** argv)
 
   nh.getParam("frame_id", frame_id);
   nh.getParam("bounding_radius", bounding_radius);
+  nh.getParam("grid_resolution", grid_resolution);
 
-  nh.getParam("resolution", resolution);
+
+  nh.getParam("resolution", obs_resolution);
   nh.getParam("bounds", map_bound);
   nh.getParam("obstacles", obstacles);
 
 
-  const auto xmin = static_cast<double>(map_bound[0][0]) * resolution;
-  const auto xmax = static_cast<double>(map_bound[0][1]) * resolution;
+  const auto xmin = static_cast<double>(map_bound[0][0]) * obs_resolution;
+  const auto xmax = static_cast<double>(map_bound[0][1]) * obs_resolution;
 
-  const auto ymin = static_cast<double>(map_bound[1][0]) * resolution;
-  const auto ymax = static_cast<double>(map_bound[1][1]) * resolution;
+  const auto ymin = static_cast<double>(map_bound[1][0]) * obs_resolution;
+  const auto ymax = static_cast<double>(map_bound[1][1]) * obs_resolution;
 
 
   ROS_INFO("Successfully launched grid_planner node");
@@ -67,8 +70,8 @@ int main(int argc, char** argv)
     for(auto j = 0; j < obstacles[i].size(); j++)
     {
       Vector2D p;
-      p.x = static_cast<double> (obstacles[i][j][0]) * resolution;
-      p.y = static_cast<double> (obstacles[i][j][1]) * resolution;
+      p.x = static_cast<double> (obstacles[i][j][0]) * obs_resolution;
+      p.y = static_cast<double> (obstacles[i][j][1]) * obs_resolution;
       poly.push_back(p);
     }
     obs_map.push_back(poly);
@@ -78,11 +81,9 @@ int main(int argc, char** argv)
   // set up the grid
   planner::GridMap grid(xmin, xmax,
                         ymin, ymax,
-                        resolution,
+                        grid_resolution,
                         bounding_radius,
                         obs_map);
-
-  std::cout << grid.grid2World(0, 1) << std::endl;
 
   // rviz representation of the grid
   std::vector<int8_t> map;
@@ -101,13 +102,19 @@ int main(int argc, char** argv)
 
   nav_msgs::OccupancyGrid map_msg;
   map_msg.header.frame_id = frame_id;
-  map_msg.info.resolution = resolution;
-  map_msg.info.width = static_cast<unsigned int> (std::ceil((xmax - xmin) / resolution));
-  map_msg.info.height = static_cast<unsigned int> (std::ceil((ymax - ymin) / resolution));
+  map_msg.info.resolution = grid_resolution;
+  map_msg.info.width = planner::gridSize(xmin, xmax, grid_resolution);
+  map_msg.info.height = planner::gridSize(ymin, ymax, grid_resolution);
 
   map_msg.info.origin = map_pose;
 
 
+  // std::cout << planner::gridSize(ymin, ymax, resolution) << std::endl;
+  // std::cout << "size test: " << std::round((ymax - ymin) / resolution) << std::endl;
+  // std::cout << "size test: " << ((ymax - ymin) / resolution) << std::endl;
+
+
+  grid.labelCells();
   grid.getGrid(map);
 
 
