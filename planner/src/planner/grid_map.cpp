@@ -10,7 +10,15 @@ namespace planner
 
 unsigned int gridSize(double lower, double upper, double resolution)
 {
-  return static_cast<unsigned int> (std::ceil((upper - lower) / resolution));
+  return static_cast<unsigned int> (std::round((upper - lower) / resolution));
+}
+
+
+double boundingRad(double inflation, double resolution)
+{
+  const auto cell_diag = std::sqrt(resolution*resolution);
+  return inflation + 0.5 * cell_diag;
+  // return inflation + cell_diag;
 }
 
 
@@ -23,13 +31,19 @@ GridMap::GridMap(double xmin, double xmax,
                     ymin(ymin),
                     ymax(ymax),
                     resolution(resolution),
-                    inflation(inflation),
+                    bnd_rad(boundingRad(inflation, resolution)),
                     obs_map(obs_map),
                     xsize(gridSize(xmin, xmax, resolution)),
                     ysize(gridSize(ymin, ymax, resolution)),
                     grid(xsize * ysize)
 {
-  preProcessObstacles(obs_map);
+  // convert world (x,y) into grid (x,y), this is the center of the
+  // closest grid cell to the obstacle vertex location in the world
+  preProcessObstacles();
+
+  // convert world (x,y) into grid (x,y), this is the center of the
+  // closest grid cell to the boundary vertex location in the world
+  // preProcessMapBounds();
 }
 
 
@@ -47,7 +61,12 @@ void GridMap::getGrid(std::vector<int8_t> &map) const
     auto idx = col * xsize + row;
 
 
-    if (grid.at(i).state == 1)
+    if (grid.at(i).state == 2)
+    {
+      map.at(idx) = 30;
+    }
+
+    else if (grid.at(i).state == 1)
     {
       map.at(idx) = 100;
     }
@@ -66,7 +85,275 @@ void GridMap::getGrid(std::vector<int8_t> &map) const
 }
 
 
-void GridMap::preProcessObstacles(obstacle_map &obs_map)
+void GridMap::labelCells()
+{
+  // loop across all cells
+  unsigned int i = 0;
+  for(auto &cell : grid)
+  {
+    // compose location of cell in grid
+    auto row = i / ysize;
+    auto col = i % ysize;
+
+    cell.i = row;
+    cell.j = col;
+
+    cell.p = grid2World(row, col);
+    // std::cout << cell.p << std::endl;
+
+    // if(row == 33 and col == 10)
+    // {
+    //   std::cout << "cell found " << std::endl;
+    //   std::cout << cell.p << std::endl;
+    //
+    //   const auto gidx = row * ysize + col;
+    //   grid.at(gidx).state = 0;
+    //
+    //   polygon poly = obs_map.at(7);
+    //   collisionCells(poly, cell);
+    // }
+
+
+    // collisions with boundaries of world
+    collideWalls(cell);
+
+
+    // loop across all obstacles
+    for(const auto &poly : obs_map)
+    // polygon poly = obs_map.at(7);
+    {
+      collisionCells(poly, cell);
+
+    } // end inner loop
+
+    // label cells as free
+    if (cell.state == -1)
+    {
+      cell.state = 0;
+    }
+
+    i++;
+  } // end outer loop
+}
+
+
+
+void GridMap::collisionCells(const polygon &poly, Cell &cell)
+{
+  // flag for determining if cell is inside an obstacle
+  bool flag_inside = true;
+
+  for(unsigned int i = 0; i < poly.size(); i++)
+  {
+    Vector2D v1, v2;
+
+    if (i != poly.size()-1)
+    {
+      v1 = poly.at(i);
+      v2 = poly.at(i+1);
+    }
+
+    // at last vertex, compare with first to get edge
+    else
+    {
+      v1 = poly.back();
+      v2 = poly.at(0);
+    }
+
+    // v1 = poly.at(0);
+    // v2 = poly.at(1);
+    //
+    // std::cout << "vertex" << std::endl;
+    // std::cout << v1 << std::endl;
+    // std::cout << v2 << std::endl;
+
+
+
+    // min distance to line
+    ClosePoint clpt = signMinDist2Line(v1, v2, cell.p);
+
+    // std::cout << "sign d: " << std::fabs(clpt.sign_d) << std::endl;
+    // std::cout << "on seg: " << clpt.on_seg << std::endl;
+    // std::cout << "t: " << clpt.t << std::endl;
+
+
+    // on the line and within the segment bounds
+    if (rigid2d::almost_equal(clpt.sign_d, 0.0) and clpt.on_seg)
+    {
+      // std::cout << "on border of obstacle: " << std::fabs(clpt.sign_d) << std::endl;
+      cell.state = 1;
+      flag_inside = false;
+    }
+
+
+    // edge case: singed distance is zero but not on line segment
+    else if (rigid2d::almost_equal(clpt.sign_d, 0.0) and !clpt.on_seg)
+    {
+      // check which side of the polygon edge we are on (v1 or v2)
+      // to the left of v1
+      // compare distance from v1 to cell
+      if (clpt.t < 0.0)
+      {
+        const auto dv1p = euclideanDistance(v1.x, v1.y, cell.p.x, cell.p.y);
+        if (dv1p > bnd_rad)
+        {
+          // cell.state = 0;
+          flag_inside = false;
+        }
+
+        else
+        {
+          if (cell.state != 1)
+          {
+            cell.state = 2;
+          }
+          flag_inside = false;
+        }
+      }
+
+      else if (clpt.t > 0.0)
+      {
+        const auto dv2p = euclideanDistance(v2.x, v2.y, cell.p.x, cell.p.y);
+        if (dv2p > bnd_rad)
+        {
+          // cell.state = 0;
+          flag_inside = false;
+        }
+
+        else
+        {
+          // std::cout << "here" << std::endl;
+          if (cell.state != 1)
+          {
+            cell.state = 2;
+          }
+          flag_inside = false;
+        }
+      }
+    }
+
+
+    // on right side of edge
+    else if (clpt.sign_d < 0.0)
+    {
+      // if on the segment the edge exists make sure it is
+      // outside the threshold
+      if (clpt.on_seg)
+      {
+        if (std::fabs(clpt.sign_d) > bnd_rad)
+        {
+          // cell.state = 0;
+          flag_inside = false;
+        }
+
+        else
+        {
+          if (cell.state != 1)
+          {
+            cell.state = 2;
+          }
+          flag_inside = false;
+        }
+      }
+
+      // min distance is not on the edge segment
+      // check distance from ends of segment to
+      // ensure the cell is not near
+      else
+      {
+        // check which side of the polygon edge we are on (v1 or v2)
+        // to the left of v1
+        // compare distance from v1 to cell
+        if (clpt.t < 0.0)
+        {
+          const auto dv1p = euclideanDistance(v1.x, v1.y, cell.p.x, cell.p.y);
+          if (dv1p > bnd_rad)
+          {
+            // cell.state = 0;
+            flag_inside = false;
+          }
+
+          else
+          {
+            // std::cout << "here" << std::endl;
+            if (cell.state != 1)
+            {
+              cell.state = 2;
+            }
+            flag_inside = false;
+          }
+        }
+
+        else if (clpt.t > 0.0)
+        {
+          const auto dv2p = euclideanDistance(v2.x, v2.y, cell.p.x, cell.p.y);
+          if (dv2p > bnd_rad)
+          {
+            // cell.state = 0;
+            flag_inside = false;
+          }
+
+          else
+          {
+            if (cell.state != 1)
+            {
+              cell.state = 2;
+            }
+            flag_inside = false;
+          }
+        }
+      }
+    } // end if (right side)
+
+  } // end for loop
+
+  // cell is inside an obstacle
+  if (flag_inside)
+  {
+    cell.state = 1;
+  }
+
+}
+
+
+void GridMap::collideWalls(Cell &cell)
+{
+  // grid (x,y) coordinates of boundary cells
+  // lower bounds
+  const GridCoordinates gc_min = world2Grid(xmin, ymin);
+  const Vector2D grid_min = grid2World(gc_min.i, gc_min.j);
+
+  // upper bounds
+  const GridCoordinates gc_max = world2Grid(xmax, ymax);
+  const Vector2D grid_max = grid2World(gc_max.i, gc_max.j);
+
+
+  const Vector2D v1 = grid_min;
+  const Vector2D v2(grid_max.x, grid_min.y);
+  const Vector2D v3 = grid_max;
+  const Vector2D v4(grid_min.x, grid_max.y);
+
+  std::vector<Vector2D> bounds = {v1, v2, v3, v4, v1};
+
+  for(unsigned int i = 0; i < bounds.size()-1; i++)
+  {
+    // min distance to line
+    ClosePoint clpt = signMinDist2Line(bounds.at(i), bounds.at(i+1), cell.p);
+
+    if (rigid2d::almost_equal(clpt.sign_d, 0.0) and clpt.on_seg)
+    {
+      cell.state = 1;
+    }
+
+    else if (std::abs(clpt.sign_d) < bnd_rad and cell.state != 1)
+    {
+      cell.state = 2;
+    }
+  }
+}
+
+
+void GridMap::preProcessObstacles()
 {
 
   // std::cout << grid.size() << std::endl;
@@ -98,24 +385,57 @@ void GridMap::preProcessObstacles(obstacle_map &obs_map)
 
 
       // IMPORTANT: now we can get the grid index
-      //            by transposing
-      const auto gidx = grid2RowMajor(gc.i, gc.j);
+      // const auto gidx = grid2RowMajor(gc.i, gc.j);
       // const auto gidx = gc.i * ysize + gc.j;
-
       // grid.at(gidx).state = 1;
-      // std::cout << "grid (x,y) " << obs_map.at(i).at(j) << std::endl;
+
+      // if (i == 2)
+      // {
+      //   std::cout << gc << std::endl;
+      //   std::cout << "grid (x,y) " << obs_map.at(i).at(j) << std::endl;
+      //
+      //   const auto gidx = gc.i * ysize + gc.j;
+      //   grid.at(gidx).state = 1;
+      //
+      // }
 
     } // end inner loop
   } // end outer loop
 }
 
 
-
+// void GridMap::preProcessMapBounds()
+// {
+//   // lower bounds
+//   const GridCoordinates gc_min = world2Grid(xmin, ymin);
+//   std::cout << gc_min << std::endl;
+//
+//   const Vector2D grid_min = grid2World(gc_min.i, gc_min.j);
+//
+//   xmin = grid_min.x;
+//   ymin = grid_min.y;
+//
+//
+//   // upper bounds
+//   const GridCoordinates gc_max = world2Grid(xmax, ymax);
+//   std::cout << gc_max << std::endl;
+//   const Vector2D grid_max = grid2World(gc_max.i, gc_max.j);
+//
+//   xmax = grid_max.x;
+//   ymax = grid_max.y;
+//
+//
+//   std::cout <<  xmin << std::endl;
+//   std::cout <<  ymin << std::endl;
+//   std::cout <<  xmax << std::endl;
+//   std::cout <<  ymax << std::endl;
+// }
 
 
 
 Vector2D GridMap::grid2World(int i, int j) const
 {
+
   if (!(i >= 0 and i <= xsize-1))
   {
     std::cout << "i: " << i << std::endl;

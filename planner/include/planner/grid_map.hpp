@@ -27,8 +27,10 @@ namespace planner
   /// \brief Grid cell
   struct Cell
   {
-    int state;        // occupied: 1, unoccupied: 0, unknown: -1
+    int state;        // occupied: 1, unoccupied: 0, inflation: 2, unknown: -1
     int i, j;         // index location in grid
+
+    Vector2D p;       // (x,y) world location
 
     /// \brief default values
     Cell(): state(-1), i(-1), j(-1) {}
@@ -48,6 +50,12 @@ namespace planner
   /// \returns size of grid
   unsigned int gridSize(double lower, double upper, double resolution);
 
+  /// \brief Compose the bounding radius for determining obstacle cells
+  /// \param inflation - obstalce inflation distance
+  /// \param resolution - length of a grid cell edge (all edges are equal)
+  /// \returns the bounding radius
+  double boundingRad(double inflation, double resolution);
+
 
   /// \brief Constructs an 2D grid
   class GridMap
@@ -66,17 +74,33 @@ namespace planner
             double resolution, double inflation,
             obstacle_map obs_map);
 
-
     /// \brief Compose a map viewable in rviz
     /// map[out] a map in row major order
     void getGrid(std::vector<int8_t> &map) const;
 
+    /// \brief Determines state of all cells in grid
+    void labelCells();
+
   private:
+    /// \brief Labels all osbtacle cells
+    /// \param poly - plygon to examine
+    /// cell[out] - labels if it is an osbtacle cell
+    void collisionCells(const polygon &poly, Cell &cell);
+
+    /// \brief Check if cell collides with boundaries of map
+    /// cell[out] - labels if it is an obstacle cell
+    void collideWalls(Cell &cell);
+
     /// \brief Coverts the real-world coordinates of the obstacles into
-    ///        grid cell coordinates/ Finds the (x,y) grid coordinates
+    ///        grid cell coordinates. Finds the (x,y) grid coordinates
     ///        of a cell's center that correspond to the vertex of an obstacle.
-    /// obs_map[out] - coordinates of vertices of all obstalces
-    void preProcessObstacles(obstacle_map &obs_map);
+    void preProcessObstacles();
+
+    /// \brief Coverts the real-world coordinates of the boundaries into
+    ///        grid cell coordinates. Finds the (x,y) grid coordinates
+    ///        of a cell's center that correspond to the boundary.
+    // void preProcessMapBounds();
+
 
     /// \brief Converts grid indices to word coordinates (x, y)
     /// \param i - row in the grid
@@ -98,7 +122,7 @@ namespace planner
 
     double xmin, xmax, ymin, ymax;               // map dims
     double resolution;                           // map resolution
-    double inflation;                            // obstacle inflation radius
+    double bnd_rad;                              // obstacle inflation radius
     obstacle_map obs_map;                        // collection of all the polygons
 
     int xsize, ysize;                            // number of discretization
