@@ -135,6 +135,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
 	src/${PROJECT_NAME}/grid_map.cpp
+	src/${PROJECT_NAME}/${PROJECT_NAME}_utilities.cpp
   src/${PROJECT_NAME}/road_map.cpp
 )
 
