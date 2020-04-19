@@ -18,7 +18,6 @@ double boundingRad(double inflation, double resolution)
 {
   const auto cell_diag = std::sqrt(resolution*resolution);
   return inflation + 0.5 * cell_diag;
-  // return inflation + cell_diag;
 }
 
 
@@ -40,10 +39,6 @@ GridMap::GridMap(double xmin, double xmax,
   // convert world (x,y) into grid (x,y), this is the center of the
   // closest grid cell to the obstacle vertex location in the world
   preProcessObstacles();
-
-  // convert world (x,y) into grid (x,y), this is the center of the
-  // closest grid cell to the boundary vertex location in the world
-  // preProcessMapBounds();
 }
 
 
@@ -404,35 +399,6 @@ void GridMap::preProcessObstacles()
 }
 
 
-// void GridMap::preProcessMapBounds()
-// {
-//   // lower bounds
-//   const GridCoordinates gc_min = world2Grid(xmin, ymin);
-//   std::cout << gc_min << std::endl;
-//
-//   const Vector2D grid_min = grid2World(gc_min.i, gc_min.j);
-//
-//   xmin = grid_min.x;
-//   ymin = grid_min.y;
-//
-//
-//   // upper bounds
-//   const GridCoordinates gc_max = world2Grid(xmax, ymax);
-//   std::cout << gc_max << std::endl;
-//   const Vector2D grid_max = grid2World(gc_max.i, gc_max.j);
-//
-//   xmax = grid_max.x;
-//   ymax = grid_max.y;
-//
-//
-//   std::cout <<  xmin << std::endl;
-//   std::cout <<  ymin << std::endl;
-//   std::cout <<  xmax << std::endl;
-//   std::cout <<  ymax << std::endl;
-// }
-
-
-
 Vector2D GridMap::grid2World(int i, int j) const
 {
 
@@ -454,9 +420,6 @@ Vector2D GridMap::grid2World(int i, int j) const
 
   return w;
 }
-
-
-
 
 
 GridCoordinates GridMap::world2Grid(double x, double y) const

@@ -7,7 +7,7 @@
 #include <iosfwd>
 #include <vector>
 
-#include "planner/road_map.hpp"
+#include "planner/planner_utilities.hpp"
 
 
 namespace planner
@@ -95,12 +95,6 @@ namespace planner
     ///        grid cell coordinates. Finds the (x,y) grid coordinates
     ///        of a cell's center that correspond to the vertex of an obstacle.
     void preProcessObstacles();
-
-    /// \brief Coverts the real-world coordinates of the boundaries into
-    ///        grid cell coordinates. Finds the (x,y) grid coordinates
-    ///        of a cell's center that correspond to the boundary.
-    // void preProcessMapBounds();
-
 
     /// \brief Converts grid indices to word coordinates (x, y)
     /// \param i - row in the grid
