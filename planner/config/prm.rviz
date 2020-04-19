@@ -73,9 +73,9 @@ Visualization Manager:
       Value: true
     - Class: rviz/Axes
       Enabled: true
-      Length: 0.10000000149011612
+      Length: 0.5
       Name: Axes
-      Radius: 0.009999999776482582
+      Radius: 0.05000000074505806
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray
@@ -91,7 +91,7 @@ Visualization Manager:
       Marker Topic: /prm_edges
       Name: MarkerArray
       Namespaces:
-        {}
+        prm_edges: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -122,16 +122,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.202261447906494
+      Distance: 18.524999618530273
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.8522217273712158
-        Y: 2.421553373336792
-        Z: -0.4698328971862793
+        X: 6.561764717102051
+        Y: 7.225235939025879
+        Z: -0.4500149190425873
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -140,7 +140,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.713583469390869
+      Yaw: 4.713583946228027
     Saved: ~
 Window Geometry:
   Displays:
