@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include <unordered_map>
 
 #include "planner/road_map.hpp"
 
@@ -172,14 +173,38 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
   // clear prvious graph
   nodes.clear();
 
+
+  if (!isFreeSpace(start) and !collideWalls(start))
+  {
+    std::cout << "ERROR: starting position NOT valid" << std::endl;
+    return;
+  }
+
+  if (!isFreeSpace(goal) and !collideWalls(goal))
+  {
+    std::cout << "ERROR: goal position NOT valid" << std::endl;
+    return;
+  }
+
+  double res = 0.3;
+  std::vector<Vector2D> hc = {Vector2D(7*res, 7*res),
+                              Vector2D(7*res, 9*res),
+                              Vector2D(8*res, 10*res),
+                              Vector2D(7*res, 15*res),
+                              Vector2D(9*res, 20*res)};
+
+  int i = 0;
+  // start adding nodes
   while(nodes.size() < n)
   {
     Vector2D q = randomPoint();
+    // Vector2D q = hc.at(i);
 
     if(!collideWalls(q) and isFreeSpace(q))
     {
       addNode(q);
     }
+    i++;
   } // end while loop
 
 
@@ -202,7 +227,91 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
   } // end outer loop
 
 
+  // add start and end goals
+  if(!addStartGoalConfig(start, goal))
+  {
+    std::cout << "ERROR: Disconnected graph" << std::endl;
+  }
+
 }
+
+
+bool RoadMap::stlnPathCollision(const Vector2D &p1, const Vector2D &p2) const
+{
+  for(const auto &poly : obs_map)
+  {
+    if (lnSegIntersectPolygon(poly, p1, p2) or lnSegClose2Polygon(poly, p1, p2))
+    {
+      return false;
+    }
+  } // end  outer loop
+
+  return true;
+}
+
+
+bool RoadMap::addStartGoalConfig(const Vector2D &start, const Vector2D &goal)
+{
+  const auto start_id = addNode(start);
+  const auto goal_id = addNode(goal);
+
+
+  // KNN for start
+  std::vector<int> neighbors;
+  nearestNeighbors(nodes.at(start_id), neighbors);
+
+  for(const auto neighbor_id : neighbors)
+  {
+      // adds edge from nd to neighbor
+      // and from neighbor to nd
+      if(stlnPathCollision(nodes.at(start_id).point, nodes.at(neighbor_id).point))
+      {
+        addEdge(nodes.at(start_id).id, neighbor_id);
+      }
+  }
+
+  // std::cout << "start node: " << nodes.at(start_id).edges.size() << std::endl;
+
+
+  // start node has neighbors
+  if (nodes.at(start_id).edges.empty())
+  {
+    std::cout << "ERROR: start node NOT connected to PRM" << std::endl;
+    return false;
+  }
+
+
+  // KNN for goal
+  neighbors.clear();
+  nearestNeighbors(nodes.at(goal_id), neighbors);
+
+  for(const auto neighbor_id : neighbors)
+  {
+      // adds edge from nd to neighbor
+      // and from neighbor to nd
+      if(stlnPathCollision(nodes.at(goal_id).point, nodes.at(neighbor_id).point))
+      {
+        addEdge(nodes.at(goal_id).id, neighbor_id);
+      }
+  }
+
+
+  // std::cout << "goal node: " << nodes.at(goal_id).edges.size() << std::endl;
+
+
+  // goal node has neighbors
+  if (nodes.at(goal_id).edges.empty())
+  {
+    std::cout << "ERROR: goal node NOT connected to PRM" << std::endl;
+    return false;
+  }
+
+
+  return true;
+}
+
+
+
 
 
 void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors) const
@@ -298,19 +407,6 @@ bool RoadMap::isFreeSpace(const Vector2D &q) const
   return true;
 }
 
-
-bool RoadMap::stlnPathCollision(const Vector2D &p1, const Vector2D &p2) const
-{
-  for(const auto &poly : obs_map)
-  {
-    if (lnSegIntersectPolygon(poly, p1, p2) or lnSegClose2Polygon(poly, p1, p2))
-    {
-      return false;
-    }
-  } // end  outer loop
-
-  return true;
-}
 
 
 bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
@@ -468,12 +564,13 @@ bool RoadMap::lnSegClose2Polygon(const polygon &poly,
 
 
 
-void RoadMap::addNode(const Vector2D &q)
+int RoadMap::addNode(const Vector2D &q)
 {
   Node nd;
   nd.id = nodes.size();
   nd.point = q;
   nodes.push_back(nd);
+  return nd.id;
 }
 
 
