@@ -136,6 +136,7 @@ include_directories(
 add_library(${PROJECT_NAME}
 	src/${PROJECT_NAME}/grid_map.cpp
 	src/${PROJECT_NAME}/${PROJECT_NAME}_utilities.cpp
+	src/${PROJECT_NAME}/prm_${PROJECT_NAME}.cpp
   src/${PROJECT_NAME}/road_map.cpp
 )
 
