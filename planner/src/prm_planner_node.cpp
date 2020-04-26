@@ -118,6 +118,7 @@ int main(int argc, char** argv)
   // declare the start/goal
   Vector2D start(2.1, 0.9);
   Vector2D goal(6.0, 13.5);
+  // Vector2D goal(2.1, 7.8);
 
 
   // construct the prm
