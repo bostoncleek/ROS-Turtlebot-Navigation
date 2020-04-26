@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 
 
@@ -15,62 +16,69 @@ namespace planner
 PRMPlanner::PRMPlanner(RoadMap &prm) : prm(prm)
 {
   prm.getRoadMap(roadmap);
-  start_id = roadmap.size()-2;
-  goal_id = roadmap.size()-1;
-  curr_id = start_id;
+  start_id = roadmap.at(roadmap.size()-2).id;
+  goal_id = roadmap.at(roadmap.size()-1).id;
 
   // update cost of start
   roadmap.at(start_id).f = 0.0;
   roadmap.at(start_id).g = 0.0;
 
-  // enqueue the start
-  open_set.insert(start_id);
+  // add the start
+  open_list.push_back(roadmap.at(start_id));
 
-  // enqueue the start
-  enqueueOpenSet();
-
-
-
-  Node n1;
-  n1.id = 1;
-  n1.f = 0.5;
-
-  Node n2;
-  n2.id = 2;
-  n2.f = 10.0;
-
-  open.insert(n1);
-  open.insert(n2);
+  std::cout << "start ID: " << start_id << std::endl;
+  std::cout << "goal ID: " << goal_id << std::endl;
 
 
-  std::cout << "min ID: " << open.begin()->id << " cost: " << open.begin()->f << std::endl;
-  std::cout << "find ID: " << open.find(2)->f << std::endl;
+  // Node n1;
+  // n1.id = 1;
+  // n1.f = 500.0;
+  //
+  // Node n2;
+  // n2.id = 2;
+  // n2.f = 10.0;
+  //
+  // Node n3;
+  // n3.id = 3;
+  // n3.f = 0.1;
+  //
+  // open_list.push_back(n1);
+  // open_list.push_back(n2);
+  // open_list.push_back(n3);
+  //
+  // std::sort(open_list.begin(), open_list.end(), SortCost());
+  //
+  // std::cout << "min ID: " << open_list.begin()->id << " cost: " << open_list.begin()->f << std::endl;
+  //
+  // auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(3));
+  // std::cout << "find ID: " << it->id << std::endl;
+  //
+  //
+  // open_list.erase(it);
+  // std::cout << "min ID: " << open_list.begin()->id << " cost: " << open_list.begin()->f << std::endl;
 
-
-
-  auto it = open.find(2);
-  std::cout << "found ID: "  << it->id << std::endl;
-  open.erase(it);
-
-  std::cout << "min ID: " << open.begin()->id << " cost: " << open.begin()->f << std::endl;
-
-  it = open.find(1);
-  std::cout << "found ID: "  << it->id << std::endl;
-  open.erase(it);
 }
 
 
 bool PRMPlanner::planPath()
 {
 
-  while (!q.empty())
+  while (!open_list.empty())
   {
+    // std::cout << "---------------" <<  std::endl;
+
     // node with min cost
-    const Node min_node = q.top();
-    q.pop();
+    std::sort(open_list.begin(), open_list.end(), SortCost());
+    auto it = open_list.begin();
+    const Node min_node = (*it);
+
+    // remove min node from open set
+    open_list.erase(it);
+
+
     curr_id = min_node.id;
-    open_set.erase(curr_id);
-    std::cout << "min ID: " << min_node.id << std::endl;
+    // std::cout << "min ID: " << min_node.id << std::endl;
+
 
     // goal reached
     const auto d = euclideanDistance(min_node.point.x,
@@ -78,7 +86,11 @@ bool PRMPlanner::planPath()
                                      roadmap.at(goal_id).point.x,
                                      roadmap.at(goal_id).point.y);
 
-    if (rigid2d::almost_equal(d, 0.0))
+    // std::cout << "D to goal: " << d << std::endl;
+
+
+
+    if (curr_id == goal_id)
     {
       std::cout << "Goal reached!" <<  std::endl;
       return true;
@@ -89,107 +101,126 @@ bool PRMPlanner::planPath()
 
     // compose cost of neighboring cells to the current node
     // and enqueue them
-    enqueueNeighbors();
+    exploreNeighbors();
+
+    // std::cout << "---------------" <<  std::endl;
 
   }
   return false;
 }
 
 
-void PRMPlanner::enqueueNeighbors()
+
+
+void PRMPlanner::exploreNeighbors()
 {
+  // std::cout << "Node: " << curr_id << ", # of neighbors: " << roadmap.at(curr_id).edges.size() <<  std::endl;
+
   // loop across nodes adjacency list
   for(unsigned int i = 0; i < roadmap.at(curr_id).edges.size(); i++)
   {
     // index ID of a neighboring node
-    const auto neighbor_id = roadmap.at(curr_id).edges.at(i).id;
+    const auto nid = roadmap.at(curr_id).edges.at(i).id;
 
-    // compose the cost of the neighbor
-    Node temp_node = composeCost(neighbor_id);
+    // edge(s s')
+    const auto edge = roadmap.at(curr_id).edges.at(i);
 
-    if (examineNeighbor(temp_node))
+
+    // std::cout << "Neighbor ID: " << nid <<  std::endl;
+
+
+
+    // the neighbor is on closed list
+    auto search_closed = closed_set.find(nid);
+    if (search_closed != closed_set.end())
     {
-      // update the node in the prm with the temp node
-      roadmap.at(neighbor_id) = temp_node;
-
-      // add temp_node to open set
-      open_set.insert(neighbor_id);
+      // std::cout << "Node: " << nid << " already on closed list" <<  std::endl;
+      continue;
     }
-  }
 
-  // heapify the open list
-  enqueueOpenSet();
+    // std::cout << "Checking out " << "Node: " << nid  <<  std::endl;
+    updateNode(edge);
+  }
 }
 
 
-Node PRMPlanner::composeCost(const int id)
+void PRMPlanner::updateNode(const Edge &edge)
 {
-  // create a temporary node
-  Node node = roadmap.at(id);
+  // temp node, may need to update prm node based on this one
+  Node temp_node = roadmap.at(edge.id);
 
-  // update node's parent, which is the current min node
-  node.parent_id = curr_id;
+  // compose costs
+  // g(s, s')
+  temp_node.g = roadmap.at(curr_id).g + edge.d;
+  // f(s') = g(s, s') + h(s')
+  temp_node.f = temp_node.g;// + heuristic(edge.id);
 
-  // the cost to move from the current cell to the neighbor is the
-  // distance between the two nodes
-  const auto dcn = euclideanDistance(roadmap.at(curr_id).point.x,
-                                     roadmap.at(curr_id).point.y,
-                                     roadmap.at(id).point.x,
-                                     roadmap.at(id).point.y);
-
-  // true cost
-  const auto true_cost = roadmap.at(curr_id).g + dcn;
+  // set neighbor's parent
+  temp_node.parent_id = curr_id;
 
 
-  // update cost of neighbor node
-  node.g = true_cost;
-  node.f = true_cost + heuristic(id);
-
-  return node;
-}
-
-
-
-bool PRMPlanner::examineNeighbor(const Node &node)
-{
-  // on closed list
-  auto search_closed = closed_set.find(node.id);
-  if (search_closed != closed_set.end())
-  {
-    return false;
-  }
-
-  // on open list
-  auto search_open = open_set.find(node.id);
-  if (search_open != open_set.end())
+  // if on open set compare true cost and update if needed
+  auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(edge.id));
+  if (it != open_list.end())
   {
     // NOTE: this means this node has already been added to the open list
     //       but may need to update its costs
     // id should be the same as node
-    const auto id = (*search_open);
+    Node open_node = (*it);
 
-    // compare true cost
-    // node on the open list is already better than or equal to the temp
-    if (roadmap.at(id).g < node.g or rigid2d::almost_equal(node.g, roadmap.at(id).g))
+    // std::cout << "Already on open set" <<  std::endl;
+
+    if (temp_node.g < open_node.g)
     {
-      return false;
-    }
+      // std::cout << "update cost" <<  std::endl;
 
+      // remove from open set
+      // open_list.erase(it);
+      (*it) = temp_node;
 
-    // temp is better than node on open list so update it
-    else if (roadmap.at(id).g > node.g)
-    {
-      roadmap.at(id).g = node.g;
-      return false;
+      // std::cout << "---------------" <<  std::endl;
+      // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
+
+      // update prm based on temp node
+      roadmap.at(edge.id) = temp_node;
+
+      // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
+      // std::cout << "---------------" <<  std::endl;
+
+      // add lower cost node to open set
+      // open_list.push_back(temp_node);
     }
   }
 
-  // not on open or closed
-  // it will be added to the open list
-  return true;
+  // not on open set then add it
+  else
+  {
+    roadmap.at(edge.id) = temp_node;
+    open_list.push_back(temp_node);
+  }
 }
 
 
+
+void PRMPlanner::getPath(std::vector<Vector2D> &path)
+{
+  // path.push_back(roadmap.at(start_id).point);
+  // path.push_back(roadmap.at(goal_id).point);
+
+  // std::cout << "Current ID: " << curr_id << std::endl;
+  auto id = curr_id;
+
+  while(id != -1)
+  {
+    Node node = roadmap.at(id);
+    path.push_back(node.point);
+
+    id = node.parent_id;
+    // std::cout << "Parent ID: " << node.parent_id << std::endl;
+  }
+
+  std::reverse(path.begin(), path.end());
+}
 
 
 double PRMPlanner::heuristic(const int id)
@@ -202,33 +233,5 @@ double PRMPlanner::heuristic(const int id)
 
   return h;
 }
-
-
-
-void PRMPlanner::enqueueOpenSet()
-{
-  // TODO: find more effecient method
-  //        this is required incase a node on the queue is updated
-
-  while(!q.empty())
-  {
-    q.pop();
-  }
-
-
-  for(const auto &id : open_set)
-  {
-    // std::cout << "id: "<< id << std::endl;
-    q.push(roadmap.at(id));
-  }
-}
-
-
-
-
-
-
-
-
 
 } // end namespace

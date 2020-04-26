@@ -18,34 +18,26 @@ namespace planner
   using rigid2d::euclideanDistance;
 
 
-  struct CompareCost
+  struct SortCost
   {
-    bool operator()(const Node &a, const Node &b)
-    {
-      return a.f > b.f;
-    }
-  };
-
-
-  struct CompareNodes
-  {
-    using is_transparent = void;
-
     bool operator()(const Node &a, const Node &b) const
     {
       return a.f < b.f;
     }
+  };
 
-    bool operator()(const int id, const Node &node) const
-    {
-      return id > node.id;
-    }
 
-    bool operator()(const Node &node, const int id) const
+  struct MatchesID
+  {
+    int id;
+    MatchesID(int id): id(id) {}
+
+    bool operator()(const Node &n) const
     {
-      return node.id < id;
+        return n.id == id;
     }
   };
+
 
 
 
@@ -60,43 +52,32 @@ namespace planner
     /// \return true if path is founc
     bool planPath();
 
+    /// \brief Coordinates of nodes in path
+    /// path[out] - (x/y) locations of each node
+    void getPath(std::vector<Vector2D> &path);
+
     /// \brief Add/examines the neighboring cells of the current min node
-    void enqueueNeighbors();
+    void exploreNeighbors();
 
-    /// \brief Compose the cost of a neighbor node
-    /// \param id - the node ID
-    /// \return - a temporary node, need to examine before added to open list
-    Node composeCost(const int id);
-
-    /// \brief Determines whether a node should be added to the open list
-    /// \param node - the neighbor node
-    /// \return true if the node should be added to the open list
-    bool examineNeighbor(const Node &node);
+    /// \brief
+    /// \param edge - edge between current node and a neighbor (s, s')
+    void updateNode(const Edge &edge);
 
     /// \brief Compose the heuristic cost of a node
     /// \param id - the node ID
     /// \return - heuristic cost of node
     double heuristic(const int id);
 
-    /// \brief Removes all nodes and enqueues all nodes on the open set
-    void enqueueOpenSet();
-
-
 
   private:
     RoadMap prm;                              // probabilisitc road map
     std::vector<Node> roadmap;                // graph structure of road map
-    std::unordered_set<int> open_set;         // open set
     std::unordered_set<int> closed_set;       // closed set
-    Node curr_node;
     int start_id, goal_id, curr_id;           // ID of start/goal/current node in roadmap
 
-    std::set<Node, CompareNodes> open;
 
+    std::vector<Node> open_list;
 
-    // queue for finding the min node
-    // constains the nodes on the open list
-    std::priority_queue<Node, std::vector<Node>, CompareCost> q;
 
 
   };
