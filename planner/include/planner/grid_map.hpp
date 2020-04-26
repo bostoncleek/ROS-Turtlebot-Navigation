@@ -7,6 +7,7 @@
 #include <iosfwd>
 #include <vector>
 
+#include <rigid2d/utilities.hpp>
 #include "planner/planner_utilities.hpp"
 
 
