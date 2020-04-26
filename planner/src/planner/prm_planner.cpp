@@ -65,7 +65,7 @@ bool PRMPlanner::planPath()
 
   while (!open_list.empty())
   {
-    // std::cout << "---------------" <<  std::endl;
+    std::cout << "---------------" <<  std::endl;
 
     // node with min cost
     std::sort(open_list.begin(), open_list.end(), SortCost());
@@ -103,7 +103,7 @@ bool PRMPlanner::planPath()
     // and enqueue them
     exploreNeighbors();
 
-    // std::cout << "---------------" <<  std::endl;
+    std::cout << "---------------" <<  std::endl;
 
   }
   return false;
@@ -114,7 +114,7 @@ bool PRMPlanner::planPath()
 
 void PRMPlanner::exploreNeighbors()
 {
-  // std::cout << "Node: " << curr_id << ", # of neighbors: " << roadmap.at(curr_id).edges.size() <<  std::endl;
+  std::cout << "Node: " << curr_id << ", # of neighbors: " << roadmap.at(curr_id).edges.size() <<  std::endl;
 
   // loop across nodes adjacency list
   for(unsigned int i = 0; i < roadmap.at(curr_id).edges.size(); i++)
@@ -126,7 +126,7 @@ void PRMPlanner::exploreNeighbors()
     const auto edge = roadmap.at(curr_id).edges.at(i);
 
 
-    // std::cout << "Neighbor ID: " << nid <<  std::endl;
+    std::cout << "Neighbor ID: " << nid <<  std::endl;
 
 
 
@@ -134,11 +134,11 @@ void PRMPlanner::exploreNeighbors()
     auto search_closed = closed_set.find(nid);
     if (search_closed != closed_set.end())
     {
-      // std::cout << "Node: " << nid << " already on closed list" <<  std::endl;
+      std::cout << "Node: " << nid << " already on closed list" <<  std::endl;
       continue;
     }
 
-    // std::cout << "Checking out " << "Node: " << nid  <<  std::endl;
+    std::cout << "Checking out " << "Node: " << nid  <<  std::endl;
     updateNode(edge);
   }
 }
@@ -146,6 +146,9 @@ void PRMPlanner::exploreNeighbors()
 
 void PRMPlanner::updateNode(const Edge &edge)
 {
+  // this is A*
+  bool default_path = true;
+
   // temp node, may need to update prm node based on this one
   Node temp_node = roadmap.at(edge.id);
 
@@ -153,50 +156,110 @@ void PRMPlanner::updateNode(const Edge &edge)
   // g(s, s')
   temp_node.g = roadmap.at(curr_id).g + edge.d;
   // f(s') = g(s, s') + h(s')
-  temp_node.f = temp_node.g;// + heuristic(edge.id);
+  temp_node.f = temp_node.g + heuristic(edge.id);
 
   // set neighbor's parent
   temp_node.parent_id = curr_id;
 
 
-  // if on open set compare true cost and update if needed
-  auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(edge.id));
-  if (it != open_list.end())
+
+  auto ps_id = roadmap.at(curr_id).parent_id;
+  // there is no parent because this is the start node
+  if (ps_id == -1)
   {
-    // NOTE: this means this node has already been added to the open list
-    //       but may need to update its costs
-    // id should be the same as node
-    Node open_node = (*it);
+    ps_id = curr_id;
+  }
 
-    // std::cout << "Already on open set" <<  std::endl;
 
-    if (temp_node.g < open_node.g)
+
+  // check for line of sight from (s s')
+  if (prm.stlnPathCollision(roadmap.at(ps_id).point, roadmap.at(edge.id).point))
+  {
+    std::cout << "short cut" <<  std::endl;
+
+    Node parent_node = roadmap.at(ps_id);
+
+    // distance from parent(s) to s'
+    const auto d = euclideanDistance(parent_node.point.x,
+                                     parent_node.point.y,
+                                     roadmap.at(edge.id).point.x,
+                                     roadmap.at(edge.id).point.y);
+
+    // true cost from parent(s) to s'
+    const auto gps = parent_node.g + d;
+
+    if (gps < temp_node.g)
     {
-      // std::cout << "update cost" <<  std::endl;
+      default_path = false;
+      std::cout << "short cut is cheaper" <<  std::endl;
 
-      // remove from open set
-      // open_list.erase(it);
-      (*it) = temp_node;
+      temp_node.g = gps;
+      temp_node.f = gps + heuristic(edge.id);
+      temp_node.parent_id = ps_id;
 
-      // std::cout << "---------------" <<  std::endl;
-      // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
 
-      // update prm based on temp node
-      roadmap.at(edge.id) = temp_node;
+      auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(edge.id));
+      if (it != open_list.end())
+      {
+        (*it) = temp_node;
+        roadmap.at(edge.id) = temp_node;
+      }
 
-      // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
-      // std::cout << "---------------" <<  std::endl;
-
-      // add lower cost node to open set
-      // open_list.push_back(temp_node);
+      else
+      {
+        roadmap.at(edge.id) = temp_node;
+        open_list.push_back(temp_node);
+      }
     }
   }
 
-  // not on open set then add it
-  else
+
+  // else
+  if (default_path)
   {
-    roadmap.at(edge.id) = temp_node;
-    open_list.push_back(temp_node);
+    std::cout << "default_path" <<  std::endl;
+
+
+
+    // if on open set compare true cost and update if needed
+    auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(edge.id));
+    if (it != open_list.end())
+    {
+      // NOTE: this means this node has already been added to the open list
+      //       but may need to update its costs
+      // id should be the same as node
+      Node open_node = (*it);
+
+      // std::cout << "Already on open set" <<  std::endl;
+
+      if (temp_node.g < open_node.g)
+      {
+        // std::cout << "update cost" <<  std::endl;
+
+        // remove from open set
+        // open_list.erase(it);
+        (*it) = temp_node;
+
+        // std::cout << "---------------" <<  std::endl;
+        // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
+
+        // update prm based on temp node
+        roadmap.at(edge.id) = temp_node;
+
+        // std::cout << "pre parenent" << roadmap.at(edge.id).parent_id << std::endl;
+        // std::cout << "---------------" <<  std::endl;
+
+        // add lower cost node to open set
+        // open_list.push_back(temp_node);
+      }
+    }
+
+    // not on open set then add it
+    else
+    {
+      roadmap.at(edge.id) = temp_node;
+      open_list.push_back(temp_node);
+    }
   }
 }
 
