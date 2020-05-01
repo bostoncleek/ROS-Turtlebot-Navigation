@@ -186,14 +186,14 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
     return;
   }
 
-  double res = 0.3;
-  std::vector<Vector2D> hc = {Vector2D(7*res, 7*res),
-                              Vector2D(7*res, 9*res),
-                              Vector2D(8*res, 10*res),
-                              Vector2D(7*res, 15*res),
-                              Vector2D(9*res, 20*res)};
+  // double res = 0.3;
+  // std::vector<Vector2D> hc = {Vector2D(7*res, 7*res),
+  //                             Vector2D(7*res, 9*res),
+  //                             Vector2D(8*res, 10*res),
+  //                             Vector2D(7*res, 15*res),
+  //                             Vector2D(9*res, 20*res)};
 
-  int i = 0;
+  // int i = 0;
   // start adding nodes
   while(nodes.size() < n)
   {
@@ -204,7 +204,7 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
     {
       addNode(q);
     }
-    i++;
+    // i++;
   } // end while loop
 
 
