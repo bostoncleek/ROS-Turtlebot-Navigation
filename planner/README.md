@@ -1,20 +1,28 @@
 ### Boston Cleek
 
 # Overview:
-A collection of path planning algorithms
+A collection of shortest path planning algorithms in continuous and discrete space
 
 
-# Dependencies
-1) xmlrpcpp
+# How to run
+For the continuous map theta* planner:
 
-# Files
+`roslaunch planner plan.launch map:=1`
 
 
-# Nodes 
+For the grid based planners:
+`roslaunch planner plan.launch map:=2`
+
+
+# Nodes
+* `prm_planner`: searches the probabilistic road map using theta*
+* `draw_cont_map` : draw the map in continuous space
+* `gird_planner` : path planning on grid and constructs map as a 2D occupancy grid
+
 
 
 # Probabilisitc Roadmap
-## Roadmap Construction
+## Theta* Shortest Path
 <p align="center">
-  <img src= "media/prm_construction.png" width="350" height="500">
+  <img src= "media/thetastar.png" width="350" height="500">
 </p>
