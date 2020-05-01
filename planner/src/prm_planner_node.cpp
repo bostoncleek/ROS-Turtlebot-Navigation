@@ -6,7 +6,9 @@
 /// \date 4/11/20
 ///
 /// PUBLISHES:
-///
+/// prm (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
+/// shortest_path (visualization_msgs::Marker): points and edges for shortest path 
+
 
 
 #include <ros/ros.h>

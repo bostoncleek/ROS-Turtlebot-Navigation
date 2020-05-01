@@ -1,11 +1,11 @@
 /// \file
-/// \brief
+/// \brief Path planning on grid and constructs map as a 2D occupancy grid
 ///
 /// \author Boston Cleek
 /// \date 4/15/20
 ///
 /// PUBLISHES:
-///
+/// map (nav_msgs::OccupancyGrid>): free/occupied/buffer zone for planning
 
 
 #include <ros/ros.h>
