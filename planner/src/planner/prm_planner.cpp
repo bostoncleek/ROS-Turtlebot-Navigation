@@ -26,37 +26,8 @@ PRMPlanner::PRMPlanner(RoadMap &prm) : prm(prm)
   // add the start
   open_list.push_back(roadmap.at(start_id));
 
-  std::cout << "start ID: " << start_id << std::endl;
-  std::cout << "goal ID: " << goal_id << std::endl;
-
-
-  // Node n1;
-  // n1.id = 1;
-  // n1.f = 500.0;
-  //
-  // Node n2;
-  // n2.id = 2;
-  // n2.f = 10.0;
-  //
-  // Node n3;
-  // n3.id = 3;
-  // n3.f = 0.1;
-  //
-  // open_list.push_back(n1);
-  // open_list.push_back(n2);
-  // open_list.push_back(n3);
-  //
-  // std::sort(open_list.begin(), open_list.end(), SortCost());
-  //
-  // std::cout << "min ID: " << open_list.begin()->id << " cost: " << open_list.begin()->f << std::endl;
-  //
-  // auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(3));
-  // std::cout << "find ID: " << it->id << std::endl;
-  //
-  //
-  // open_list.erase(it);
-  // std::cout << "min ID: " << open_list.begin()->id << " cost: " << open_list.begin()->f << std::endl;
-
+  // std::cout << "start ID: " << start_id << std::endl;
+  // std::cout << "goal ID: " << goal_id << std::endl;
 }
 
 
@@ -81,10 +52,10 @@ bool PRMPlanner::planPath()
 
 
     // goal reached
-    const auto d = euclideanDistance(min_node.point.x,
-                                     min_node.point.y,
-                                     roadmap.at(goal_id).point.x,
-                                     roadmap.at(goal_id).point.y);
+    // const auto d = euclideanDistance(min_node.point.x,
+    //                                  min_node.point.y,
+    //                                  roadmap.at(goal_id).point.x,
+    //                                  roadmap.at(goal_id).point.y);
 
     // std::cout << "D to goal: " << d << std::endl;
 
@@ -146,9 +117,6 @@ void PRMPlanner::exploreNeighbors()
 
 void PRMPlanner::updateNode(const Edge &edge)
 {
-  // this is A*
-  bool default_path = true;
-
   // temp node, may need to update prm node based on this one
   Node temp_node = roadmap.at(edge.id);
 
@@ -162,17 +130,20 @@ void PRMPlanner::updateNode(const Edge &edge)
   temp_node.parent_id = curr_id;
 
 
-
+  // get parent ID and check for path optimization
   auto ps_id = roadmap.at(curr_id).parent_id;
+
   // there is no parent because this is the start node
+  bool at_start = false;
   if (ps_id == -1)
   {
+    at_start = true;
     ps_id = curr_id;
   }
 
 
 
-  // check for line of sight from (s s')
+  // // check for line of sight from (s s')
   if (prm.stlnPathCollision(roadmap.at(ps_id).point, roadmap.at(edge.id).point))
   {
     std::cout << "short cut" <<  std::endl;
@@ -188,9 +159,9 @@ void PRMPlanner::updateNode(const Edge &edge)
     // true cost from parent(s) to s'
     const auto gps = parent_node.g + d;
 
-    if (gps < temp_node.g)
+    if (gps < temp_node.g or at_start)
     {
-      default_path = false;
+      // default_path = false;
       std::cout << "short cut is cheaper" <<  std::endl;
 
       temp_node.g = gps;
@@ -214,8 +185,7 @@ void PRMPlanner::updateNode(const Edge &edge)
   }
 
 
-  // else
-  if (default_path)
+  else
   {
     std::cout << "default_path" <<  std::endl;
 
