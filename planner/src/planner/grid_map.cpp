@@ -2,7 +2,6 @@
 /// \brief Creates an occupancy grid
 
 #include <iostream>
-
 #include "planner/grid_map.hpp"
 
 namespace planner
@@ -39,10 +38,12 @@ GridMap::GridMap(double xmin, double xmax,
   // convert world (x,y) into grid (x,y), this is the center of the
   // closest grid cell to the obstacle vertex location in the world
   preProcessObstacles();
+
+  std::cout << xsize << " " << ysize << std::endl;
 }
 
 
-void GridMap::getGrid(std::vector<int8_t> &map) const
+void GridMap::getGridViz(std::vector<int8_t> &map) const
 {
   // IMPORTANT
   // Transpose map
@@ -50,6 +51,8 @@ void GridMap::getGrid(std::vector<int8_t> &map) const
 
   for(unsigned int i = 0; i < grid.size(); i++)
   {
+    // convert from column major order to row major order
+    // internal map is rotated 90 deg from rviz
     auto row = i / ysize;
     auto col = i % ysize;
 
@@ -80,6 +83,12 @@ void GridMap::getGrid(std::vector<int8_t> &map) const
 }
 
 
+void GridMap::getGrid(std::vector<Cell> &grid_cells) const
+{
+    grid_cells = grid;
+}
+
+
 void GridMap::labelCells()
 {
   // loop across all cells
@@ -92,26 +101,12 @@ void GridMap::labelCells()
 
     cell.i = row;
     cell.j = col;
+    cell.id = grid2RowMajor(row, col);
 
     cell.p = grid2World(row, col);
-    // std::cout << cell.p << std::endl;
-
-    // if(row == 33 and col == 10)
-    // {
-    //   std::cout << "cell found " << std::endl;
-    //   std::cout << cell.p << std::endl;
-    //
-    //   const auto gidx = row * ysize + col;
-    //   grid.at(gidx).state = 0;
-    //
-    //   polygon poly = obs_map.at(7);
-    //   collisionCells(poly, cell);
-    // }
-
 
     // collisions with boundaries of world
     collideWalls(cell);
-
 
     // loop across all obstacles
     for(const auto &poly : obs_map)
@@ -131,6 +126,94 @@ void GridMap::labelCells()
   } // end outer loop
 }
 
+
+bool GridMap::worldBounds(int i, int j) const
+{
+  return ((i >= 0 and i <= xsize-1) and (j >= 0 and j <= ysize-1)) ? true : false;
+}
+
+
+
+Vector2D GridMap::grid2World(int i, int j) const
+{
+
+  if (!(i >= 0 and i <= xsize-1))
+  {
+    std::cout << "i: " << i << std::endl;
+    throw std::invalid_argument("ith row out of grid bounds");
+  }
+
+  if (!(j >= 0 and j <= ysize-1))
+  {
+    std::cout << "j: " << j << std::endl;
+    throw std::invalid_argument("jth column out of grid bounds");
+  }
+
+  Vector2D w;
+  w.x = i * resolution + resolution/2.0 + xmin;
+  w.y = j * resolution + resolution/2.0 + ymin;
+
+  return w;
+}
+
+
+GridCoordinates GridMap::world2Grid(double x, double y) const
+{
+  if (!(x >= xmin and x <= xmax))
+  {
+    throw std::invalid_argument("X position NOT in the bounds of the world");
+  }
+
+  if (!(y >= ymin and y <= ymax))
+  {
+    throw std::invalid_argument("Y position NOT in the bounds of the world");
+  }
+
+  // round down to the nearest cell
+  // do not want to over estimate the index
+  auto i = std::floor((x - xmin) / resolution);
+  // Case: x query == 0 and xmin < 0
+  //        (0 - (-3)) / 1 = 3 == xsize
+  //     or x query == xsize and xmin == 0
+  //        (3 - 0) / 1 = 3 == xsize
+
+
+  if (i == xsize)
+  {
+    i--;
+    // std::cout << "i (dec): " << i << std::endl;
+  }
+
+
+  auto j = std::floor((y - ymin) / resolution);
+  // Case: y query == 0 and ymin < 0
+  //     or y query == ysize and ymin == 0
+
+
+  if (j == ysize)
+  {
+    j--;
+    // std::cout << "j (dec): " << j << std::endl;
+  }
+
+  GridCoordinates gc;
+  gc.i = i;
+  gc.j = j;
+  return gc;
+}
+
+
+unsigned int GridMap::grid2RowMajor(int i, int j) const
+{
+  // IMPORTANT: swap i and j because rviz uses rows for y-axis
+  //            and col for x-axis
+  // std::cout << "i: " << i << std::endl;
+  // std::cout << "j: " << j << std::endl;
+  // std::cout << "row-major " << i * xsize + j << std::endl;
+
+  // return j * xsize + i;
+  return i * ysize + j;
+}
 
 
 void GridMap::collisionCells(const polygon &poly, Cell &cell)
@@ -373,7 +456,7 @@ void GridMap::preProcessObstacles()
       const GridCoordinates gc = world2Grid(x, y);
       // std::cout << gc << std::endl;
 
-      // IMPORTANT: map is transposed to world
+      // IMPORTANT:
       // convert grid row and col pair into grid (x, y)
       // update the vertex of the obstacle
       obs_map.at(i).at(j) = grid2World(gc.i, gc.j);
@@ -396,88 +479,6 @@ void GridMap::preProcessObstacles()
 
     } // end inner loop
   } // end outer loop
-}
-
-
-Vector2D GridMap::grid2World(int i, int j) const
-{
-
-  if (!(i >= 0 and i <= xsize-1))
-  {
-    std::cout << "i: " << i << std::endl;
-    throw std::invalid_argument("ith row out of grid bounds");
-  }
-
-  if (!(j >= 0 and j <= ysize-1))
-  {
-    std::cout << "j: " << j << std::endl;
-    throw std::invalid_argument("jth column out of grid bounds");
-  }
-
-  Vector2D w;
-  w.x = i * resolution + resolution/2.0 + xmin;
-  w.y = j * resolution + resolution/2.0 + ymin;
-
-  return w;
-}
-
-
-GridCoordinates GridMap::world2Grid(double x, double y) const
-{
-  if (!(x >= xmin and x <= xmax))
-  {
-    throw std::invalid_argument("X position NOT in the bounds of the world");
-  }
-
-  if (!(y >= ymin and y <= ymax))
-  {
-    throw std::invalid_argument("Y position NOT in the bounds of the world");
-  }
-
-  // round down to the nearest cell
-  // do not want to over estimate the index
-  auto i = std::floor((x - xmin) / resolution);
-  // Case: x query == 0 and xmin < 0
-  //        (0 - (-3)) / 1 = 3 == xsize
-  //     or x query == xsize and xmin == 0
-  //        (3 - 0) / 1 = 3 == xsize
-
-
-  if (i == xsize)
-  {
-    i--;
-    // std::cout << "i (dec): " << i << std::endl;
-  }
-
-
-  auto j = std::floor((y - ymin) / resolution);
-  // Case: y query == 0 and ymin < 0
-  //     or y query == ysize and ymin == 0
-
-
-  if (j == ysize)
-  {
-    j--;
-    // std::cout << "j (dec): " << j << std::endl;
-  }
-
-  GridCoordinates gc;
-  gc.i = i;
-  gc.j = j;
-  return gc;
-}
-
-
-
-unsigned int GridMap::grid2RowMajor(int i, int j) const
-{
-  // IMPORTANT: swap i and j because rviz uses rows for y-axis
-  //            and col for x-axis
-  // std::cout << "i: " << i << std::endl;
-  // std::cout << "j: " << j << std::endl;
-  // std::cout << "row-major " << i * xsize + j << std::endl;
-  // return j * xsize + i;
-  return i * ysize + j;
 }
 
 

@@ -5,8 +5,10 @@
 
 #include <cmath>
 #include <iosfwd>
+#include <algorithm>
 #include <vector>
 
+#include <rigid2d/rigid2d.hpp>
 #include <rigid2d/utilities.hpp>
 #include "planner/planner_utilities.hpp"
 
@@ -28,17 +30,45 @@ namespace planner
   /// \brief Grid cell
   struct Cell
   {
-    int state;        // occupied: 1, unoccupied: 0, inflation: 2, unknown: -1
-    int i, j;         // index location in grid
+    int state;              //  unoccupied: 0, occupied: 1, inflation: 2, unknown: -1
+    int i, j;               // index location in grid
+    int id;                 // cell ID in grid
 
-    Vector2D p;       // (x,y) world location
+
+    int parent_id = -1;
+
+
+    Vector2D p;             // (x,y) world location
+
+    double g = 1e12;         // min true cost from start to cell
+    double rhs = 1e12;       // min cost from cell to neighbor (best neighbor to potentially move to)
+    double h = 0.0;          // heuristic cost
+
+    double k1 = 0.0;        // min(g, rhs + h)
+    double k2 = 0.0;        // min(g, rhs)
+
 
     /// \brief default values
-    Cell(): state(-1), i(-1), j(-1) {}
+    Cell(): state(-1), i(-1), j(-1), id(-1) {}
 
     /// \brief set cell values
     /// \param st - state of cell
-    Cell(int st, int row, int col): state(st), i(row), j(col) {}
+    Cell(int st, int row, int col, int id): state(st), i(row), j(col), id(id) {}
+
+
+    /// \brief calculate keys for cell
+    void calculateKeys()
+    {
+      k1 = std::min(g, rhs + h);
+      k2 = std::min(g, rhs);
+    }
+
+    /// \brief test whether cells are locally consistent
+    /// \returns - true if g = rhs
+    bool locallyConsistent()
+    {
+      return (rigid2d::almost_equal(g, rhs)) ? true : false;
+    }
   };
 
 
@@ -77,25 +107,20 @@ namespace planner
 
     /// \brief Compose a map viewable in rviz
     /// map[out] a map in row major order
-    void getGrid(std::vector<int8_t> &map) const;
+    void getGridViz(std::vector<int8_t> &map) const;
+
+    /// \brief Obtain the grid
+    /// grid_cells[out] a 2D grid of cells
+    void getGrid(std::vector<Cell> &grid_cells) const;
 
     /// \brief Determines state of all cells in grid
     void labelCells();
 
-  private:
-    /// \brief Labels all osbtacle cells
-    /// \param poly - plygon to examine
-    /// cell[out] - labels if it is an osbtacle cell
-    void collisionCells(const polygon &poly, Cell &cell);
-
-    /// \brief Check if cell collides with boundaries of map
-    /// cell[out] - labels if it is an obstacle cell
-    void collideWalls(Cell &cell);
-
-    /// \brief Coverts the real-world coordinates of the obstacles into
-    ///        grid cell coordinates. Finds the (x,y) grid coordinates
-    ///        of a cell's center that correspond to the vertex of an obstacle.
-    void preProcessObstacles();
+    /// \brief Checks if the cell is within the bounds of the map
+    /// \param i - row in the grid
+    /// \param j - column in the grid
+    /// \returns true if cell is within bounds
+    bool worldBounds(int i, int j) const;
 
     /// \brief Converts grid indices to word coordinates (x, y)
     /// \param i - row in the grid
@@ -114,6 +139,21 @@ namespace planner
     /// \param j - column in the grid
     /// \returns the grid index in row major order
     unsigned int grid2RowMajor(int i, int j) const;
+
+  private:
+    /// \brief Labels all osbtacle cells
+    /// \param poly - plygon to examine
+    /// cell[out] - labels if it is an osbtacle cell
+    void collisionCells(const polygon &poly, Cell &cell);
+
+    /// \brief Check if cell collides with boundaries of map
+    /// cell[out] - labels if it is an obstacle cell
+    void collideWalls(Cell &cell);
+
+    /// \brief Coverts the real-world coordinates of the obstacles into
+    ///        grid cell coordinates. Finds the (x,y) grid coordinates
+    ///        of a cell's center that correspond to the vertex of an obstacle.
+    void preProcessObstacles();
 
     double xmin, xmax, ymin, ymax;               // map dims
     double resolution;                           // map resolution
