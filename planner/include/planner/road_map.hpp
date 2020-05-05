@@ -8,6 +8,8 @@
 #include <iosfwd>
 #include <unordered_set>
 
+
+#include <rigid2d/rigid2d.hpp>
 #include <rigid2d/utilities.hpp>
 #include "planner/planner_utilities.hpp"
 

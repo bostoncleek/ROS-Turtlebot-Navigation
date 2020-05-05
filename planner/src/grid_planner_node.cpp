@@ -13,14 +13,21 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/GridCells.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Point.h>
 #include <xmlrpcpp/XmlRpcValue.h>
 
 #include "planner/grid_map.hpp"
+#include "planner/lpa_star.hpp"
 
 
 using rigid2d::Vector2D;
 
 
+
+/// \brief Places each cell in the path into a grid cell msg
+/// \param path - 2D points representing the center of each cell in the path
+/// cell_path[out] - array of points reprsented as grid cells
+void gridCellPath(const std::vector<Vector2D> &path, nav_msgs::GridCells &cell_path);
 
 
 int main(int argc, char** argv)
@@ -30,6 +37,9 @@ int main(int argc, char** argv)
   ros::NodeHandle node_handle;
 
   ros::Publisher map_pub = node_handle.advertise<nav_msgs::OccupancyGrid>("map", 1);
+  ros::Publisher path_pub = node_handle.advertise<nav_msgs::GridCells>("global_path", 1);
+  ros::Publisher visit_pub = node_handle.advertise<nav_msgs::GridCells>("visited_cells", 1);
+  ros::Publisher sg_pub = node_handle.advertise<nav_msgs::GridCells>("start_goal", 1);
 
 
   auto obs_resolution = 0.0;              // resolution of obstacle coordinates
@@ -79,7 +89,7 @@ int main(int argc, char** argv)
 
 
   // set up the grid
-  planner::GridMap grid(xmin, xmax,
+  planner::GridMap gridmap(xmin, xmax,
                         ymin, ymax,
                         grid_resolution,
                         bounding_radius,
@@ -105,7 +115,6 @@ int main(int argc, char** argv)
   map_msg.info.resolution = grid_resolution;
   map_msg.info.width = planner::gridSize(xmin, xmax, grid_resolution);
   map_msg.info.height = planner::gridSize(ymin, ymax, grid_resolution);
-
   map_msg.info.origin = map_pose;
 
 
@@ -113,9 +122,76 @@ int main(int argc, char** argv)
   // std::cout << "size test: " << std::round((ymax - ymin) / resolution) << std::endl;
   // std::cout << "size test: " << ((ymax - ymin) / resolution) << std::endl;
 
+  // label cells
+  gridmap.labelCells();
+  gridmap.getGridViz(map);
 
-  grid.labelCells();
-  grid.getGrid(map);
+
+  // start/goal configurations
+  Vector2D start(6.0 * obs_resolution, 3.0 * obs_resolution);
+  Vector2D goal(20.0 * obs_resolution, 45.0 * obs_resolution);
+
+  // convert start/goal to grid coordinates
+  const planner::GridCoordinates gc_start = gridmap.world2Grid(start.x, start.y);
+  const planner::GridCoordinates gc_goal = gridmap.world2Grid(goal.x, goal.y);
+
+  const Vector2D gw_start = gridmap.grid2World(gc_start.i, gc_start.j);
+  const Vector2D gw_goal = gridmap.grid2World(gc_goal.i, gc_goal.j);
+
+
+  nav_msgs::GridCells sg_msg;
+  sg_msg.header.frame_id = frame_id;
+  sg_msg.header.stamp = ros::Time::now();
+  sg_msg.cell_width = grid_resolution;
+  sg_msg.cell_height = grid_resolution;
+
+  geometry_msgs::Point ps;
+  ps.x = gw_start.x;
+  ps.y = gw_start.y;
+  ps.z = 0.0;
+
+
+  geometry_msgs::Point pg;
+  pg.x = gw_goal.x;
+  pg.y = gw_goal.y;
+  pg.z = 0.0;
+
+  sg_msg.cells.push_back(ps);
+  sg_msg.cells.push_back(pg);
+
+
+
+  // TODO add check if plan succeeds
+
+  // start planning
+  std::cout << "Currently Planning " <<  std::endl;
+  planner::LPAstar lpa(gridmap);
+  lpa.initPath(start, goal);
+  lpa.planPath();
+
+  std::vector<Vector2D> path;
+  lpa.getPath(path);
+
+
+  // global path msg
+  nav_msgs::GridCells path_msg;
+  path_msg.header.frame_id = frame_id;
+  path_msg.cell_width = 0.5 * grid_resolution;
+  path_msg.cell_height = 0.5 * grid_resolution;
+
+  gridCellPath(path, path_msg);
+
+
+  std::vector<Vector2D> visted_cells;
+  lpa.getVisited(visted_cells);
+
+  // visited cells path msg
+  nav_msgs::GridCells visit_msg;
+  visit_msg.header.frame_id = frame_id;
+  visit_msg.cell_width = 0.5 * grid_resolution;
+  visit_msg.cell_height = 0.5 * grid_resolution;
+
+  gridCellPath(visted_cells, visit_msg);
 
 
 
@@ -123,13 +199,23 @@ int main(int argc, char** argv)
   {
     ros::spinOnce();
 
-
+    // publish the map
     map_msg.header.stamp = ros::Time::now();
     map_msg.info.map_load_time = ros::Time::now();
     map_msg.data = map;
     map_pub.publish(map_msg);
 
+    // publish the visited cells
+    visit_msg.header.stamp = ros::Time::now();
+    visit_pub.publish(visit_msg);
 
+    // publish the shortest path
+    path_msg.header.stamp = ros::Time::now();
+    path_pub.publish(path_msg);
+
+
+    // publsih start/goal
+    sg_pub.publish(sg_msg);
   }
 
 
@@ -137,6 +223,29 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+
+void gridCellPath(const std::vector<Vector2D> &path, nav_msgs::GridCells &cell_path)
+{
+  cell_path.cells.resize(path.size());
+  geometry_msgs::Point pt;
+
+  for(const auto point : path)
+  {
+    pt.x = point.x;
+    pt.y = point.y;
+    pt.z = 0.0;
+    cell_path.cells.push_back(pt);
+  }
+}
+
+
+
+
+
+
+
+
 
 
 
