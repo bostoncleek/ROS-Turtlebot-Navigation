@@ -64,11 +64,13 @@ bool LPAstar::planPath()
     // Cell with min key
     auto it = open_list.begin();
     const Cell min_cell = (*it);
-    std::cout << "Current Cell ID: " << min_cell.id << std::endl;
+    // std::cout << "Current Cell ID: " << min_cell.id << std::endl;
 
     // remove min cell from open list
     open_list.erase(it);
 
+    curr_id = min_cell.id;
+    visited.push_back(min_cell.id);
 
     // update the true cost and
     // examine neighbors
@@ -128,9 +130,38 @@ void LPAstar::initPath(const Vector2D &start, const Vector2D &goal)
 
 
   std::cout << start_id << " " << goal_id << std::endl;
+}
+
+
+void LPAstar::getPath(std::vector<Vector2D> &path) const
+{
+  std::cout << "Retreiving Path: " << std::endl;
+  auto id = curr_id;
+
+  std::cout << "Current ID: " << id << std::endl;
+  while(id != -1)
+  {
+    const Cell cell = grid.at(id);
+    path.push_back(cell.p);
+
+    id = cell.parent_id;
+    std::cout << "Parent ID: " << id << std::endl;
+  }
+
+  std::reverse(path.begin(), path.end());
+
+  // path.push_back(grid.at(306).p);
 
 }
 
+
+void LPAstar::getVisited(std::vector<Vector2D> &cells) const
+{
+  for(const auto id : visited)
+  {
+    cells.push_back(grid.at(id).p);
+  }
+}
 
 
 void LPAstar::updateCell(int id)
@@ -188,6 +219,11 @@ void LPAstar::updateCell(int id)
     {
       grid.at(id).rhs = cell.g + free_cost;
     }
+
+    // update parent
+    grid.at(id).parent_id = min_id;
+
+
   } // end if
 
 
@@ -198,6 +234,7 @@ void LPAstar::updateCell(int id)
     open_list.erase(it);
   }
 
+  // not locally inconsistent then add to open list
   if(!grid.at(id).locallyConsistent())
   {
     grid.at(id).calculateKeys();
@@ -242,20 +279,18 @@ void LPAstar::neighbors(const Cell &cell, std::vector<int> &id_vec) const
   for(const auto &action : actions)
   {
     // std::cout << action.at(0) << " " << action.at(1) << std::endl;
-    // succ grid coordinates
-    auto ip = i + action.at(0);
-    auto jp = j + action.at(1);
+    // grid coordinates of neighbor
+    const auto in = i + action.at(0);
+    const auto jn = j + action.at(1);
+    const auto idn = gridmap.grid2RowMajor(in, jn);
 
-    // within bounds
-    if (gridmap.worldBounds(ip, jp))
+    // within bounds and not an obstacle
+    if (gridmap.worldBounds(in, jn) and (grid.at(idn).state != 1 and grid.at(idn).state != 2))
     {
-      id_vec.push_back(gridmap.grid2RowMajor(ip, jp));
+      id_vec.push_back(idn);
     }
   }
 }
-
-
-
 
 
 double LPAstar::heuristic(int id) const

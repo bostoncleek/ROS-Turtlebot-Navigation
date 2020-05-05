@@ -52,7 +52,7 @@ namespace planner
 
 
   /// \brief - Sort std::pait based on second element, usefull for
-  ///          sorting nodes based on cost and having access to their IDs 
+  ///          sorting nodes based on cost and having access to their IDs
   struct SortCost
   {
     /// \brief Sorts cells
@@ -102,6 +102,14 @@ namespace planner
    /// \param goal - goal configuration
    void initPath(const Vector2D &start, const Vector2D &goal);
 
+   /// \brief Retreive the shortest path
+   /// path[out] - path
+   void getPath(std::vector<Vector2D> &path) const;
+
+   /// \brief Retreive the cells visited, usefull for debugging
+   /// cells[out] - cells visited during shortes path search
+   void getVisited(std::vector<Vector2D> &cells) const;
+
  private:
 
    /// \brief Updates the cost of a cell a may remove it from the
@@ -131,7 +139,7 @@ namespace planner
    double occu_cost, free_cost;              // cost of a cell being occupied or free
    int start_id, goal_id, curr_id;           // ID of start/goal/current node in roadmap
 
-
+   std::vector<int> visited;
 
  };
 
