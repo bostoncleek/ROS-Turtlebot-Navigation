@@ -39,8 +39,7 @@ namespace planner
   };
 
 
-
-
+  /// \brief Theta* shortest path planner
   class PRMPlanner
   {
   public:
@@ -56,6 +55,7 @@ namespace planner
     /// path[out] - (x/y) locations of each node
     void getPath(std::vector<Vector2D> &path);
 
+  private:
     /// \brief Add/examines the neighboring cells of the current min node
     void exploreNeighbors();
 
@@ -69,14 +69,13 @@ namespace planner
     double heuristic(const int id);
 
 
-  private:
     RoadMap prm;                              // probabilisitc road map
     std::vector<Node> roadmap;                // graph structure of road map
-    std::unordered_set<int> closed_set;       // closed set
+    std::vector<Node> open_list;              // open list, nodes currently being considered
+    std::unordered_set<int> closed_set;       // closed set, nodes that were once on the open list
     int start_id, goal_id, curr_id;           // ID of start/goal/current node in roadmap
 
 
-    std::vector<Node> open_list;
 
 
 

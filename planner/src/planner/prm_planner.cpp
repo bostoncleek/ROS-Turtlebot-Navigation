@@ -1,7 +1,6 @@
 /// \file
 /// \brief Global path planner usinga probabilisitc road map
 
-#include <stdexcept>
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -117,6 +116,9 @@ void PRMPlanner::exploreNeighbors()
 
 void PRMPlanner::updateNode(const Edge &edge)
 {
+  // TODO: add edge between parent(s) and s' in strigh line
+
+
   // temp node, may need to update prm node based on this one
   Node temp_node = roadmap.at(edge.id);
 
