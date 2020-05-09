@@ -92,10 +92,13 @@ namespace planner
    LPAstar(GridMap &gridmap);
 
    /// \brief Plans a path from start to goal on the grid
-   /// \param start - start configuration
-   /// \param goal - goal configuration
    /// \return true if path is found
-   bool planPath();
+   void planPath();
+
+   /// \brief simulates robot driving a path
+   // from start to goal on the grid
+   /// \return true goal is reached
+   void pathTraversal();
 
    /// \brief initialize start and goal
    /// \param start - start configuration
@@ -110,8 +113,11 @@ namespace planner
    /// cells[out] - cells visited during shortes path search
    void getVisited(std::vector<Vector2D> &cells) const;
 
- private:
+   /// \brief Compose a map viewable in rviz
+   /// map[out] a map in row major order
+   void getGridViz(std::vector<int8_t> &map) const;
 
+ private:
    /// \brief Updates the cost of a cell a may remove it from the
    ///        open set if it is on it
    /// \param id - the cell ID
@@ -121,10 +127,19 @@ namespace planner
    /// \return true if to keep planning
    bool ifPlanning();
 
+   /// \brief Simulates a laser scan update by updating the
+   ///        cells of grid using ref_grid
+   void simulateGridUpdate();
+
    /// \brief Compose the neighbors of a cell
    /// \parma cell - cell to examine
    /// pred[out] - IDs of all neighbors to the cell
    void neighbors(const Cell &cell, std::vector<int> &id_vec) const;
+
+   /// \brief Compse the ID of the neighbor with the min cost
+   /// \parma id - starting cell ID
+   /// \return ID of min neighbor
+   int minNeighbor(int id) const;
 
    /// \brief Compose the heuristic cost of a cell
    /// \param id - the cell ID
@@ -132,15 +147,27 @@ namespace planner
    double heuristic(int id) const;
 
 
-   GridMap gridmap;                          // grid map
-   std::vector<Cell> grid;                   // 2D grid of Cspace
+   // the grid mapper used to simulate a map
+   // created by a laser scan
+   GridMap gridmap;
+
+   // complete grid with all obstalces
+   // this simulates the sensor measurements
+   // of map, this is the map created using
+   // the
+   std::vector<Cell> ref_grid;
+
+   // The internal representation of the grid
+   // by the planner
+   std::vector<Cell> grid;
+
+
    std::vector<Cell> open_list;              // open list, nodes currently being considered
-
    double occu_cost, free_cost;              // cost of a cell being occupied or free
-   int start_id, goal_id, curr_id;           // ID of start/goal/current node in roadmap
-
-   std::vector<int> visited;
-
+   int start_id, goal_id, curr_id;           // ID of start/goal/min cell in roadmap
+   int vizd;                                 // number of cells visible from robot
+   std::vector<int> visited;                 // ID of visited cells by the planner
+   std::vector<Vector2D> path;
  };
 
 
