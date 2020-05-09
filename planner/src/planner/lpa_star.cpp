@@ -59,7 +59,7 @@ LPAstar::LPAstar(GridMap &gridmap) : gridmap(gridmap)
 bool LPAstar::planPath()
 {
   int i = 0;
-  while(planning())
+  while(ifPlanning())
   {
     // Cell with min key
     auto it = open_list.begin();
@@ -76,21 +76,38 @@ bool LPAstar::planPath()
     // examine neighbors
     if (min_cell.g > min_cell.rhs)
     {
+      // update cost of u
       grid.at(min_cell.id).g = grid.at(min_cell.id).rhs;
+
+      // visit predecessors of u
+      std::vector<int> pred;
+      neighbors(min_cell, pred);
+
+      for(const auto &id : pred)
+      {
+        updateCell(id);
+      }
     }
 
     else
     {
+      // set cost u to large number
       grid.at(min_cell.id).g = 1e12;
+
+      // visit successors of u
+      std::vector<int> pred;
+      neighbors(min_cell, pred);
+
+      for(const auto &id : pred)
+      {
+        updateCell(id);
+      }
+
+      // update u
+      updateCell(min_cell.id);
     }
 
-    std::vector<int> succ;
-    neighbors(min_cell, succ);
 
-    for(const auto &id : succ)
-    {
-      updateCell(id);
-    }
 
 
     if (i == 100)
@@ -114,19 +131,36 @@ void LPAstar::initPath(const Vector2D &start, const Vector2D &goal)
   auto gc = gridmap.world2Grid(start.x, start.y);
   start_id = gridmap.grid2RowMajor(gc.i, gc.j);
 
-  // add start to open list
-  grid.at(start_id).rhs = 0.0;
-  grid.at(start_id).h = heuristic(start_id);
-  grid.at(start_id).calculateKeys();
-
-  // std::cout << grid.at(start_id).k1 << " " << grid.at(start_id).k2 << std::endl;
-  open_list.push_back(grid.at(start_id));
-
   // goal cell
   gc = gridmap.world2Grid(goal.x, goal.y);
   goal_id = gridmap.grid2RowMajor(gc.i, gc.j);
+
+  // costs and key for goal
+  grid.at(goal_id).rhs = 0.0;
+  grid.at(goal_id).h = heuristic(start_id);
   grid.at(goal_id).calculateKeys();
-  // std::cout << grid.at(goal_id).k1 << " " << grid.at(goal_id).k2 << std::endl;
+
+  // add goal to open list
+  open_list.push_back(grid.at(goal_id));
+
+
+  // // start cell
+  // auto gc = gridmap.world2Grid(start.x, start.y);
+  // start_id = gridmap.grid2RowMajor(gc.i, gc.j);
+  //
+  // // add start to open list
+  // grid.at(start_id).rhs = 0.0;
+  // grid.at(start_id).h = heuristic(start_id);
+  // grid.at(start_id).calculateKeys();
+  //
+  // // std::cout << grid.at(start_id).k1 << " " << grid.at(start_id).k2 << std::endl;
+  // open_list.push_back(grid.at(start_id));
+  //
+  // // goal cell
+  // gc = gridmap.world2Grid(goal.x, goal.y);
+  // goal_id = gridmap.grid2RowMajor(gc.i, gc.j);
+  // grid.at(goal_id).calculateKeys();
+  // // std::cout << grid.at(goal_id).k1 << " " << grid.at(goal_id).k2 << std::endl;
 
 
   std::cout << start_id << " " << goal_id << std::endl;
@@ -138,14 +172,14 @@ void LPAstar::getPath(std::vector<Vector2D> &path) const
   std::cout << "Retreiving Path: " << std::endl;
   auto id = curr_id;
 
-  std::cout << "Current ID: " << id << std::endl;
+  // std::cout << "Current ID: " << id << std::endl;
   while(id != -1)
   {
     const Cell cell = grid.at(id);
     path.push_back(cell.p);
 
     id = cell.parent_id;
-    std::cout << "Parent ID: " << id << std::endl;
+    // std::cout << "Parent ID: " << id << std::endl;
   }
 
   std::reverse(path.begin(), path.end());
@@ -167,16 +201,16 @@ void LPAstar::getVisited(std::vector<Vector2D> &cells) const
 void LPAstar::updateCell(int id)
 {
   // not the start
-  if (id != start_id)
+  if (id != goal_id)
   {
-    std::vector<int> pred;
-    neighbors(grid.at(id), pred);
+    std::vector<int> succ;
+    neighbors(grid.at(id), succ);
 
-    // pairs of predecessor ID and the cost: g(s') + c(s', u)
+    // pairs of successor ID and the cost: g(s') + c(s', u)
     std::vector<std::pair<int, double>> id_cost;
 
     // rhs(u)
-    for(const auto &pid : pred)
+    for(const auto &pid : succ)
     {
       const Cell cell = grid.at(pid);
 
@@ -244,17 +278,21 @@ void LPAstar::updateCell(int id)
 
 
 
-bool LPAstar::planning()
+bool LPAstar::ifPlanning()
 {
   // TODO: figure out which or both keys to compare
+
+  // determine key for start
+  grid.at(start_id).calculateKeys();
+
 
   std::sort(open_list.begin(), open_list.end(), SortKey());
   const auto min_key1 = open_list.begin()->k1;
   const auto min_key2 = open_list.begin()->k2;
 
-  const auto goal = grid.at(goal_id);
+  const auto start = grid.at(start_id);
 
-  if (((min_key1 < goal.k1) and (min_key2 < goal.k2)) or goal.rhs != goal.g)
+  if (((min_key1 < start.k1) and (min_key2 < start.k2)) or (start.rhs != start.g))
   {
     return true;
   }
@@ -285,7 +323,8 @@ void LPAstar::neighbors(const Cell &cell, std::vector<int> &id_vec) const
     const auto idn = gridmap.grid2RowMajor(in, jn);
 
     // within bounds and not an obstacle
-    if (gridmap.worldBounds(in, jn) and (grid.at(idn).state != 1 and grid.at(idn).state != 2))
+    if (gridmap.worldBounds(in, jn))
+    // if (gridmap.worldBounds(in, jn) and (grid.at(idn).state != 1 and grid.at(idn).state != 2))
     {
       id_vec.push_back(idn);
     }

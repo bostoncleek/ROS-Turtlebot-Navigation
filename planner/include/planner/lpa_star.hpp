@@ -119,7 +119,7 @@ namespace planner
 
    /// \brief Determines whether or not the goal has been reached
    /// \return true if to keep planning
-   bool planning();
+   bool ifPlanning();
 
    /// \brief Compose the neighbors of a cell
    /// \parma cell - cell to examine
