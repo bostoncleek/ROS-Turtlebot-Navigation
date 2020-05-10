@@ -1,5 +1,5 @@
 // \file
-/// \brief Lifelong planning A*
+/// \brief D* light version 1
 
 #include <iostream>
 #include <algorithm>
@@ -31,7 +31,7 @@ LPAstar::LPAstar(GridMap &gridmap) : gridmap(gridmap)
   free_cost = 1.0;
 
   // visibility (number of cells)
-  vizd = 1;
+  vizd = 5;
 
   start_id = goal_id = curr_id = 0;
   path.push_back(grid.at(start_id).p);
@@ -40,14 +40,13 @@ LPAstar::LPAstar(GridMap &gridmap) : gridmap(gridmap)
 
 void LPAstar::planPath()
 {
+  // clear previously visited cells for viz
   visited.clear();
 
-
-  int i = 0;
   while(ifPlanning())
   {
     // Cell with min key
-    auto it = open_list.begin();
+    const auto it = open_list.begin();
     const Cell min_cell = (*it);
     // std::cout << "Current Cell ID: " << min_cell.id << std::endl;
     std::cout << "Replanning !!!!" << std::endl;
@@ -76,33 +75,37 @@ void LPAstar::planPath()
       }
     }
 
+
     else
     {
       // set cost u to large number
       grid.at(min_cell.id).g = 1e12;
 
-      // visit successors of u
+      // visit predecessors of u
       std::vector<int> pred;
       neighbors(min_cell, pred);
 
+
       for(const auto &id : pred)
       {
-        updateCell(id);
+        // update predecessors in open list
+        // std::cout << "Look in open" << std::endl;
+        // const auto it_open = std::find_if(open_list.begin(), open_list.end(), MatchesID(id));
+        //
+        // if (it_open != open_list.end())
+        {
+          // std::cout << "found in open" << std::endl;
+          updateCell(id);
+        }
       }
 
       // update u
       updateCell(min_cell.id);
     }
 
+    // std::cout << " done if/else" << std::endl;
 
-    if (i == 100)
-    {
-      std::cout << "MAX iter" << std::endl;
-      break;
-    }
   }
-
-  // return false;
 }
 
 
@@ -117,15 +120,77 @@ void LPAstar::pathTraversal()
 
   // move from start to the min successor
   start_id = minNeighbor(start_id);
-  // std::cout << "Start ID: " << start_id << std::endl;
+  std::cout << "Start ID: " << start_id << std::endl;
+  // collect shortest path
   path.push_back(grid.at(start_id).p);
 
 
   // update grid based on simulated sensors
-  simulateGridUpdate();
+  // these are the cells that are updated
+  std::vector<int> cell_id;
+  simulateGridUpdate(cell_id);
 
-  // compose shortest path
-  planPath();
+
+  // changes have taken place
+  if (!cell_id.empty())
+  {
+    // neighbors of start
+    // need this to determine which ones to update
+    // create set to see if need to update a directed edge
+    // not all visible cells that are updated
+    // are edges from (start, v)
+    // std::vector<int> nid;
+    // neighbors(grid.at(start_id), nid);
+    // std::set<int> nid_set;
+    //
+    // for(const auto n : nid)
+    // {
+    //   nid_set.insert(n);
+    // }
+
+
+    for(const auto cid : cell_id)
+    {
+      // directed edge (start, v)
+      // if (nid_set.find(id) != nid_set.end())
+      {
+        // update edge cost (c) which here is the state
+        // grid.at(id).state = ref_grid.at(id).state;
+        // std::cout << "Updating !!!!!!!!! " <<  std::endl;
+        updateCell(cid);
+
+
+        // all neighbors of cid
+        // std::vector<int> nid;
+        // neighbors(grid.at(cid), nid);
+        //
+        // for(const auto n : nid)
+        // {
+        //   updateCell(n);
+        // }
+
+
+
+
+        // this seems to make it work
+        updateCell(start_id);
+      }
+    }
+
+    // update cell costs/keys in open list
+    for(auto &cell : open_list)
+    {
+      cell.h = heuristic(cell.id);
+      cell.calculateKeys();
+
+      // sort keys
+      // std::sort(open_list.begin(), open_list.end(), SortKey());
+    }
+
+    // compose shortest path
+    planPath();
+
+  }
 }
 
 
@@ -149,28 +214,31 @@ void LPAstar::initPath(const Vector2D &start, const Vector2D &goal)
   open_list.push_back(grid.at(goal_id));
 
   std::cout << start_id << " " << goal_id << std::endl;
+  std::cout << grid.at(goal_id).k1 << " " << grid.at(goal_id).k2 << std::endl;
+
 }
 
 
 void LPAstar::getPath(std::vector<Vector2D> &path) const
 {
   // std::cout << "Retreiving Path" << std::endl;
-  path = this->path;
+  // path = this->path;
 
 
   // auto id = curr_id;
-  //
-  // // std::cout << "Current ID: " << id << std::endl;
-  // while(id != -1)
-  // {
-  //   const Cell cell = grid.at(id);
-  //   path.push_back(cell.p);
-  //
-  //   id = cell.parent_id;
-  //   // std::cout << "Parent ID: " << id << std::endl;
-  // }
-  //
-  // std::reverse(path.begin(), path.end());
+  auto id = start_id;
+
+  // std::cout << "Current ID: " << id << std::endl;
+  while(id != -1)
+  {
+    const Cell cell = grid.at(id);
+    path.push_back(cell.p);
+
+    id = cell.parent_id;
+    // std::cout << "Parent ID: " << id << std::endl;
+  }
+
+  std::reverse(path.begin(), path.end());
 }
 
 
@@ -254,19 +322,14 @@ void LPAstar::updateCell(int id)
 
 
   // on open set then remove it
-  auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(id));
+  const auto it = std::find_if(open_list.begin(), open_list.end(), MatchesID(id));
   if (it != open_list.end())
   {
     open_list.erase(it);
   }
 
-
-  // std::cout << "rhs: " << grid.at(id).rhs << std::endl;
-  // std::cout << "g: " << grid.at(id).g << std::endl;
-
-
   // not locally inconsistent then add to open list
-  if(!grid.at(id).locallyConsistent())
+  if(grid.at(id).rhs != grid.at(id).g)
   {
     grid.at(id).h = heuristic(id);
     grid.at(id).calculateKeys();
@@ -278,8 +341,6 @@ void LPAstar::updateCell(int id)
 
 bool LPAstar::ifPlanning()
 {
-  // TODO: figure out which or both keys to compare
-
   // determine key for start
   grid.at(start_id).h = heuristic(start_id);
   grid.at(start_id).calculateKeys();
@@ -300,12 +361,12 @@ bool LPAstar::ifPlanning()
   std::cout << "start k2: " << start.k2 << std::endl;
   std::cout << "start rhs: " << start.rhs << std::endl;
   std::cout << "start g: " << start.g << std::endl;
+  std::cout << "start h: " << start.h << std::endl;
   std::cout << "-------------------" << std::endl;
 
 
 
   if (((min_key1 < start.k1) or (min_key2 < start.k2)) or (start.rhs != start.g))
-  // if (((min_key1 < start.k1) and (min_key2 < start.k2)))
   {
     return true;
   }
@@ -315,7 +376,7 @@ bool LPAstar::ifPlanning()
 }
 
 
-void LPAstar::simulateGridUpdate()
+void LPAstar::simulateGridUpdate(std::vector<int> &cell_id)
 {
   // TODO: check bounds on these
   // TODO: make sure to only update it the cell has not been updated already
@@ -359,21 +420,6 @@ void LPAstar::simulateGridUpdate()
   }
 
 
-  // neighbors of u
-  // need this to determine which ones to update
-  // create set to see if need to update a directed edge
-  // not all visible cells that are updated
-  // are edges from (u, v)
-  std::vector<int> nid;
-  neighbors(grid.at(start_id), nid);
-  std::set<int> nid_set;
-
-  for(const auto n : nid)
-  {
-    nid_set.insert(n);
-  }
-
-
   // all ID within bounding box
   for(int i = i_min; i <= i_max; i++)
   {
@@ -381,38 +427,19 @@ void LPAstar::simulateGridUpdate()
     {
       const auto id = gridmap.grid2RowMajor(i, j);
 
-      // std::cout << "Updating: " << id << std::endl;
-      if (!gridmap.worldBounds(i,j))
+      // states are not equal between the planners grid and
+      // the ref_grid then assume this is an adge cost change and update
+      // if (grid.at(id).state != ref_grid.at(id).state)
+      if (!grid.at(id).updated)
       {
-        std::cout << "not in bounds: " << id << std::endl;
-      }
-      grid.at(id).state = ref_grid.at(id).state;
-
-      // directed edge (u, v)
-      if (nid_set.find(id) != nid_set.end())
-      {
-        // update edge cost (c) which here is the state
-        // grid.at(id).state = ref_grid.at(id).state;
-
-        // update (u), the current min node
-        // std::cout << "Updating !!!!!!!!! " <<  std::endl;
-        updateCell(start_id);
+        grid.at(id).updated = true;
+        grid.at(id).state = ref_grid.at(id).state;
+        cell_id.push_back(id);
+        // std::cout << "Updating: " << id << std::endl;
       }
     } // end inner loop
   } // end outer loop
-
-
-  // update cells in open list
-  for(auto &cell : open_list)
-  {
-    cell.calculateKeys();
-  }
 }
-
-
-
-
-
 
 
 void LPAstar::neighbors(const Cell &cell, std::vector<int> &id_vec) const
@@ -483,11 +510,12 @@ int LPAstar::minNeighbor(int id) const
 
 double LPAstar::heuristic(int id) const
 {
-  const auto goal = grid.at(goal_id);
+  // const auto start = grid.at(goal_id);
+  const auto start = grid.at(start_id);
   const auto cell = grid.at(id);
 
-  const auto dx = std::abs(cell.i - goal.i);
-  const auto dy = std::abs(cell.j - goal.j);
+  const auto dx = std::abs(cell.i - start.i);
+  const auto dy = std::abs(cell.j - start.j);
 
   return std::sqrt(dx*dx + dy*dy);
 }

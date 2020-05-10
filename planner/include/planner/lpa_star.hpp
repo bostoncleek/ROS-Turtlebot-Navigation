@@ -1,7 +1,7 @@
 #ifndef LPA_STAR_GUARD_HPP
 #define LPA_STAR_GUARD_HPP
 // \file
-/// \brief Lifelong planning A*
+/// \brief D* light version 1
 
 #include <iosfwd>
 #include <utility>
@@ -129,7 +129,7 @@ namespace planner
 
    /// \brief Simulates a laser scan update by updating the
    ///        cells of grid using ref_grid
-   void simulateGridUpdate();
+   void simulateGridUpdate(std::vector<int> &cell_id);
 
    /// \brief Compose the neighbors of a cell
    /// \parma cell - cell to examine
@@ -142,6 +142,7 @@ namespace planner
    int minNeighbor(int id) const;
 
    /// \brief Compose the heuristic cost of a cell
+   ///        from id to start
    /// \param id - the cell ID
    /// \return - heuristic cost of cell
    double heuristic(int id) const;
