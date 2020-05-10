@@ -46,7 +46,7 @@ GridMap::GridMap(double xmin, double xmax,
 void GridMap::getGridViz(std::vector<int8_t> &map) const
 {
   // IMPORTANT
-  // Transpose map
+  // convert from column to row
   map.resize(grid.size());
 
   for(unsigned int i = 0; i < grid.size(); i++)
@@ -78,7 +78,6 @@ void GridMap::getGridViz(std::vector<int8_t> &map) const
     {
       map.at(idx) = -1;
     }
-
   }
 }
 
@@ -213,6 +212,13 @@ unsigned int GridMap::grid2RowMajor(int i, int j) const
 
   // return j * xsize + i;
   return i * ysize + j;
+}
+
+
+std::vector<int> GridMap::getGridSize() const
+{
+  std::vector<int> gs = {xsize, ysize};
+  return gs;
 }
 
 

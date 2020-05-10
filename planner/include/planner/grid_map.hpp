@@ -34,6 +34,7 @@ namespace planner
     int i, j;               // index location in grid
     int id;                 // cell ID in grid
 
+    bool updated = false;   // used for simulating updates in planner
 
     int parent_id = -1;
 
@@ -139,6 +140,10 @@ namespace planner
     /// \param j - column in the grid
     /// \returns the grid index in row major order
     unsigned int grid2RowMajor(int i, int j) const;
+
+    /// \brief Obtain size of grid in number of discretizations
+    /// \returns x/y discretizations
+    std::vector<int> getGridSize() const;
 
   private:
     /// \brief Labels all osbtacle cells
