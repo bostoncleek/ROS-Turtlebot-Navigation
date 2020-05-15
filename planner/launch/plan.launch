@@ -32,8 +32,8 @@
     <node name="grid_planner" pkg="planner" type="grid_planner" output="screen" >
       <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
       <param name="frame_id" value="map" />
-      <param name="bounding_radius" value="0.15" />
-      <param name="grid_resolution" value="0.05" />
+      <param name="bounding_radius" value="0.1" />
+      <param name="grid_resolution" value="0.1" />
     </node>
 
     <!-- rviz for grid based planners -->

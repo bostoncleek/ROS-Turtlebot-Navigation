@@ -17,7 +17,7 @@
 #include <xmlrpcpp/XmlRpcValue.h>
 
 #include "planner/grid_map.hpp"
-#include "planner/lpa_star.hpp"
+#include "planner/dstar_light.hpp"
 
 
 using rigid2d::Vector2D;
@@ -118,18 +118,13 @@ int main(int argc, char** argv)
   map_msg.info.origin = map_pose;
 
 
-  // std::cout << planner::gridSize(ymin, ymax, resolution) << std::endl;
-  // std::cout << "size test: " << std::round((ymax - ymin) / resolution) << std::endl;
-  // std::cout << "size test: " << ((ymax - ymin) / resolution) << std::endl;
-
-  // label cells
-  gridmap.labelCells();
-  gridmap.getGridViz(map);
-
-
   // start/goal configurations
   Vector2D start(6.0 * obs_resolution, 3.0 * obs_resolution);
   Vector2D goal(20.0 * obs_resolution, 45.0 * obs_resolution);
+
+  // visibility radius for map updates
+  const auto viz_rad = 5.0*grid_resolution;
+
 
   // convert start/goal to grid coordinates
   const planner::GridCoordinates gc_start = gridmap.world2Grid(start.x, start.y);
@@ -160,17 +155,22 @@ int main(int argc, char** argv)
   sg_msg.cells.push_back(pg);
 
 
+  // label cells
+  gridmap.labelCells();
+  // Map from grid mapper
+  // gridmap.getGridViz(map);
+
+
+  // number of cells visibile for map update
+  const auto vizd = std::round(viz_rad / grid_resolution);
 
   // TODO add check if plan succeeds
-
   // start planning
   std::cout << "Currently Planning " <<  std::endl;
-  planner::LPAstar lpa(gridmap);
-  lpa.initPath(start, goal);
-  lpa.planPath();
+  planner::DStarLight dstar(gridmap, vizd);
+  dstar.initPath(start, goal);
+  dstar.planPath();
 
-  std::vector<Vector2D> path;
-  lpa.getPath(path);
 
 
   // global path msg
@@ -179,11 +179,6 @@ int main(int argc, char** argv)
   path_msg.cell_width = 0.5 * grid_resolution;
   path_msg.cell_height = 0.5 * grid_resolution;
 
-  gridCellPath(path, path_msg);
-
-
-  std::vector<Vector2D> visted_cells;
-  lpa.getVisited(visted_cells);
 
   // visited cells path msg
   nav_msgs::GridCells visit_msg;
@@ -191,14 +186,35 @@ int main(int argc, char** argv)
   visit_msg.cell_width = 0.5 * grid_resolution;
   visit_msg.cell_height = 0.5 * grid_resolution;
 
-  gridCellPath(visted_cells, visit_msg);
-
-
-
+  ros::Rate rate(5);
   while(node_handle.ok())
   {
     ros::spinOnce();
 
+    // plan until goal reached
+    dstar.pathTraversal();
+
+    // internal map to LPA*
+    map.clear();
+    dstar.getGridViz(map);
+
+    // path viz
+    std::vector<Vector2D> path;
+    dstar.getPath(path);
+
+    // path_msg.cells.clear();
+    gridCellPath(path, path_msg);
+
+
+    // visited cells for debugging
+    std::vector<Vector2D> visted_cells;
+    dstar.getVisited(visted_cells);
+
+    // visit_msg.cells.clear();
+    gridCellPath(visted_cells, visit_msg);
+
+
+    ///////////////////////////////////////////////
     // publish the map
     map_msg.header.stamp = ros::Time::now();
     map_msg.info.map_load_time = ros::Time::now();
@@ -213,9 +229,11 @@ int main(int argc, char** argv)
     path_msg.header.stamp = ros::Time::now();
     path_pub.publish(path_msg);
 
-
     // publsih start/goal
     sg_pub.publish(sg_msg);
+    ///////////////////////////////////////////////
+
+    rate.sleep();
   }
 
 
