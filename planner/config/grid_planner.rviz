@@ -8,6 +8,9 @@ Panels:
         - /Status1
         - /Map1
         - /Axes1
+        - /GridCells1
+        - /GridCells2
+        - /GridCells3
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz/Selection
@@ -71,6 +74,27 @@ Visualization Manager:
       Radius: 0.05000000074505806
       Reference Frame: <Fixed Frame>
       Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 25; 255; 0
+      Enabled: true
+      Name: GridCells
+      Topic: /global_path
+      Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 0; 0; 255
+      Enabled: true
+      Name: GridCells
+      Topic: /start_goal
+      Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 255; 0; 0
+      Enabled: true
+      Name: GridCells
+      Topic: /visited_cells
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -99,16 +123,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 18.744802474975586
+      Distance: 5.600303649902344
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.938899993896484
-        Y: 7.374457836151123
-        Z: 1.5500802993774414
+        X: 1.906037449836731
+        Y: 2.3285491466522217
+        Z: 1.5451111793518066
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -117,7 +141,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.705423831939697
+      Yaw: 4.705435276031494
     Saved: ~
 Window Geometry:
   Displays:
