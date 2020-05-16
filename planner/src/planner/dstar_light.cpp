@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+
 #include "planner/dstar_light.hpp"
 
 
@@ -29,7 +30,6 @@ DStarLight::DStarLight(GridMap &gridmap, double vizd)
 
   // costs
   occu_cost = 1000.0;
-  free_cost = 1.0;
 
   // visibility (number of cells)
   // vizd = 5;
@@ -109,11 +109,12 @@ void DStarLight::pathTraversal()
   }
 
   // move from start to the min successor
-  start_id = minNeighbor(start_id);
-  // std::cout << "Start ID: " << start_id << std::endl;
-  // collect shortest path
-  path.push_back(grid.at(start_id).p);
+  // do not move into occupied cells
+  start_id = minNeighbor(start_id, true);
+  // std::cout << start_id << std::endl;
 
+
+  path.push_back(grid.at(start_id).p);
 
   // update grid based on simulated sensors
   // these are the cells that are updated
@@ -152,7 +153,6 @@ void DStarLight::pathTraversal()
 }
 
 
-
 void DStarLight::initPath(const Vector2D &start, const Vector2D &goal)
 {
   // start cell
@@ -185,10 +185,14 @@ void DStarLight::getPath(std::vector<Vector2D> &traj) const
   // get the remainder of the path that has not
   // been updated yet due to replanning
   auto id = start_id;
+  int i = 0;
   while(id != -1)
   {
+
     traj.push_back(grid.at(id).p);
     id = grid.at(id).parent_id;
+
+    i++;
   }
 }
 
@@ -245,27 +249,16 @@ void DStarLight::getGridViz(std::vector<int8_t> &map) const
 }
 
 
-
 void DStarLight::updateCell(int id)
 {
   // not the start
   if (id != goal_id)
   {
     // successor with min cost
-    const auto min_id = minNeighbor(id);
+    const auto min_id = minNeighbor(id, false);
 
-    // update rhs(u)
-    // occupied cell
-    if (grid.at(min_id).state == 1 or grid.at(min_id).state == 2)
-    {
-      grid.at(id).rhs = grid.at(min_id).g + occu_cost;
-    }
-
-    // unoccupied or unknow cell state
-    else
-    {
-      grid.at(id).rhs = grid.at(min_id).g + free_cost;
-    }
+    // // update rhs(u)
+    grid.at(id).rhs = grid.at(min_id).g + edgeCost(id, min_id);
 
     // update parent
     grid.at(id).parent_id = min_id;
@@ -287,7 +280,6 @@ void DStarLight::updateCell(int id)
     open_list.push_back(grid.at(id));
   }
 }
-
 
 
 bool DStarLight::ifPlanning()
@@ -315,13 +307,22 @@ bool DStarLight::ifPlanning()
   // std::cout << "start h: " << start.h << std::endl;
   // std::cout << "-------------------" << std::endl;
 
-
-  if (((min_key1 < start.k1) or (min_key2 < start.k2)) or (start.rhs != start.g))
+  if (rigid2d::almost_equal(min_key1, start.k1))
   {
-    return true;
+    if ((min_key2 < start.k2) or (start.rhs != start.g))
+    {
+      return true;
+    }
   }
 
-  // std::cout << "Shortest Path Complete" << std::endl;
+  else
+  {
+    if ((min_key1 < start.k1) or (start.rhs != start.g))
+    {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -421,7 +422,7 @@ void DStarLight::neighbors(const Cell &cell, std::vector<int> &id_vec) const
 }
 
 
-int DStarLight::minNeighbor(int id) const
+int DStarLight::minNeighbor(int id, bool exc_obs) const
 {
   std::vector<int> neigh;
   neighbors(grid.at(id), neigh);
@@ -431,23 +432,21 @@ int DStarLight::minNeighbor(int id) const
 
   for(const auto &nid : neigh)
   {
-    const Cell cell = grid.at(nid);
-
-    // std::cout << "succ ID: " << id << " pred ID: " << pid << std::endl;
-
-    // cost from (s' to u)
-    // occupied cell
-    if (cell.state == 1 or cell.state == 2)
+    // consider occupied and unoccupied cells
+    if(!exc_obs)
     {
-      const auto cost = cell.g + occu_cost;
+      const auto cost = grid.at(nid).g + edgeCost(id, nid);
       id_cost.push_back({nid, cost});
     }
 
-    // unoccupied or unknow cell state
+    // only unoccupied cells
     else
     {
-      const auto cost = cell.g + free_cost;
-      id_cost.push_back({nid, cost});
+      if (grid.at(nid).state != 1 and grid.at(nid).state != 2)
+      {
+          const auto cost = grid.at(nid).g + edgeCost(id, nid);
+          id_cost.push_back({nid, cost});
+      }
     }
   } // end loop
 
@@ -466,6 +465,26 @@ double DStarLight::heuristic(int id) const
 
   const auto dx = std::abs(cell.i - start.i);
   const auto dy = std::abs(cell.j - start.j);
+
+  return std::sqrt(dx*dx + dy*dy);
+}
+
+
+double DStarLight::edgeCost(int id1, int id2) const
+{
+  const auto a = grid.at(id1);    // Cell a
+  const auto b = grid.at(id2);    // cell b
+
+  // from a -> b
+  // b is occupied
+  if (b.state == 1 or b.state == 2)
+  {
+    return occu_cost;
+  }
+
+  // free cost is euclidena distance in grid coordinates
+  const auto dx = std::abs(a.i - b.i);
+  const auto dy = std::abs(a.j - b.j);
 
   return std::sqrt(dx*dx + dy*dy);
 }

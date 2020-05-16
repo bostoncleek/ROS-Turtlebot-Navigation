@@ -33,16 +33,20 @@ namespace planner
         return true;
       }
 
-      else if (a.k1 > b.k1)
+      else if (rigid2d::almost_equal(a.k1, b.k1))
       {
-        return false;
+        if (a.k2 < b.k2)
+        {
+          return true;
+        }
+
+        else
+        {
+          return false;
+        }
       }
 
-      else if (a.k2 < b.k2)
-      {
-        return true;
-      }
-
+      // a.k1 > b.k1
       else
       {
         return false;
@@ -133,14 +137,15 @@ namespace planner
    void simulateGridUpdate(std::vector<int> &cell_id);
 
    /// \brief Compose the neighbors of a cell
-   /// \parma cell - cell to examine
+   /// \param cell - cell to examine
    /// pred[out] - IDs of all neighbors to the cell
    void neighbors(const Cell &cell, std::vector<int> &id_vec) const;
 
    /// \brief Compse the ID of the neighbor with the min cost
-   /// \parma id - starting cell ID
+   /// \param id - starting cell ID
+   /// \param exc_obs - true excludes obstacle cells
    /// \return ID of min neighbor
-   int minNeighbor(int id) const;
+   int minNeighbor(int id, bool exc_obs) const;
 
    /// \brief Compose the heuristic cost of a cell
    ///        from id to start
@@ -148,6 +153,12 @@ namespace planner
    /// \return - heuristic cost of cell
    double heuristic(int id) const;
 
+   /// \bief Compose the traversal cost to go from
+   ///       cell (id1) to cell (id2)
+   /// \param id1 - ID of first cell
+   /// \param id2 - ID of second cell
+   /// \return - cost to go from id1 -> id2
+   double edgeCost(int id1, int id2) const;
 
    // the grid mapper used to simulate a map
    // created by a laser scan
@@ -165,26 +176,12 @@ namespace planner
 
 
    std::vector<Cell> open_list;              // open list, nodes currently being considered
-   double occu_cost, free_cost;              // cost of a cell being occupied or free
+   double occu_cost;                         // cost of a cell being occupied
    int start_id, goal_id, curr_id;           // ID of start/goal/min cell in roadmap
    int vizd;                                 // number of cells visible from robot
    std::vector<int> visited;                 // ID of visited cells by the planner
    std::vector<Vector2D> path;               // (x/y) locations of cells in the path traversed
  };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 } // end namespace
 
 #endif
