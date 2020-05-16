@@ -123,7 +123,8 @@ int main(int argc, char** argv)
   Vector2D goal(20.0 * obs_resolution, 45.0 * obs_resolution);
 
   // visibility radius for map updates
-  const auto viz_rad = 5.0*grid_resolution;
+  const auto viz_rad = 1.0*grid_resolution;
+  ros::Rate rate(5);
 
 
   // convert start/goal to grid coordinates
@@ -186,7 +187,6 @@ int main(int argc, char** argv)
   visit_msg.cell_width = 0.5 * grid_resolution;
   visit_msg.cell_height = 0.5 * grid_resolution;
 
-  ros::Rate rate(5);
   while(node_handle.ok())
   {
     ros::spinOnce();
@@ -235,9 +235,6 @@ int main(int argc, char** argv)
 
     rate.sleep();
   }
-
-
-
 
   return 0;
 }
