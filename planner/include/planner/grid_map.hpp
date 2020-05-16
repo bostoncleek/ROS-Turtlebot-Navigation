@@ -60,7 +60,7 @@ namespace planner
     /// \brief calculate keys for cell
     void calculateKeys()
     {
-      k1 = std::min(g, rhs + h);
+      k1 = std::min(g, rhs) + h;
       k2 = std::min(g, rhs);
     }
 
