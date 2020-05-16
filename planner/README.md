@@ -31,13 +31,7 @@ For the grid based planners:
 # D* Light
 This algorithm plans from the goal to the starting cell. The green cells represent the current shortest path. The red squares are the cells that are updated during the replanning stage after a map update.
 
-## 5 cell visibility
+## 10 cell visibility
 <p align="center">
-  <img src= "media/dstar5cell.gif" width="350" height="500">
-</p>
-
-
-## 1 cell visibility
-<p align="center">
-  <img src= "media/dstar1cell.gif" width="350" height="500">
+  <img src= "media/dstarcell10.gif" width="350" height="500">
 </p>
