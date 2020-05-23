@@ -1,5 +1,5 @@
 /// \file
-/// \brief Global path planner usinga probabilisitc road map
+/// \brief Theta* using a probabilisitc road map
 
 #include <cmath>
 #include <algorithm>

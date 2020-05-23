@@ -38,8 +38,8 @@ GridMap::GridMap(double xmin, double xmax,
   // convert world (x,y) into grid (x,y), this is the center of the
   // closest grid cell to the obstacle vertex location in the world
   preProcessObstacles();
-
-  std::cout << xsize << " " << ysize << std::endl;
+  
+  // std::cout << xsize << " " << ysize << std::endl;
 }
 
 

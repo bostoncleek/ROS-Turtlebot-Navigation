@@ -31,11 +31,7 @@ DStarLight::DStarLight(GridMap &gridmap, double vizd)
   // costs
   occu_cost = 1000.0;
 
-  // visibility (number of cells)
-  // vizd = 5;
-
   start_id = goal_id = curr_id = 0;
-  path.push_back(grid.at(start_id).p);
 }
 
 
@@ -49,15 +45,11 @@ void DStarLight::planPath()
     // Cell with min key
     const auto it = open_list.begin();
     const Cell min_cell = (*it);
-    // std::cout << "Current Cell ID: " << min_cell.id << std::endl;
-    // std::cout << "Replanning !!!!" << std::endl;
-
 
     // remove min cell from open list
     open_list.erase(it);
 
     curr_id = min_cell.id;
-    visited.push_back(min_cell.id);
 
     // update the true cost and
     // examine neighbors
@@ -73,9 +65,9 @@ void DStarLight::planPath()
       for(const auto &id : pred)
       {
         updateCell(id);
+        visited.push_back(id);
       }
     }
-
 
     else
     {
@@ -89,12 +81,13 @@ void DStarLight::planPath()
       for(const auto &id : pred)
       {
           updateCell(id);
+          visited.push_back(id);
       }
 
       // update u
       updateCell(min_cell.id);
+      visited.push_back(min_cell.id);
     }
-
   }
 }
 
@@ -111,8 +104,6 @@ void DStarLight::pathTraversal()
   // move from start to the min successor
   // do not move into occupied cells
   start_id = minNeighbor(start_id, true);
-  // std::cout << start_id << std::endl;
-
 
   path.push_back(grid.at(start_id).p);
 
@@ -120,7 +111,6 @@ void DStarLight::pathTraversal()
   // these are the cells that are updated
   std::vector<int> cell_id;
   simulateGridUpdate(cell_id);
-
 
   // changes have taken place
   if (!cell_id.empty())
@@ -148,7 +138,6 @@ void DStarLight::pathTraversal()
 
     // compose shortest path
     planPath();
-
   }
 }
 
@@ -170,10 +159,6 @@ void DStarLight::initPath(const Vector2D &start, const Vector2D &goal)
 
   // add goal to open list
   open_list.push_back(grid.at(goal_id));
-
-  std::cout << start_id << " " << goal_id << std::endl;
-  std::cout << grid.at(goal_id).k1 << " " << grid.at(goal_id).k2 << std::endl;
-
 }
 
 
@@ -188,7 +173,6 @@ void DStarLight::getPath(std::vector<Vector2D> &traj) const
   int i = 0;
   while(id != -1)
   {
-
     traj.push_back(grid.at(id).p);
     id = grid.at(id).parent_id;
 
@@ -297,16 +281,6 @@ bool DStarLight::ifPlanning()
 
   const auto start = grid.at(start_id);
 
-  // std::cout << "-------------------" << std::endl;
-  // std::cout << "Min k1: " << min_key1 << std::endl;
-  // std::cout << "Min k2: " << min_key2 << std::endl;
-  // std::cout << "start k1: " << start.k1 << std::endl;
-  // std::cout << "start k2: " << start.k2 << std::endl;
-  // std::cout << "start rhs: " << start.rhs << std::endl;
-  // std::cout << "start g: " << start.g << std::endl;
-  // std::cout << "start h: " << start.h << std::endl;
-  // std::cout << "-------------------" << std::endl;
-
   if (rigid2d::almost_equal(min_key1, start.k1))
   {
     if ((min_key2 < start.k2) or (start.rhs != start.g))
@@ -329,10 +303,6 @@ bool DStarLight::ifPlanning()
 
 void DStarLight::simulateGridUpdate(std::vector<int> &cell_id)
 {
-  // TODO: check bounds on these
-  // TODO: make sure to only update it the cell has not been updated already
-
-
   // index of u
   const auto iu = grid.at(start_id).i;
   const auto ju = grid.at(start_id).j;
@@ -380,13 +350,11 @@ void DStarLight::simulateGridUpdate(std::vector<int> &cell_id)
 
       // states are not equal between the planners grid and
       // the ref_grid then assume this is an adge cost change and update
-      // if (grid.at(id).state != ref_grid.at(id).state)
       if (!grid.at(id).updated)
       {
         grid.at(id).updated = true;
         grid.at(id).state = ref_grid.at(id).state;
         cell_id.push_back(id);
-        // std::cout << "Updating: " << id << std::endl;
       }
     } // end inner loop
   } // end outer loop

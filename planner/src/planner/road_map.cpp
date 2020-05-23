@@ -136,6 +136,8 @@ RoadMap::RoadMap(double xmin, double xmax,
                       n(num_nodes),
                       obs_map(obs_map)
 {
+  // TODO: add check to make sure start/goal are within bounds
+
   if (n <= k)
   {
     throw std::invalid_argument("Number of nodes in road map less than nearest neighbors");
@@ -474,7 +476,7 @@ bool RoadMap::ptInsidePolygon(const polygon &poly, const Vector2D &q) const
 
         // to the left of v2
         // compare distance from v2 to q
-        else if (clpt.t > 0.0)
+        else if (clpt.t > 1.0)
         {
           const auto dv2p = euclideanDistance(v2.x, v2.y, q.x, q.y);
           if (dv2p > bnd_rad)
