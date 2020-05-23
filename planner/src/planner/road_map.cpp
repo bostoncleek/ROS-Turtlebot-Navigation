@@ -26,7 +26,6 @@ bool lnSegIntersectPolygon(const polygon &poly,
   //   return false;
   // }
 
-
   auto tE = 0.0;                    // the maximum entering segment parameter
   auto tL = 1.0;                    // the minimum leaving segment parameter
   auto t = 0.0, N = 0.0, D = 0.0;   // intersect parameter t = N / D
@@ -171,10 +170,8 @@ void RoadMap::printRoadMap() const
 
 void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
 {
-
   // clear prvious graph
   nodes.clear();
-
 
   if (!isFreeSpace(start) and !collideWalls(start))
   {
@@ -188,14 +185,6 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
     return;
   }
 
-  // double res = 0.3;
-  // std::vector<Vector2D> hc = {Vector2D(7*res, 7*res),
-  //                             Vector2D(7*res, 9*res),
-  //                             Vector2D(8*res, 10*res),
-  //                             Vector2D(7*res, 15*res),
-  //                             Vector2D(9*res, 20*res)};
-
-  // int i = 0;
   // start adding nodes
   while(nodes.size() < n)
   {
@@ -206,9 +195,7 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
     {
       addNode(q);
     }
-    // i++;
   } // end while loop
-
 
   // add edges
   for(auto &nd : nodes)
@@ -227,7 +214,6 @@ void RoadMap::constructRoadMap(const Vector2D &start, const Vector2D &goal)
       }
     } // end inner loop
   } // end outer loop
-
 
   // add start and end goals
   if(!addStartGoalConfig(start, goal))
@@ -272,16 +258,12 @@ bool RoadMap::addStartGoalConfig(const Vector2D &start, const Vector2D &goal)
       }
   }
 
-  // std::cout << "start node: " << nodes.at(start_id).edges.size() << std::endl;
-
-
   // start node has neighbors
   if (nodes.at(start_id).edges.empty())
   {
     std::cout << "ERROR: start node NOT connected to PRM" << std::endl;
     return false;
   }
-
 
   // KNN for goal
   neighbors.clear();
@@ -297,17 +279,12 @@ bool RoadMap::addStartGoalConfig(const Vector2D &start, const Vector2D &goal)
       }
   }
 
-
-  // std::cout << "goal node: " << nodes.at(goal_id).edges.size() << std::endl;
-
-
   // goal node has neighbors
   if (nodes.at(goal_id).edges.empty())
   {
     std::cout << "ERROR: goal node NOT connected to PRM" << std::endl;
     return false;
   }
-
 
   return true;
 }
@@ -319,17 +296,12 @@ bool RoadMap::addStartGoalConfig(const Vector2D &start, const Vector2D &goal)
 void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors) const
 {
   // // TODO: find better method than searching all neighbors i.e kd trees
-
   neighbors.reserve(k);
 
   // map distance to node index
   // the size is size-1 b/c we do not want to compose distance to self
   std::unordered_map<double, unsigned int> umap(nodes.size()-1);
   std::vector<double> distances(nodes.size()-1);
-
-
-  // std::cout << "------------" << std::endl;
-  // std::cout << "query id: " << query.id <<  std::endl;
 
   unsigned int i = 0;
   for(const auto &nd : nodes)
@@ -340,16 +312,12 @@ void RoadMap::nearestNeighbors(const Node &query, std::vector<int> &neighbors) c
       continue;
     }
 
-
     const auto d = euclideanDistance(nd.point.x, nd.point.y, query.point.x, query.point.y);
     distances.at(i) = d;
     umap.insert({d, nd.id});
 
-    // std::cout << nd.point << " id: " << nd.id << " distance: " << d <<  std::endl;
-
     i++;
   } // end loop
-
 
   // sort in descending order
   std::sort(distances.begin(), distances.end(), std::greater<double>());
@@ -378,7 +346,6 @@ bool RoadMap::collideWalls(const Vector2D &q) const
     auto dist = 0.0;
     if (minDistLineSegPt(dist, bounds.at(i), bounds.at(i+1), q) and dist < bnd_rad)
     {
-      // std::cout << "node to close to wall" << std::endl;
       return true;
     }
   } // end loop
@@ -399,12 +366,9 @@ bool RoadMap::isFreeSpace(const Vector2D &q) const
     // is not Cfree
     if (ptInsidePolygon(poly, q))
     {
-      // std::cout << "inside polygon" << std::endl;
       return false;
     }
   } // end  outer loop
-
-  // std::cout << "outisde polygons" << std::endl;
   // is Cfree
   return true;
 }
@@ -509,8 +473,6 @@ bool RoadMap::lnSegClose2Polygon(const polygon &poly,
   //         p1  and/or p2 are the closest points to the edge v1 => v2
   //         of the polygon
 
-
-
   for(unsigned int i = 0; i < poly.size(); i++)
   {
     // vertices on polygon (CCW)
@@ -556,14 +518,10 @@ bool RoadMap::lnSegClose2Polygon(const polygon &poly,
     //   std::cout << "p2 too close" << std::endl;
     //   return true;
     // }
-
-
   } // end loop
 
   return false;
 }
-
-
 
 
 int RoadMap::addNode(const Vector2D &q)
