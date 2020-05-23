@@ -1,7 +1,7 @@
 #ifndef PRM_PLANNER_HPP
 #define PRM_PLANNER_HPP
 /// \file
-/// \brief Global path planner usinga probabilisitc road map
+/// \brief Theta* using a probabilisitc road map
 
 #include <vector>
 #include <iosfwd>
@@ -16,6 +16,7 @@
 namespace planner
 {
   using rigid2d::euclideanDistance;
+
 
 
   struct SortCost
