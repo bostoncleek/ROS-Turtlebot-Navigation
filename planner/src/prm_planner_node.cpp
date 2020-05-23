@@ -7,8 +7,7 @@
 ///
 /// PUBLISHES:
 /// prm (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
-/// shortest_path (visualization_msgs::Marker): points and edges for shortest path 
-
+/// shortest_path (visualization_msgs::Marker): points and edges for shortest path
 
 
 #include <ros/ros.h>
@@ -23,12 +22,13 @@
 #include <string>
 #include <iostream>
 
+#include "rigid2d/rigid2d.hpp"
 #include "planner/road_map.hpp"
 #include "planner/prm_planner.hpp"
 
-using rigid2d::Vector2D;
 
 static std::string frame_id;                   // frame of path marker
+using rigid2d::Vector2D;
 
 
 /// \brief - Fills a marker array with deisred contents
@@ -61,31 +61,42 @@ int main(int argc, char** argv)
   ros::Publisher prm_pub = node_handle.advertise<visualization_msgs::MarkerArray>("prm", 1);
   ros::Publisher path_pub = node_handle.advertise<visualization_msgs::Marker>("shortest_path", 1);
 
-
-  auto resolution = 0.0;                  // resolution of map coordinates
+  // map parameters
+  auto obs_resolution = 0.0;              // resolution of map coordinates
   XmlRpc::XmlRpcValue map_bound;          // boundaries of map
   XmlRpc::XmlRpcValue obstacles;          // triple nested vector for obstacle coordinates
 
+  // PRM parameters
   auto bounding_radius = 0.0;              // bounding radius around robot for collisions
   auto nearest_neighbors = 0;             // number of NN in PRM
   auto num_nodes = 0;                     // number of nodes in PRM
 
+  // start/goal
+  auto start_x = 0.0;
+  auto start_y = 0.0;
+  auto goal_x = 0.0;
+  auto goal_y = 0.0;
 
   nh.getParam("frame_id", frame_id);
   nh.getParam("bounding_radius", bounding_radius);
   nh.getParam("nearest_neighbors", nearest_neighbors);
   nh.getParam("num_nodes", num_nodes);
 
-  nh.getParam("resolution", resolution);
-  nh.getParam("bounds", map_bound);
-  nh.getParam("obstacles", obstacles);
+  nh.getParam("start_x", start_x);
+  nh.getParam("start_y", start_y);
+  nh.getParam("goal_x", goal_x);
+  nh.getParam("goal_y", goal_y);
+
+  node_handle.getParam("/resolution", obs_resolution);
+  node_handle.getParam("/bounds", map_bound);
+  node_handle.getParam("/obstacles", obstacles);
 
 
-  const auto xmin = static_cast<double>(map_bound[0][0]) * resolution;
-  const auto xmax = static_cast<double>(map_bound[0][1]) * resolution;
+  const auto xmin = static_cast<double>(map_bound[0][0]) * obs_resolution;
+  const auto xmax = static_cast<double>(map_bound[0][1]) * obs_resolution;
 
-  const auto ymin = static_cast<double>(map_bound[1][0]) * resolution;
-  const auto ymax = static_cast<double>(map_bound[1][1]) * resolution;
+  const auto ymin = static_cast<double>(map_bound[1][0]) * obs_resolution;
+  const auto ymax = static_cast<double>(map_bound[1][1]) * obs_resolution;
 
   ROS_INFO("Marker frame_id %s", frame_id.c_str());
 
@@ -101,8 +112,8 @@ int main(int argc, char** argv)
     for(auto j = 0; j < obstacles[i].size(); j++)
     {
       Vector2D p;
-      p.x = static_cast<double> (obstacles[i][j][0]) * resolution;
-      p.y = static_cast<double> (obstacles[i][j][1]) * resolution;
+      p.x = static_cast<double> (obstacles[i][j][0]) * obs_resolution;
+      p.y = static_cast<double> (obstacles[i][j][1]) * obs_resolution;
       poly.push_back(p);
     }
     obs_map.push_back(poly);
@@ -116,11 +127,14 @@ int main(int argc, char** argv)
                        num_nodes,
                        obs_map);
 
+  // WARNING: start/goal must be within bounds of map
+  // TODO: fix this it places node outside of bounds
+
 
   // declare the start/goal
-  Vector2D start(2.1, 0.9);
-  Vector2D goal(6.0, 13.5);
-  // Vector2D goal(2.1, 7.8);
+  // start/goal configurations
+  Vector2D start(start_x * obs_resolution, start_y* obs_resolution);
+  Vector2D goal(goal_x * obs_resolution, goal_y * obs_resolution);
 
 
   // construct the prm
@@ -151,27 +165,17 @@ int main(int argc, char** argv)
   visualization_msgs::Marker points, line_strip;
   pathMarkers(path, points, line_strip);
 
-
-  // for(const auto &elem: path)
-  // {
-  //   std::cout << elem << std::endl;
-  // }
-
-
   while(node_handle.ok())
   {
-
    prm_pub.publish(nodes_array);
    prm_pub.publish(edges_array);
 
    path_pub.publish(points);
    path_pub.publish(line_strip);
   }
+
   return 0;
 }
-
-
-
 
 
 void prmMarkerArray(const std::vector<planner::Node> &nodes,

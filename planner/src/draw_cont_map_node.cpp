@@ -39,11 +39,12 @@ int main(int argc, char** argv)
   XmlRpc::XmlRpcValue obstacles;
 
   nh.getParam("frame_id", frame_id);
-  nh.getParam("resolution", resolution);
-  nh.getParam("obs_total", obs_total);
-  nh.getParam("obs_total_vertices", obs_total_vertices);
-  nh.getParam("bounds", map_bound);
-  nh.getParam("obstacles", obstacles);
+
+  node_handle.getParam("/resolution", resolution);
+  node_handle.getParam("/obs_total", obs_total);
+  node_handle.getParam("/obs_total_vertices", obs_total_vertices);
+  node_handle.getParam("/bounds", map_bound);
+  node_handle.getParam("/obstacles", obstacles);
 
 
   const auto xmin = static_cast<double>(map_bound[0][0]) * resolution;
