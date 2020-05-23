@@ -18,21 +18,28 @@ namespace planner
   using rigid2d::euclideanDistance;
 
 
-
+  /// \brief Sort based on the total cost
   struct SortCost
   {
+    /// \brief Sorts nodes
+    /// \param a - node to compare
+    /// \param b - node to compare
+    /// \return true if cost of a is smaller than b
     bool operator()(const Node &a, const Node &b) const
     {
       return a.f < b.f;
     }
   };
 
-
+  /// \brief Finds a node in base its ID
   struct MatchesID
   {
-    int id;
+    int id; // cell ID
+
+    /// param id - the ID of a cell
     MatchesID(int id): id(id) {}
 
+    /// \param a - node to look for
     bool operator()(const Node &n) const
     {
         return n.id == id;
