@@ -1,5 +1,5 @@
 /// \file
-/// \brief Probabilisitc road map path planning and
+/// \brief Probabilisitc road map construction, Theta* path planning, and
 ///        draws the path using marker array
 ///
 /// \author Boston Cleek
