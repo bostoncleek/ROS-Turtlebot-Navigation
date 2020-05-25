@@ -181,6 +181,7 @@ namespace planner
    int vizd;                                 // number of cells visible from robot
    std::vector<int> visited;                 // ID of visited cells by the planner
    std::vector<Vector2D> path;               // (x/y) locations of cells in the path traversed
+   bool goal_reached;                        // goal reached
  };
 } // end namespace
 
