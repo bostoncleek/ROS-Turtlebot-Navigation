@@ -5,6 +5,18 @@
 /// \author Boston Cleek
 /// \date 4/11/20
 ///
+/// PARAMETERS:
+/// frame_id - frame of map/markers
+/// bounding_radius - radius around robot for detecting collistions
+/// nearest_neighbors - nearest neighbors for connecting edges to nodes
+/// num_nodes - number of nodes in roadmap
+/// start_x - start x position in map coordinates
+/// start_y - start y position in map coordinates
+/// goal_x - goal x position in map coordinates
+/// goal_y - goal y position in map coordinates
+/// resolution - scale of the map coodinates (scales vertices of obstacles and start/goal)
+/// bounds - boundary of map
+/// obstacles- triple nested list of obstacle vertecis in map coordinates
 /// PUBLISHES:
 /// prm (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
 /// shortest_path (visualization_msgs::Marker): points and edges for shortest path
