@@ -52,6 +52,10 @@ namespace planner
     /// \return true if goal reached
     bool planPath();
 
+    /// \brief Retriev the current positon from the planner
+    /// \return current position (x/y)
+    Vector2D getCurrenPosition() const;
+
     /// \brief Coordinates of nodes in path
     /// path[out] - (x/y) locations of each node
     void getPath(std::vector<Vector2D> &path) const;
