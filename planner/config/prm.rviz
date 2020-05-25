@@ -41,7 +41,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -54,7 +54,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /obstacle_edges
@@ -81,7 +81,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /prm
-      Name: MarkerArray
+      Name: roadmap
       Namespaces:
         edges: true
         nodes: true
@@ -90,7 +90,7 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /shortest_path
-      Name: Marker
+      Name: shortest_path
       Namespaces:
         path_nodes: true
       Queue Size: 100
@@ -123,16 +123,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.5255184173584
+      Distance: 19.42002296447754
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.571599960327148
-        Y: 7.371469497680664
-        Z: -0.06290843337774277
+        X: 5.137099266052246
+        Y: 7.4209370613098145
+        Z: -0.05651022493839264
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -141,7 +141,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.703585624694824
+      Yaw: 4.703583240509033
     Saved: ~
 Window Geometry:
   Displays:

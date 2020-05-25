@@ -1,6 +1,6 @@
 # limits of the map
 # resolution of coordinates in meters
-resolution: 0.1
+resolution: 0.3
 
 # [xmin, xmax], [ymin, ymax]
 bounds: [[0.0, 34.0], [0.0, 48.0]]
