@@ -47,6 +47,8 @@ int main(int argc, char** argv)
   auto w_att = 0.0;                       // weight attractive potential
   auto w_rep = 0.0;                       // weight repulsive potential
 
+  auto freq = 10.0;                       // frequency of node
+
   // start/goal
   auto start_x = 0.0;
   auto start_y = 0.0;
@@ -59,6 +61,9 @@ int main(int argc, char** argv)
   XmlRpc::XmlRpcValue obstacles;          // triple nested vector for obstacle coordinates
 
   nh.getParam("frame_id", frame_id);
+  nh.getParam("frequency", freq);
+
+  // potential field parameters
   nh.getParam("eps", eps);
   nh.getParam("step", step);
   nh.getParam("dthresh", dthresh);
@@ -66,11 +71,13 @@ int main(int argc, char** argv)
   nh.getParam("w_att", w_att);
   nh.getParam("w_rep", w_rep);
 
+  // start/goal
   nh.getParam("start_x", start_x);
   nh.getParam("start_y", start_y);
   nh.getParam("goal_x", goal_x);
   nh.getParam("goal_y", goal_y);
 
+  // map parameters
   node_handle.getParam("/resolution", obs_resolution);
   node_handle.getParam("/bounds", map_bound);
   node_handle.getParam("/obstacles", obstacles);
@@ -108,10 +115,10 @@ int main(int argc, char** argv)
   Vector2D goal(goal_x * obs_resolution, goal_y * obs_resolution);
 
   // ros timing
-  ros::Rate rate(30);
+  ros::Rate rate(freq);
 
   // markers for start, goal, and path
-  visualization_msgs::Marker points, bound;
+  visualization_msgs::Marker path, bound;
 
   // // add start/goal as boundary
   bound.header.frame_id = frame_id;
@@ -144,12 +151,36 @@ int main(int argc, char** argv)
   bound.points.push_back(pt);
 
 
+  // the path
+  path.header.frame_id = frame_id;
+  path.header.stamp = ros::Time::now();
+  path.lifetime = ros::Duration();
+  path.ns = "path_nodes";
+  path.id = 0;
+
+  path.type = visualization_msgs::Marker::POINTS;
+  path.action = visualization_msgs::Marker::ADD;
+
+  path.pose.orientation.x = 0.0;
+  path.pose.orientation.y = 0.0;
+  path.pose.orientation.z = 0.0;
+  path.pose.orientation.w = 1.0;
+
+  path.scale.x = 0.05;
+  path.scale.y = 0.05;
+
+  path.color.g = 1.0f;
+  path.color.a = 1.0f;
+
+
+
   // potenial field global planner
   planner::PotentialField potfield(obs_map,
                                    eps, step,
                                    dthresh, qthresh,
                                    w_att, w_rep);
 
+  // specify start/goal
   potfield.initPath(start, goal);
 
 
@@ -159,15 +190,22 @@ int main(int argc, char** argv)
     // still planning
     if (potfield.planPath())
     {
-      // retreive path
-      std::vector<Vector2D> path;
-      potfield.getPath(path);
+      Vector2D q = potfield.getCurrenPosition();
 
-      // display markers for path
-      pathMarkers(path, points);
+      pt.x = q.x;
+      pt.y = q.y;
+
+      path.points.push_back(pt);
+
+      // // retreive path
+      // std::vector<Vector2D> path;
+      // potfield.getPath(path);
+      //
+      // // display markers for path
+      // pathMarkers(path, points);
     }
 
-    path_pub.publish(points);
+    path_pub.publish(path);
     path_pub.publish(bound);
 
     rate.sleep();
