@@ -4,8 +4,24 @@
 /// \author Boston Cleek
 /// \date 5/21/20
 ///
+/// PARAMETERS:
+/// frame_id - frame of map/markers
+/// frequency - frequency planner will operate at
+/// eps - termination threshold for reaching goal
+/// step - step size in gradient descent
+/// dthresh - piecewise threshold for attractive gradient to goal
+/// qthresh - obstacle range of influence
+/// w_att - weighting factor the attactive component
+/// w_rep - weighting factor the repulsive component
+/// start_x - start x position in map coordinates
+/// start_y - start y position in map coordinates
+/// goal_x - goal x position in map coordinates
+/// goal_y - goal y position in map coordinates
+/// resolution - scale of the map coodinates (scales vertices of obstacles and start/goal)
+/// bounds - boundary of map
+/// obstacles - triple nested list of obstacle vertecis in map coordinates
 /// PUBLISHES:
-/// path (visualization_msgs::Marker): markers for start, goal, and path
+///   path (visualization_msgs::Marker): markers for start, goal, and path
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -37,7 +53,6 @@ int main(int argc, char** argv)
   ros::NodeHandle node_handle;
 
   ros::Publisher path_pub = node_handle.advertise<visualization_msgs::Marker>("path", 1);
-
 
   // potenial field paramters
   auto eps = 0.0;                        // tolerance for reaching goal

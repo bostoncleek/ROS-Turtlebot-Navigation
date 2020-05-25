@@ -4,6 +4,13 @@
 /// \author Boston Cleek
 /// \date 4/10/20
 ///
+/// PARAMETERS:
+/// frame_id - frame of map/markers
+/// resolution - scale of the map coodinates (scales vertices of obstacles and start/goal)
+/// bounds - boundary of map
+/// obstacles - triple nested list of obstacle vertecis in map coordinates
+/// obs_total - total number of obstacles
+/// obs_total_vertices - total number of vertecis for all obstalces
 /// PUBLISHES:
 ///   obstacle_vertices (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
 ///   obstacle_edges (visualization_msgs::MarkerArray): obstacle and boundary edges in continous Cspace

@@ -16,10 +16,10 @@
 /// goal_y - goal y position in map coordinates
 /// resolution - scale of the map coodinates (scales vertices of obstacles and start/goal)
 /// bounds - boundary of map
-/// obstacles- triple nested list of obstacle vertecis in map coordinates
+/// obstacles - triple nested list of obstacle vertecis in map coordinates
 /// PUBLISHES:
-/// prm (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
-/// shortest_path (visualization_msgs::Marker): points and edges for shortest path
+///   prm (visualization_msgs::MarkerArray): obstacle and boundary vertices in continous Cspace
+///   shortest_path (visualization_msgs::Marker): points and edges for shortest path
 
 
 #include <ros/ros.h>

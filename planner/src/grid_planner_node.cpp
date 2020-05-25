@@ -4,9 +4,24 @@
 /// \author Boston Cleek
 /// \date 4/15/20
 ///
+/// PARAMETERS:
+/// frame_id - frame of map/markers
+/// frequency - frequency planner will operate at
+/// bounding_radius - padding around obstacles
+/// grid_resolution - resolution of a grid cell
+/// viz_rad - visibility threshold for simulating map updates
+/// start_x - start x position in map coordinates
+/// start_y - start y position in map coordinates
+/// goal_x - goal x position in map coordinates
+/// goal_y - goal y position in map coordinates
+/// resolution - scale of the map coodinates (scales vertices of obstacles and start/goal)
+/// bounds - boundary of map
+/// obstacles - triple nested list of obstacle vertecis in map coordinates
 /// PUBLISHES:
-/// map (nav_msgs::OccupancyGrid>): free/occupied/buffer zone for planning
-
+///   map (nav_msgs::OccupancyGrid>): free/occupied/buffer zone for planning
+///   global_path (nav_msgs::GridCells): complete path from planner
+///   visited_cells (nav_msgs::GridCells): cells updated during replanning
+///   start_goal (nav_msgs::GridCells): start/goal positions
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -19,10 +34,7 @@
 #include "planner/grid_map.hpp"
 #include "planner/dstar_light.hpp"
 
-
 using rigid2d::Vector2D;
-
-
 
 /// \brief Places each cell in the path into a grid cell msg
 /// \param path - 2D points representing the center of each cell in the path
@@ -268,15 +280,6 @@ void gridCellPath(const std::vector<Vector2D> &path, nav_msgs::GridCells &cell_p
     cell_path.cells.push_back(pt);
   }
 }
-
-
-
-
-
-
-
-
-
 
 
 // end file
