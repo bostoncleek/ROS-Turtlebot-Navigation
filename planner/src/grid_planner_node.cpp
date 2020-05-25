@@ -41,22 +41,39 @@ int main(int argc, char** argv)
   ros::Publisher visit_pub = node_handle.advertise<nav_msgs::GridCells>("visited_cells", 1);
   ros::Publisher sg_pub = node_handle.advertise<nav_msgs::GridCells>("start_goal", 1);
 
-
-  auto obs_resolution = 0.0;              // resolution of obstacle coordinates
-  auto grid_resolution = 0.0;             // resolution of grid cell (cell side length)
+  // D* parameters
   std::string frame_id;                   // frame of grid
+  auto grid_resolution = 0.0;             // resolution of grid cell (cell side length)
+  auto bounding_radius = 0.0;             // bounding radius around robot for collisions
+  auto viz_rad = 0.0;                     // visibility radius for map updates
+  auto freq = 10.0;                       // frequency of node
+
+
+  // start/goal
+  auto start_x = 0.0;
+  auto start_y = 0.0;
+  auto goal_x = 0.0;
+  auto goal_y = 0.0;
+
+  // map parameters
+  auto obs_resolution = 0.0;              // resolution of obstacle coordinates
   XmlRpc::XmlRpcValue map_bound;          // boundaries of map
   XmlRpc::XmlRpcValue obstacles;          // triple nested vector for obstacle coordinates
-  auto bounding_radius = 0.0;             // bounding radius around robot for collisions
 
   nh.getParam("frame_id", frame_id);
   nh.getParam("bounding_radius", bounding_radius);
   nh.getParam("grid_resolution", grid_resolution);
+  nh.getParam("viz_rad", viz_rad);
+  nh.getParam("frequency", freq);
 
+  nh.getParam("start_x", start_x);
+  nh.getParam("start_y", start_y);
+  nh.getParam("goal_x", goal_x);
+  nh.getParam("goal_y", goal_y);
 
-  nh.getParam("resolution", obs_resolution);
-  nh.getParam("bounds", map_bound);
-  nh.getParam("obstacles", obstacles);
+  node_handle.getParam("/resolution", obs_resolution);
+  node_handle.getParam("/bounds", map_bound);
+  node_handle.getParam("/obstacles", obstacles);
 
 
   const auto xmin = static_cast<double>(map_bound[0][0]) * obs_resolution;
@@ -119,12 +136,11 @@ int main(int argc, char** argv)
 
 
   // start/goal configurations
-  Vector2D start(6.0 * obs_resolution, 3.0 * obs_resolution);
-  Vector2D goal(20.0 * obs_resolution, 45.0 * obs_resolution);
+  Vector2D start(start_x * obs_resolution, start_y* obs_resolution);
+  Vector2D goal(goal_x * obs_resolution, goal_y * obs_resolution);
 
-  // visibility radius for map updates
-  const auto viz_rad = 1.0*grid_resolution;
-  ros::Rate rate(5);
+  // update frequency
+  ros::Rate rate(freq);
 
 
   // convert start/goal to grid coordinates
@@ -171,7 +187,6 @@ int main(int argc, char** argv)
   planner::DStarLight dstar(gridmap, vizd);
   dstar.initPath(start, goal);
   dstar.planPath();
-
 
 
   // global path msg
