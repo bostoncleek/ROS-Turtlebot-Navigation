@@ -54,7 +54,6 @@ void PotentialField::initPath(const Vector2D &start, const Vector2D &goal)
 }
 
 
-
 bool PotentialField::planPath()
 {
   if(!goalReached())
@@ -85,11 +84,16 @@ bool PotentialField::planPath()
 }
 
 
+Vector2D PotentialField::getCurrenPosition() const
+{
+  return q;
+}
+
+
 void PotentialField::getPath(std::vector<Vector2D> &path) const
 {
   path = this->path;
 }
-
 
 
 Vector2D PotentialField::accumulateRepulsiveGradient() const
@@ -159,12 +163,8 @@ Vector2D PotentialField::accumulateRepulsiveGradient() const
 
     } // end inner loop
 
-    // std::cout << min_dist << std::endl;
-    // std::cout << q0 << std::endl;
-
     // repulsive gradient for obstacle
     const Vector2D Uobs = repulsiveGradient(q0, min_dist);
-    // std::cout << Uobs << std::endl;
 
     // accumulate gradient
     Urep += Uobs;
@@ -238,29 +238,5 @@ void PotentialField::oneStepGD(const Vector2D &Dn)
   q.x -= step * Dn.x;
   q.y -= step * Dn.y;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 } // end namespace
