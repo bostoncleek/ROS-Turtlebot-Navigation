@@ -32,6 +32,8 @@ DStarLight::DStarLight(GridMap &gridmap, double vizd)
   occu_cost = 1000.0;
 
   start_id = goal_id = curr_id = 0;
+
+  goal_reached = false;
 }
 
 
@@ -95,9 +97,10 @@ void DStarLight::planPath()
 void DStarLight::pathTraversal()
 {
   // goal reached
-  if (start_id == goal_id)
+  if (start_id == goal_id and !goal_reached)
   {
     std::cout << "Goal Reached" << std::endl;
+    goal_reached = true;
     return;
   }
 
