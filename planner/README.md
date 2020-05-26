@@ -5,6 +5,8 @@ This packages is apart of a larger ROS autonomous framework for the Turtlebot. T
 
 
 # How to run
+D* runs best when the `resolution` parameter in `map_boundaries.yaml` is set do 0.1. Theta* and the Potential Field preforms best when this parameter is set to 0.3. This parameter scales the size of the map.
+
 D* Light: <br/>
 `roslaunch planner plan.launch plan_type:=1`
 
