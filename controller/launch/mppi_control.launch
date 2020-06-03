@@ -1,0 +1,5 @@
+<launch>
+
+  <node name="mppi" pkg="controller" type="mppi" output="screen"/>
+
+</launch>
