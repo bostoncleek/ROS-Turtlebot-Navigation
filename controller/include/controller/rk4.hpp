@@ -9,30 +9,34 @@
 
 namespace controller
 {
+  using Eigen::MatrixXd;
+  using Eigen::VectorXd;
+  using Eigen::Ref;
+
+
   /// \brief Integrator
   class RK4 {
     public:
       /// \brief Integrator with fixed step size
-      /// \param dt - time step 
+      /// \param step - time step
       RK4(double dt);
 
-      // void RegisterODE(std::function<Eigen::VectorXd(const Eigen::VectorXd,const Eigen::VectorXd)> ode_func);
-      //
-      // void RegisterODE(std::function<Eigen::VectorXd(const Eigen::VectorXd)> ode_func);
-      //
-      // Eigen::MatrixXd Solve(Eigen::VectorXd& curr_state, double horizon);
-      //
-      // Eigen::MatrixXd Solve(Eigen::VectorXd& curr_state, const Eigen::VectorXd& u_t, double horizon);
-    private:
-      // void RK4Iteration(Eigen::VectorXd& x_t,const Eigen::VectorXd& u_t);
-      //
-      // void RK4Iteration(Eigen::VectorXd& x_t);
-      //
-      // std::function<Eigen::VectorXd(const Eigen::VectorXd)> ode_auto_func_;
-      //
-      // std::function<Eigen::VectorXd(const Eigen::VectorXd,const Eigen::VectorXd)> ode_func_;
+      /// \brief Register an autonomous ODE or system of ODEs
+      /// \param ode_func - function or system to integrate
+      void registerODE(std::function<VectorXd(Ref<VectorXd>)> ode_func);
 
-      double dt;
+      /// \brief Solve ODE or system of ODEs
+      /// \param
+      /// \param
+      MatrixXd solve(Ref<VectorXd> x0, double horizon);
+
+    private:
+      /// \brief Perform one iteration of rk4
+      /// x_t[out] - update the current state x_t
+      void integrate(Ref<VectorXd> x_t);
+
+      std::function<VectorXd(Ref<VectorXd>)> func;      // function to integrate
+      double step;                                      // time step
   };
 
 
