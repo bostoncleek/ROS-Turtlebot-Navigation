@@ -11,6 +11,7 @@ namespace controller
 {
   using Eigen::MatrixXd;
   using Eigen::VectorXd;
+  using Eigen::Vector2d;
   using Eigen::Ref;
 
 
@@ -19,28 +20,42 @@ namespace controller
     public:
       /// \brief Integrator with fixed step size
       /// \param step - time step
-      RK4(double dt);
+      RK4(double step);
 
-      /// \brief Register an autonomous ODE or system of ODEs
-      /// \param ode_func - function or system to integrate
-      void registerODE(std::function<VectorXd(Ref<VectorXd>)> ode_func);
+      /// \brief Register an autonomous ODE
+      /// \param ode_func - function to integrate
+      void registerODE(std::function<void(const Ref<VectorXd>, Ref<VectorXd>)> ode_func);
+
+      /// \brief Register an autonomous ODE
+      /// \param ode_func - function to integrate
+      void registerODE(std::function<void(const Ref<VectorXd>, const Ref<VectorXd>, Ref<VectorXd>)> ode_func);
 
       /// \brief Solve ODE or system of ODEs
-      /// \param
-      /// \param
-      MatrixXd solve(Ref<VectorXd> x0, double horizon);
+      /// \param x0 - initial condition
+      /// \param horizon - final time of integration
+      MatrixXd solve(const Ref<VectorXd> x0, double horizon);
 
+      /// \brief Solve ODE or system of ODEs
+      /// \param x0 - initial condition
+      /// \param u - control signal (must be of length equal to number of rk4 iterations => horizon/step)
+      /// \param horizon - final time of integration
+      MatrixXd solve(const Ref<VectorXd> x0, const Ref<MatrixXd> u, double horizon);
     private:
       /// \brief Perform one iteration of rk4
       /// x_t[out] - update the current state x_t
       void integrate(Ref<VectorXd> x_t);
 
-      std::function<VectorXd(Ref<VectorXd>)> func;      // function to integrate
-      double step;                                      // time step
+      /// \brief Perform one iteration of rk4
+      /// param u_t - control vector
+      /// x_t[out] - update the current state x_t
+      void integrate(Ref<VectorXd> x_t, const Ref<VectorXd> u_t);
+
+      // ODE args: x(t), u(t), xdot[out]
+      std::function<void(const Ref<VectorXd>, const Ref<VectorXd>, Ref<VectorXd>)> func_cntrl;
+
+      // ODE args: x(t), xdot[out]
+      std::function<void(const Ref<VectorXd>, Ref<VectorXd>)> func;
+      double step;                                                            // time step
   };
-
-
-
 }
-
 #endif
