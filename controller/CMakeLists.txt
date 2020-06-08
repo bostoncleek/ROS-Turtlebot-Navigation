@@ -125,6 +125,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
+	src/${PROJECT_NAME}/mppi.cpp
   src/${PROJECT_NAME}/rk4.cpp
 )
 
@@ -140,15 +141,15 @@ add_dependencies(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(mppi src/mppi_node.cpp)
+add_executable(mppi_waypoints src/mppi_waypoints_node.cpp)
 
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(mppi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(mppi_waypoints ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(mppi
+target_link_libraries(mppi_waypoints
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
@@ -170,7 +171,7 @@ target_link_libraries(mppi
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS mppi
+install(TARGETS mppi_waypoints
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
