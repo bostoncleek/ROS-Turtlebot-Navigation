@@ -16,7 +16,8 @@ namespace controller
 
 
   /// \brief Integrator
-  class RK4 {
+  class RK4
+  {
     public:
       /// \brief Integrator with fixed step size
       /// \param step - time step
