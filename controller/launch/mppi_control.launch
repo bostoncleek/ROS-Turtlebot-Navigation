@@ -1,5 +1,5 @@
 <launch>
 
-  <node name="mppi" pkg="controller" type="mppi" output="screen"/>
+  <node name="mppi_waypoints" pkg="controller" type="mppi_waypoints" output="screen"/>
 
 </launch>
