@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- turtlebot3 diff drive params -->
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
+
+  <!-- mppi control for turtblebot -->
+  <node name="mppi_waypoints" pkg="controller" type="mppi_waypoints" output="screen">
+    <rosparam command="load" file="$(find controller)/config/mppi_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtle_robot)/config/real_waypoints.yaml"/>
+  </node>
+
+</launch>
