@@ -10,8 +10,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 find_package(catkin REQUIRED COMPONENTS
+	geometry_msgs
+	nav_msgs
 	rigid2d
 	roscpp
+	tf2
+	tf2_ros
+	visualization_msgs
 )
 
 
@@ -107,7 +112,12 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
+	geometry_msgs
+	nav_msgs
 	roscpp
+	tf2
+	tf2_ros
+	visualization_msgs
 #  DEPENDS system_lib
 )
 
