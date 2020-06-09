@@ -1,0 +1,17 @@
+# sampling variance left wheel velocity
+ul_var: 0.9
+# sampling variance right wheel velocity
+ur_var: 0.9
+# time horizon (s)
+horizon: 1.0
+# time step (s)
+time_step: 0.1
+# number of rollouts
+rollouts: 3
+# loss parameters represent diagnols of matrix
+# penalize on states
+Q: [1000.0, 1000.0, 1.0]
+# penalize controls
+R: [0.1, 0.1]
+# penalize terminal states
+P1: [1000.0, 1000.0, 1000.0]
