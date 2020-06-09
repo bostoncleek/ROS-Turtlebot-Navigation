@@ -3,8 +3,9 @@
 /// \file
 /// \brief Model predictive path integral control
 
-#include <eigen3/Eigen/Dense>
 #include <iosfwd>
+#include <vector>
+#include <eigen3/Eigen/Dense>
 
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
@@ -51,11 +52,41 @@ namespace controller
   class MPPI
   {
   public:
-    MPPI(int rollouts);
+    /// \brief contoller for diff drive robot
+    /// \param cart_model - model of robot
+    /// \param ul_var - sampling variance for left wheel velocity
+    /// \param ur_var - sampling variance for right wheel velocity
+    /// \param horizon - time horizon
+    /// \param dt - time step for integrating model
+    /// \param rollouts - number of rollouts
+    MPPI(const CartModel &cart_model,
+         double max_wheel_vel,
+         double ul_var,
+         double ur_var,
+         double horizon,
+         double dt,
+         int rollouts);
 
 
   private:
-
+    RK4 rk4;
+    double max_wheel_vel, ul_var, ur_var;
+    double horizon, dt;
+    int rollouts;
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif
