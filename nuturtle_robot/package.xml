@@ -12,6 +12,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>controller</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nuturtlebot</build_depend>
   <build_depend>rigid2d</build_depend>
