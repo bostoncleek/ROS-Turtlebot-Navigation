@@ -39,7 +39,7 @@
 
 
 // global variables
-rigid2d::Pose pose;
+static rigid2d::Pose pose;
 
 static bool odom_msg;
 static bool start_call;
@@ -244,6 +244,7 @@ int main(int argc, char** argv)
       cmd = waypts.nextWaypointClosedLoop(pose);
       twist_msg.linear.x = cmd.vx;
       twist_msg.angular.z = cmd.w;
+      odom_msg = false;
     }
 
 
