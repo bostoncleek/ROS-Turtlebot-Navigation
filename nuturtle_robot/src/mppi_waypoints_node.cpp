@@ -30,9 +30,8 @@
 
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
-
-#include "controller/rk4.hpp"
-#include "controller/mppi.hpp"
+#include <controller/rk4.hpp>
+#include <controller/mppi.hpp>
 
 
 static rigid2d::Pose pose;
