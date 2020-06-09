@@ -10,13 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 find_package(catkin REQUIRED COMPONENTS
-	geometry_msgs
-	nav_msgs
 	rigid2d
 	roscpp
-	tf2
-	tf2_ros
-	visualization_msgs
 )
 
 
@@ -112,12 +107,7 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
  CATKIN_DEPENDS
-	geometry_msgs
-	nav_msgs
 	roscpp
-	tf2
-	tf2_ros
-	visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -151,19 +141,19 @@ add_dependencies(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(mppi_waypoints src/mppi_waypoints_node.cpp)
+# add_executable(mppi_waypoints src/mppi_waypoints_node.cpp)
 
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(mppi_waypoints ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(mppi_waypoints ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(mppi_waypoints
-  ${catkin_LIBRARIES}
-	${PROJECT_NAME}
-	${rigid2d_LIBRARIES}
-)
+# target_link_libraries(mppi_waypoints
+#   ${catkin_LIBRARIES}
+# 	${PROJECT_NAME}
+# 	${rigid2d_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -181,9 +171,9 @@ target_link_libraries(mppi_waypoints
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS mppi_waypoints
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# install(TARGETS mppi_waypoints
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
