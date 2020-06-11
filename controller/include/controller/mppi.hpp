@@ -1,7 +1,12 @@
 #ifndef MPPI_HPP
 #define MPPI_HPP
 /// \file
-/// \brief Model predictive path integral control
+/// \brief Model predictive path integral control for turtlebot3
+///        waypoint following
+
+// TODO: add functionality to insert waypoints
+//       or add set goal function
+
 
 #include <iosfwd>
 #include <vector>
@@ -17,8 +22,9 @@ namespace controller
   using Eigen::VectorXd;
   using Eigen::Ref;
 
-  using rigid2d::Pose;
   using rigid2d::Vector2D;
+  using rigid2d::WheelVelocities;
+  using rigid2d::Pose;
 
 
   /// \brief ODEs for kinematic model of turtlebot
@@ -105,6 +111,12 @@ namespace controller
   };
 
 
+  /// \brief Perform accumulative sum across rows of loss matrix
+  ///        sum is composed from end to start
+  /// \param input - input matrix
+  /// result[out] - each row element is the sum of
+  void cumSumCost(const Ref<MatrixXd> input, Ref<MatrixXd> result);
+
 
 
 
@@ -115,6 +127,7 @@ namespace controller
     /// \brief contoller for diff drive robot
     /// \param cart_model - model of robot
     /// \param loss_func - loss function
+    /// \param lambda - temperature parameter
     /// \param ul_var - sampling variance for left wheel velocity
     /// \param ur_var - sampling variance for right wheel velocity
     /// \param horizon - time horizon
@@ -122,6 +135,7 @@ namespace controller
     /// \param rollouts - number of rollouts
     MPPI(const CartModel &cart_model,
          const LossFunc &loss_func,
+         double lambda,
          double max_wheel_vel,
          double ul_var,
          double ur_var,
@@ -129,18 +143,48 @@ namespace controller
          double dt,
          int rollouts);
 
+    /// \brief Initialize Cost matrix, stored pertubations matrices, and control signal
+    void initController();
 
+    /// \brief Set the initial controls
+    /// \param uL - intial controls for left wheel velocity
+    /// \param uR - intial controls for right wheel velocity
+    void setInitialControls(double uL, double uR);
+
+    /// \brief Set the pose of a waypoint this is the current goal
+    /// \param wp - pose of current waypoint (x,y,theta)
+    void setWaypoint(const Pose &wpt);
+
+    /// \brief Update the wheel velocities using MPPI control loop
+    /// \param Pose - current state (x,y,theta)
+    /// \return wheel velocities
+    WheelVelocities newControls(const Pose &ps);
 
   private:
     /// \brief Initialize kinematic cart model for RK4 simulation
     void initModel();
 
-    RK4 rk4;
-    CartModel cart_model;
-    LossFunc loss_func;
-    double max_wheel_vel, ul_var, ur_var;
-    double horizon, dt;
-    int rollouts;
+    /// \brief Generate perturbations to control signal
+    /// pert[out] - drawn from normal distribution with specified variance
+    ///             reach row corresponds to a control input (uL, uR)
+    void pertubations(Ref<MatrixXd> pert);
+
+    RK4 rk4;                                   // integrator
+    CartModel cart_model;                      // kinematic model functor
+    LossFunc loss_func;                        // loss functor
+    double lambda;                             // temperature parameter
+    double max_wheel_vel, ul_var, ur_var;      // max wheel control and control sampling variance
+    double horizon, dt;                        // time horizon and time step
+    int rollouts;                              // K simulations
+    int steps;                                 // N time steps per simulation
+
+    VectorXd xd;                                // desired goal (x,y,theta)
+    VectorXd uinit;                             // initial controls (2,1)
+    MatrixXd u;                                 // control signal (2,N)
+    MatrixXd J;                                 // cost matrix (N,K)
+    MatrixXd duL;                               //  pertubations to left wheel vel (N,K)
+    MatrixXd duR;                               //  pertubations to right wheel vel (N,K)
+
   };
 }
 
