@@ -336,11 +336,7 @@ int main(int argc, char** argv)
     tf_mo.transform.translation.z = 0.0;
     tf_mo.transform.rotation = quat_mo;
 
-<<<<<<< HEAD
-    slam_broadcaster.sendTransform(tf_mo);
-=======
     map_odom_broadcaster.sendTransform(tf_mo);
->>>>>>> master
 
     /////////////////////////////////////////////////////////////////////////////
 
