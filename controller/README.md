@@ -10,6 +10,9 @@ The `nuturtle_robot` package is required for the waypoint following demo. It con
 
 `roslaunch nuturtle_robot mppi_waypoints.launch`
 
+The call the start service
+`rosservice call /start "direction: ''"`
+
 
 # Results
 The following gif is at x5 speed.
