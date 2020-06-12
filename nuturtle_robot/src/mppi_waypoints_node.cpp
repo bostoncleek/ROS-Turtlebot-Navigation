@@ -15,7 +15,8 @@
 
 
 // TODO : add filter to control signal
-// TODO:  initController in constructor and make set init controls init whole signal
+
+
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -85,11 +86,6 @@ void placeMarkers(ros::Publisher &marker_pub, const std::vector<std::vector<doub
 
 
 
-
-
-
-
-
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "mppi_waypoints");
@@ -99,7 +95,7 @@ int main(int argc, char** argv)
   ros::Subscriber odom_sub = node_handle.subscribe("odom", 1, odomCallBack);
   ros::Publisher cmd_pub = node_handle.advertise<geometry_msgs::Twist>("cmd_vel", 1);
   ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("vizualize_waypoints", 100, true);
-  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
+  // ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
   ros::ServiceClient set_pose_client = node_handle.serviceClient<rigid2d::set_pose>("set_pose");
 
 
@@ -201,7 +197,6 @@ int main(int argc, char** argv)
 
 
   mppi.setInitialControls(ul_init, ur_init);
-  mppi.initController();
 
 
   // WARNING: The pose (internal to diff_drive) will not be correct
@@ -221,8 +216,8 @@ int main(int argc, char** argv)
   mppi.setWaypoint(wpt);
 
   // vizualize trajectory of robot
-  nav_msgs::Path odom_path;
-  odom_path.header.frame_id = frame_id;
+  // nav_msgs::Path odom_path;
+  // odom_path.header.frame_id = frame_id;
 
   auto cnt = 0;
   geometry_msgs::Twist twist_msg;
@@ -262,8 +257,22 @@ int main(int argc, char** argv)
         mppi.setWaypoint(wpt);
       }
 
+      // ////////////////////////////////////////////////////////////////////////////
+      // // START TIMR
+      // const auto start = std::chrono::high_resolution_clock::now();
+      // ////////////////////////////////////////////////////////////////////////////
 
       rigid2d::WheelVelocities wheel_vel = mppi.newControls(pose);
+
+      // ////////////////////////////////////////////////////////////////////////////
+      // // STOP TIMER
+      // const auto stop = std::chrono::high_resolution_clock::now();
+      // const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+      // std::cout.precision(5);
+      // std::cout << "Freq: " << (double)(1.0/(duration.count()/1000.0)) << " (Hz)" << std::endl;
+      // //////////////////////////////////////////////////////////////////////////
+
+
       rigid2d::Twist2D cmd = diff_drive.wheelsToTwist(wheel_vel);
 
       twist_msg.linear.x = cmd.vx;
@@ -279,42 +288,25 @@ int main(int argc, char** argv)
     }
 
 
-    tf2::Quaternion q_or;
-    q_or.setRPY(0, 0, pose.theta);
-    geometry_msgs::Quaternion quat_or;
-    quat_or = tf2::toMsg(q_or);
-
-    geometry_msgs::PoseStamped odom_pose;
-    odom_pose.header.stamp = ros::Time::now();
-    odom_pose.pose.position.x = pose.x;
-    odom_pose.pose.position.y = pose.y;
-    odom_pose.pose.orientation = quat_or;
-
-    // odom_path.poses.emplace_back(odom_pose);
-
-    odom_path_pub.publish(odom_path);
-
+    // tf2::Quaternion q_or;
+    // q_or.setRPY(0, 0, pose.theta);
+    // geometry_msgs::Quaternion quat_or;
+    // quat_or = tf2::toMsg(q_or);
+    //
+    // geometry_msgs::PoseStamped odom_pose;
+    // odom_pose.header.stamp = ros::Time::now();
+    // odom_pose.pose.position.x = pose.x;
+    // odom_pose.pose.position.y = pose.y;
+    // odom_pose.pose.orientation = quat_or;
+    //
+    // // odom_path.poses.emplace_back(odom_pose);
+    //
+    // odom_path_pub.publish(odom_path);
   }
 
   return 0;
 }
 
-
-
-// ////////////////////////////////////////////////////////////////////////////
-// // START TIMR
-// const auto start = std::chrono::high_resolution_clock::now();
-// ////////////////////////////////////////////////////////////////////////////
-//
-// rigid2d::WheelVelocities wheel_vel = mppi.newControls(pose);
-//
-// ////////////////////////////////////////////////////////////////////////////
-// // STOP TIMER
-// const auto stop = std::chrono::high_resolution_clock::now();
-// const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-// std::cout.precision(5);
-// std::cout << "Freq: " << (double)(1.0/(duration.count()/1000.0)) << " (Hz)" << std::endl;
-// //////////////////////////////////////////////////////////////////////////
 
 
 void odomCallBack(const nav_msgs::Odometry::ConstPtr &msg)
