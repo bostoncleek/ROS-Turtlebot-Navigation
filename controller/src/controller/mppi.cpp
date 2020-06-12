@@ -46,24 +46,8 @@ MPPI::MPPI(const CartModel &cart_model,
                rollouts(rollouts),
                steps(static_cast<int>(horizon/dt))
 {
-  xd = VectorXd::Zero(3);
-  uinit = VectorXd::Zero(2);
   initModel();
-  // initController();
-}
-
-
-void MPPI::initController()
-{
-  // init control signal
-  u = MatrixXd::Zero(2,steps);
-  u.row(0) = MatrixXd::Constant(1, steps, uinit(0));
-  u.row(1) = MatrixXd::Constant(1, steps, uinit(1));
-
-  // set cost matrix and stored perturbations to zero
-  J = MatrixXd::Zero(steps,rollouts);
-  duL = MatrixXd::Zero(steps,rollouts);
-  duR = MatrixXd::Zero(steps,rollouts);
+  initController();
 }
 
 
@@ -71,6 +55,9 @@ void MPPI::setInitialControls(double uL, double uR)
 {
   uinit(0) = uL;
   uinit(1) = uR;
+
+  u.row(0) = MatrixXd::Constant(1, steps, uinit(0));
+  u.row(1) = MatrixXd::Constant(1, steps, uinit(1));
 }
 
 
@@ -164,6 +151,22 @@ void MPPI::initModel()
                                                             std::placeholders::_3);
 
   rk4.registerODE(func_cntrl);
+}
+
+
+void MPPI::initController()
+{
+  // init control signal
+  uinit = VectorXd::Zero(2);
+  u = MatrixXd::Zero(2,steps);
+
+  // set cost matrix and stored perturbations to zero
+  J = MatrixXd::Zero(steps,rollouts);
+  duL = MatrixXd::Zero(steps,rollouts);
+  duR = MatrixXd::Zero(steps,rollouts);
+
+  // waypoint goal
+  xd = VectorXd::Zero(3);
 }
 
 

@@ -140,9 +140,6 @@ namespace controller
          double dt,
          int rollouts);
 
-    /// \brief Initialize Cost matrix, stored pertubations matrices, and control signal
-    void initController();
-
     /// \brief Set the initial controls
     /// \param uL - intial controls for left wheel velocity
     /// \param uR - intial controls for right wheel velocity
@@ -160,6 +157,9 @@ namespace controller
   private:
     /// \brief Initialize kinematic cart model for RK4 simulation
     void initModel();
+
+    /// \brief Initialize Cost matrix, stored pertubations matrices, and control signal
+    void initController();
 
     /// \brief Generate perturbations to control signal
     /// pert[out] - drawn from normal distribution with specified variance
