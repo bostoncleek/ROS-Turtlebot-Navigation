@@ -1,8 +1,9 @@
 Boston Cleek
 
 # Overview
-This package contains an implementation of model predictive path integral control (MPPI)
-for a TurtleBot3. The controls are the left and right wheel velocities. The cost function used is that same as the LQR cost. Currently, `fake_diff_encoders` and `odometer` nodes are used to simulate the robot.
+This package contains an implementation of model predictive path integral control (MPPI) for a TurtleBot3. The average control update occurs at a rate of 50Hz.
+
+The controls are the left and right wheel velocities. The cost function used is that same as the LQR cost. Currently, `fake_diff_encoders` and `odometer` nodes are used to simulate the robot.
 
 # How to run
 The `nuturtle_robot` package is required for the waypoint following demo. It contains the `mppi_waypoints` node. You can set the waypoints in `real_waypoints.yaml` in the `nuturtle_robot` package.
@@ -13,7 +14,7 @@ The `nuturtle_robot` package is required for the waypoint following demo. It con
 # Results
 The following gif is at x5 speed.
 <p align="center">
-  <img src="controller/media/mppi_waypoints.gif" width="400" height="300"/>
+  <img src="media/mppi_waypoints.gif" width="500" height="300"/>
 </p>
 
 
