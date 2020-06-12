@@ -3,6 +3,7 @@
 ///        waypoint following
 
 #include <iostream>
+#include <algorithm>
 #include <functional>
 #include "controller/mppi.hpp"
 #include "rigid2d/utilities.hpp"
@@ -129,25 +130,18 @@ WheelVelocities MPPI::newControls(const Pose &ps)
     VectorXd w = Eigen::exp((J.array().row(i) * -1.0/lambda)) + 1e-8;
     w = w.array() * (1.0 / w.sum());
 
-    // std::cout << w.rows() << " x " << w.cols() << std::endl;    //
-    // VectorXd temp = duL.row(i);
-    // std::cout << temp.rows() << " x " << temp.cols() << std::endl;
-    //
-    // std::cout << w.dot(duL.row(i)) << std::endl;
-    // std::cout << w.dot(duR.row(i)) << std::endl;
-
     u(0,i) += w.dot(duL.row(i));
     u(1,i) += w.dot(duR.row(i));
-  }
 
-  // std::cout << u << std::endl;
-  // std::cout << " " << std::endl;
+    // saturate controls
+    u(0,i) = std::clamp(u(0,i), -max_wheel_vel, max_wheel_vel);
+    u(1,i) = std::clamp(u(1,i), -max_wheel_vel, max_wheel_vel);
+  }
 
   // send first column controls to robot
   WheelVelocities wheel_vel;
   wheel_vel.ul = u(0,0);
   wheel_vel.ur = u(1,0);
-  // std::cout << wheel_vel.ul << " " << wheel_vel.ur << std::endl;
 
   // shift controls over for next iteration
   u.leftCols(u.cols()-1) = u.rightCols(u.cols()-1);
@@ -155,13 +149,8 @@ WheelVelocities MPPI::newControls(const Pose &ps)
   u(0,u.cols()-1) = uinit(0);
   u(1,u.cols()-1) = uinit(1);
 
-  // std::cout << u << std::endl;
-
   return wheel_vel;
 }
-
-
-
 
 
 void MPPI::initModel()
@@ -189,28 +178,6 @@ void MPPI::pertubations(Ref<MatrixXd> pert)
     pert(0,i) = rigid2d::sampleNormalDistribution(0.0, ul_sig);
     pert(1,i) = rigid2d::sampleNormalDistribution(0.0, ur_sig);
   }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

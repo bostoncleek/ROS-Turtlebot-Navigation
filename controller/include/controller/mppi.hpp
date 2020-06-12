@@ -110,14 +110,11 @@ namespace controller
     MatrixXd P1;
   };
 
-
   /// \brief Perform accumulative sum across rows of loss matrix
   ///        sum is composed from end to start
   /// \param input - input matrix
   /// result[out] - each row element is the sum of
   void cumSumCost(const Ref<MatrixXd> input, Ref<MatrixXd> result);
-
-
 
 
   /// \brief model predictive path integral control
