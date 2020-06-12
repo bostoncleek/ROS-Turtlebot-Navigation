@@ -64,6 +64,17 @@ The green line is the path, the blue dots are the start/goal positions, and the 
   <img src= "media/potentialfield.gif" width="350" height="500">
 </p>
 
+# Resources
+* LaValle, Steven M. Planning algorithms. Cambridge university press, 2006. Link
+
+* Choset, Howie M., et al. Principles of robot motion: theory, algorithms, and implementation. MIT press, 2005.
+
+* Latombe, Lydia E. Kavraki Jean-Claude. ”Probabilistic Roadmaps for Robot Path Planning.” Prati- cal motion planning in robotics: current aproaches and future challenges (1998): 33-53.
+
+* Daniel, Kenny, et al. ”Theta*: Any-angle path planning on grids.” Journal of Artificial In- telligence Research 39 (2010): 533-579.
+
+* Koenig, Sven, and Maxim Likhachev. ”Fast replanning for navigation in unknown terrain.” IEEE Transactions on Robotics 21.3 (2005): 354-363.
+
 
 # Algorithms
 
