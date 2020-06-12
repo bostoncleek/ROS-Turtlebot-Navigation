@@ -18,7 +18,7 @@ You can adjust the landmark visibility range and noise levels for the ground tru
 You can run the EKF with the know data or unknown data association. Set the parameter `known_data_association` in `slam.launch` to false to run with unknown data association. If running with the `known_data_association` set to true make sure to set `debug` to true as well.
 
 # Results
-## L.002 SLAM Known Data Association
+## SLAM Known Data Association
 
 
 landmark radius: 0.6 m
@@ -34,7 +34,7 @@ sensor noise: mean = 0.0 sigma = 0.00001
 </p>
 
 
-## L.003 SLAM Unknown Data Association
+## SLAM Unknown Data Association
 
 landmark radius: 0.6 m
 sensor noise: mean = 0.0 sigma = 0.01
