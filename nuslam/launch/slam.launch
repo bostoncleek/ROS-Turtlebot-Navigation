@@ -22,12 +22,7 @@
     <param name="marker_frame_id" value="map" />
     <param name="left_wheel_joint" value="left_wheel_axle" />
     <param name="right_wheel_joint" value="right_wheel_axle" />
+    <param name="known_data_association" value="false" />
   </node>
-
-
-
-  <!-- teleop -->
-  <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
-       name="turtlebot3_teleop_keyboard" />
 
 </launch>

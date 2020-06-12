@@ -1,14 +1,14 @@
 /// \file
-/// \brief
+/// \brief Draw the landmarks usig a marker array
 ///
 /// \author Boston Cleek
 /// \date 2/27/20
 ///
 /// PUBLISHES:
-///
+///   map (visualization_msgs::MarkerArray): landmarks represented as cylinders
 /// SUBSCRIBES:
-///
-/// SERVICES:
+///   landmarks (nuslam::TurtleMap): center and radius of all circles detected
+
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -20,16 +20,17 @@
 
 #include "nuslam/TurtleMap.h"
 
-static bool map_update;
-static std::vector<double> cx;
-static std::vector<double> cy;
-static std::vector<double> r;
-static std::string frame_id;
+static bool map_update;               // map update flag
+static std::vector<double> cx;        // circles x position
+static std::vector<double> cy;        // circles y position
+static std::vector<double> r;         // circles radius
+static std::string frame_id;          // frame the circles are in
 
 
 
 
-
+/// \brief Update the map
+/// \param msg -recent map
 void mapCallback(const nuslam::TurtleMap::ConstPtr &msg)
 {
   cx = msg->cx;
@@ -95,28 +96,11 @@ int main(int argc, char** argv)
       }
       marker_pub.publish(marker_array);
 
-
-
       map_update = false;
     }
-
 
   }
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // end file

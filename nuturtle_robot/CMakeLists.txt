@@ -7,16 +7,20 @@ add_compile_options(-Wall -Wextra -Wno-psabi)
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
 # don't use gnu extensions
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	controller
 	geometry_msgs
 	message_generation
 	message_runtime
 	nav_msgs
+	nuturtlebot
+	rigid2d
 	roscpp
 	sensor_msgs
 	std_srvs
@@ -25,9 +29,6 @@ find_package(catkin REQUIRED COMPONENTS
 	visualization_msgs
 	)
 
-
-find_package(nuturtlebot REQUIRED)
-find_package(rigid2d REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -141,8 +142,6 @@ catkin_package(
 include_directories(
 # include
 	${catkin_INCLUDE_DIRS}
-	${nuturtlebot_INCLUDE_DIRS}
-	${rigid2d_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -158,6 +157,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
+add_executable(mppi_waypoints src/mppi_waypoints_node.cpp)
 add_executable(turtle_interface src/turtle_interface_node.cpp)
 add_executable(rotation src/rotation_node.cpp)
 add_executable(real_waypoint src/real_waypoint_node.cpp)
@@ -170,12 +170,21 @@ add_executable(real_waypoint src/real_waypoint_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
+add_dependencies(mppi_waypoints ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(turtle_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rotation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(real_waypoint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(mppi_waypoints
+  ${catkin_LIBRARIES}
+	${controller_LIBRARIES}
+	${nuturtlebot_LIBRARIES}
+	${rigid2d_LIBRARIES}
+)
+
+
 target_link_libraries(turtle_interface
   ${catkin_LIBRARIES}
 	${nuturtlebot_LIBRARIES}
@@ -215,7 +224,7 @@ install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS real_waypoint rotation turtle_interface
+install(TARGETS mppi_waypoints real_waypoint rotation turtle_interface
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

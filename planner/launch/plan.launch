@@ -1,0 +1,85 @@
+<launch>
+  <!-- IMPORTANT: The start/goal positions must be within bounds of the map
+                   and the are given in terms of the coodinates described by
+                   vertices such at the obstacles in the map_boundaries.yaml. -->
+
+  <!-- select the plannning algorithm  -->
+  <arg name="plan_type" default="1" doc="type of planner"/>
+
+  <!-- tf from the world to the map -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0 1 world map"/>
+
+  <!-- map obstacles, boundaries, and resolution -->
+  <rosparam command="load" file="$(find planner)/config/map_boundaries.yaml" />
+
+
+  <!-- D* Light -->
+  <group if="$(eval arg('plan_type') == 1)">
+    <node name="grid_planner" pkg="planner" type="grid_planner" output="screen" >
+      <param name="frame_id" value="map"/>
+      <param name="frequency" value="8"/>
+      <param name="bounding_radius" value="0.1"/>
+      <param name="grid_resolution" value="0.1"/>
+      <param name="viz_rad" value="0.8"/>
+      <param name="start_x" value="6.0"/>
+      <param name="start_y" value="3.0"/>
+      <param name="goal_x" value="20.0"/>
+      <param name="goal_y" value="45.0"/>
+    </node>
+
+    <!-- rviz for grid based planners -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/grid_planner.rviz"/>
+  </group>
+
+
+  <!-- Theta* on probabilisitc road map -->
+  <group if="$(eval arg('plan_type') == 2)">
+    <!-- draw the continous space map -->
+    <node name="draw_cont_map" pkg="planner" type="draw_cont_map" output="screen" >
+      <param name="frame_id" value="map" />
+    </node>
+
+    <!-- start/goal must be within world: fix this -->
+    <!-- probabilisitc road maps -->
+    <node name="prm_global_planner" pkg="planner" type="prm_planner" output="screen" >
+      <param name="frame_id" value="map"/>
+      <param name="bounding_radius" value="0.1"/>
+      <param name="nearest_neighbors" value="10"/>
+      <param name="num_nodes" value="200"/>
+      <param name="start_x" value="6.0"/>
+      <param name="start_y" value="3.0"/>
+      <param name="goal_x" value="20.0"/>
+      <param name="goal_y" value="45.0"/>
+    </node>
+
+    <!-- rviz for probabilisitc road maps -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/prm.rviz"/>
+  </group>
+
+
+  <!-- Potenial Fields -->
+  <group if="$(eval arg('plan_type') == 3)">
+    <node name="draw_cont_map" pkg="planner" type="draw_cont_map" output="screen" >
+      <param name="frame_id" value="map" />
+    </node>
+
+    <node name="potential_field_planner" pkg="planner" type="potential_field_planner" output="screen" >
+      <param name="frame_id" value="map"/>
+      <param name="frequency" value="200"/>
+      <param name="eps" value="0.1"/>
+      <param name="step" value="0.01"/>
+      <param name="dthresh" value="3.0"/>
+      <param name="qthresh" value="0.4"/>
+      <param name="w_att" value="0.6"/>
+      <param name="w_rep" value="0.1"/>
+      <param name="start_x" value="2.0" />
+      <param name="start_y" value="2.0" />
+      <param name="goal_x" value="19.0" />
+      <param name="goal_y" value="29.0" />
+
+    </node>
+
+    <!-- rviz for grid based planners -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find planner)/config/potential_field.rviz"/>
+  </group>
+</launch>

@@ -3,3 +3,5 @@
 x_component: [0, 1, 1, 0.5, 0]
 # y component for each waypoint
 y_component: [0, 0, 1, 2, 1]
+# heading
+theta_component: [0, 1.5707, 2.3562, -2.3562, -1.5707]

@@ -132,8 +132,8 @@ int main(int argc, char** argv)
   node_handle.getParam("/wheel_radius", wheel_radius);
 
 
-  ROS_WARN("odom_frame_id %s", odom_frame_id.c_str());
-  ROS_WARN("body_frame_id %s", body_frame_id.c_str());
+  ROS_INFO("odom_frame_id %s", odom_frame_id.c_str());
+  ROS_INFO("body_frame_id %s", body_frame_id.c_str());
 
   ROS_INFO("left_wheel_joint %s", left_wheel_joint.c_str());
   ROS_INFO("right_wheel_joint %s", right_wheel_joint.c_str());

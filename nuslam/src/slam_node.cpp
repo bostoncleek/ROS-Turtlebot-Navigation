@@ -1,17 +1,30 @@
 /// \file
-/// \brief publishes odometry messages and broadcasts a tf from odom to base link frame
+/// \brief EKF SLAM
 ///
 /// \author Boston Cleek
-/// \date 1/23/20
+/// \date 3/22/20
 ///
+/// PARAMETERS:
+///   map_frame_id - map frame
+///   odom_frame_id - odometry frame
+///   body_frame_id - base link frame
+///   left_wheel_joint - name of left wheel joint
+///   right_wheel_joint - name of right wheel joint
+///   wheel_base - distance between wheels
+///   wheel_radius - radius of wheels
+///   known_data_association - EKF runs with or without know data association
 /// PUBLISHES:
-///   odom (nav_msgs/Odometry): Pose of robot in odom frame and twist in body frame
-///
+///   slam_path (nav_msgs/Path): trajectory from EKF slam
+///   odom_path (nav_msgs/Path): trajectory from odometry
+///   gazebo_path (nav_msgs/Path): trajectory from gazebo
+///   map (visualization_msgs::MarkerArray): landmarks states from EKF represented as cylinders
+///   odom_error (tsim/PoseError): pose error between gazebo and odometry
+///   slam_error (tsim/PoseError): pose error between gazebo and EKF slam
 /// SUBSCRIBES:
 ///   joint_states (sensor_msgs/JointState): angular wheel positions
-///
-/// SERVICES:
-///   set_pose (set_pose) - sets the pose of the robot
+///   landmarks (nuslam::TurtleMap): center and radius of all circles detected
+///   /gazebo/model_states (gazebo_msgs/ModelStates): model states from grazebo
+
 
 
 #include <ros/ros.h>
@@ -23,6 +36,7 @@
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
@@ -30,24 +44,21 @@
 #include <vector>
 #include <iostream>
 #include <exception>
-#include <Eigen/Core>
 
 
 #include <rigid2d/diff_drive.hpp>
-#include "nuslam/filter.hpp"
-#include "rigid2d/set_pose.h"
+#include "nuslam/ekf_filter.hpp"
 #include "nuslam/TurtleMap.h"
+#include "tsim/PoseError.h"
 
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using Eigen::Vector2d;
-using Eigen::Vector3d;
 using rigid2d::Twist2D;
 using rigid2d::Vector2D;
 using rigid2d::Pose;
 using rigid2d::Transform2D;
 using rigid2d::TransformData2D;
+using rigid2d::normalize_angle_PI;
+
 
 static std::string left_wheel_joint, right_wheel_joint;    // joint names
 static double left, right;                                 // wheel angular positions for odometry
@@ -55,19 +66,15 @@ static double ekf_left, ekf_right;                         // wheel angular posi
 
 static bool wheel_odom_flag;                               // odometry update
 
-// static bool message;                                       // callback flag
-// static rigid2d::Pose pose_srv;                             // pose set by srv
-// static bool srv_active;                                    // set pose srv activated
+static std::vector<Vector2D> meas;                         // x/y locations of cylinders relative to robot
+static bool map_flag;                                      // map update flag
+
+static bool known_data_association;                        // EKF runs with or without know data association
+static geometry_msgs::PoseStamped gazebo_robot_pose;       // pose of robot in gazebo
 
 
-static std::vector<Vector2D> meas;
-static bool map_flag;
-
-
-static geometry_msgs::PoseStamped gazebo_robot_pose;
-
-
-
+/// \brief  Retreive gazebo robot pose
+/// \param model_data - model states in world
 void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
 {
   // store names of all items in gazebo
@@ -97,7 +104,8 @@ void modelCallBack(const gazebo_msgs::ModelStates::ConstPtr& model_data)
 }
 
 
-
+/// \brief Update the map
+/// \param msg -recent map
 void mapCallBack(const nuslam::TurtleMap::ConstPtr &map_msg)
 {
   // clear previous measurement
@@ -114,29 +122,6 @@ void mapCallBack(const nuslam::TurtleMap::ConstPtr &map_msg)
   map_flag = true;
 }
 
-
-/// \brief service sets the pose of the robot
-/// \param req - service request pose
-/// \param res - service pose result
-// bool setPoseService(rigid2d::set_pose::Request &req,
-//                     rigid2d::set_pose::Response &res)
-// {
-//   // the requested pose
-//   pose_srv.theta = req.theta;
-//   pose_srv.x = req.x;
-//   pose_srv.y = req.y;
-//
-//   ROS_INFO("pose %f %f %f", pose_srv.theta, pose_srv.x, pose_srv.y);
-//   // set response
-//   res.set_pose_state = true;
-//
-//   // service flag has been activated
-//   srv_active = true;
-//
-//   ROS_INFO("Set Pose service activated");
-//
-//   return true;
-// }
 
 
 /// \brief updates the wheel encoder angles
@@ -171,17 +156,10 @@ void jointStatesCallback(const sensor_msgs::JointState::ConstPtr &msg)
   left = msg->position.at(left_idx);
   right = msg->position.at(right_idx);
 
-  ekf_left += left;
-  ekf_right += right;
-
 
   wheel_odom_flag = true;
 }
 
-
-
-// TODO: add flag for odom update
-// TODO: turn noise on in gazebo update
 
 int main(int argc, char** argv)
 {
@@ -195,31 +173,14 @@ int main(int argc, char** argv)
   ros::Subscriber map_sub = node_handle.subscribe("landmarks", 1, mapCallBack);
   ros::Subscriber scan_sub = nh.subscribe("/gazebo/model_states", 1, modelCallBack);
 
-  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 1);
-  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 1);
-  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 1);
-  ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 100);
+  ros::Publisher slam_path_pub = node_handle.advertise<nav_msgs::Path>("slam_path", 10);
+  ros::Publisher odom_path_pub = node_handle.advertise<nav_msgs::Path>("odom_path", 10);
+  ros::Publisher gazebo_path_pub = node_handle.advertise<nav_msgs::Path>("gazebo_path", 10);
+  ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::MarkerArray>("slam_map", 10);
 
-  // ros::ServiceServer ps_server = node_handle.advertiseService("set_pose", setPoseService);
+  ros::Publisher odom_error_pub = node_handle.advertise<tsim::PoseError>("odom_error", 1);
+  ros::Publisher slam_error_pub = node_handle.advertise<tsim::PoseError>("slam_error", 1);
 
-  /////////////////////////////////////////////////////////////////////////////
-  // load in real landmark data
-  // std::vector<double> lm_x;
-  // std::vector<double> lm_y;
-  // std::vector<int> lm_id;
-  //
-  // nh.getParam("x", lm_x);
-  // nh.getParam("y", lm_y);
-  // nh.getParam("id", lm_id);
-  //
-  // std::vector<Vector3d> landmarks;
-  // for(unsigned int i = 0; i < lm_id.size(); i++)
-  // {
-  //   Vector3d lmvec;
-  //   lmvec << lm_x.at(i), lm_y.at(i), lm_id.at(i);
-  //   // std::cout << lmvec << std::endl;
-  //   landmarks.push_back(lmvec);
-  // }
   /////////////////////////////////////////////////////////////////////////////
 
   std::string map_frame_id, odom_frame_id, marker_frame_id;
@@ -232,14 +193,16 @@ int main(int argc, char** argv)
   nh.getParam("odom_frame_id", odom_frame_id);
   nh.getParam("marker_frame_id", marker_frame_id);
 
+  nh.getParam("known_data_association", known_data_association);
+
 
   node_handle.getParam("/wheel_base", wheel_base);
   node_handle.getParam("/wheel_radius", wheel_radius);
 
 
-  ROS_WARN("map_frame_id %s", map_frame_id.c_str());
-  ROS_WARN("odom_frame_id %s", odom_frame_id.c_str());
-  ROS_WARN("marker_frame_id %s", marker_frame_id.c_str());
+  ROS_INFO("map_frame_id %s", map_frame_id.c_str());
+  ROS_INFO("odom_frame_id %s", odom_frame_id.c_str());
+  ROS_INFO("marker_frame_id %s", marker_frame_id.c_str());
 
   ROS_INFO("left_wheel_joint %s", left_wheel_joint.c_str());
   ROS_INFO("right_wheel_joint %s", right_wheel_joint.c_str());
@@ -247,14 +210,16 @@ int main(int argc, char** argv)
   ROS_INFO("wheel_base %f", wheel_base);
   ROS_INFO("wheel_radius %f", wheel_radius);
 
+  ROS_INFO("known_data_association %d", known_data_association);
+
+
   ROS_INFO("Successfully launched slam node");
 
   /////////////////////////////////////////////////////////////////////////////
 
-  tf2_ros::TransformBroadcaster slam_broadcaster;
+  tf2_ros::TransformBroadcaster map_odom_broadcaster;
   map_flag = false;
   wheel_odom_flag = false;
-  // srv_active = false;
 
 
   // Assume pose starts at (0,0,0)
@@ -272,11 +237,10 @@ int main(int argc, char** argv)
 
 
   // number of landmarks in model
-  int n = 12;
-  double md_max = 100; // currently not used
-  double md_min = 2.00;
+  int n = 25;
+  double md_max = 1e7;//0.30;
+  double md_min = 20000.0;//0.05;
   nuslam::EKF ekf(n, md_max, md_min);
-  // ekf.setKnownLandamrks(landmarks);
 
 
   // path from odometry
@@ -288,33 +252,29 @@ int main(int argc, char** argv)
   // path from gazebo
   nav_msgs::Path gazebo_path;
 
+  // error in pose
+  tsim::PoseError odom_error_msg;
+  tsim::PoseError slam_error_msg;
+
   /////////////////////////////////////////////////////////////////////////////
-
-
-  // int frequency = 5;
-  // ros::Rate loop_rate(frequency);
-
-  // TODO: Turn noise in gazebo back on
 
   while(node_handle.ok())
   {
     ros::spinOnce();
 
-    // set pose service flag
-    // if (srv_active)
-    // {
-    //   drive.reset(pose_srv);
-    //
-    //   srv_active = false;
-    // }
-
     /////////////////////////////////////////////////////////////////////////////
+
 
     if (wheel_odom_flag)
     {
       // most recent odom update
       drive.updateOdometry(left, right);
       pose = drive.pose();
+
+
+      // IMPORTANT: set ekf wheel encoder to current odometry encoders
+      ekf_left = left;
+      ekf_right = right;
 
       // update ekf with odometry and sensor measurements
       if (map_flag)
@@ -323,17 +283,22 @@ int main(int argc, char** argv)
         rigid2d::WheelVelocities vel = ekf_drive.wheelVelocities();
         rigid2d::Twist2D vb = ekf_drive.wheelsToTwist(vel);
 
-        // ekf.knownCorrespondenceSLAM(meas, vb);
-        ekf.SLAM(meas, vb);
+        if (known_data_association)
+        {
+          ekf.knownCorrespondenceSLAM(meas, vb);
+        }
 
-        ekf_left = 0.0;
-        ekf_right = 0.0;
+        else
+        {
+          ekf.SLAM(meas, vb);
+        }
 
         map_flag = false;
       }
 
       wheel_odom_flag = false;
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -371,7 +336,11 @@ int main(int argc, char** argv)
     tf_mo.transform.translation.z = 0.0;
     tf_mo.transform.rotation = quat_mo;
 
+<<<<<<< HEAD
     slam_broadcaster.sendTransform(tf_mo);
+=======
+    map_odom_broadcaster.sendTransform(tf_mo);
+>>>>>>> master
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -466,7 +435,36 @@ int main(int argc, char** argv)
     }
     marker_pub.publish(marker_array);
 
-    // loop_rate.sleep();
+    /////////////////////////////////////////////////////////////////////////////
+    // ground truth robot heading
+    tf2::Quaternion gazebo_robot_quat(gazebo_robot_pose.pose.orientation.x,
+                               gazebo_robot_pose.pose.orientation.y,
+                               gazebo_robot_pose.pose.orientation.z,
+                               gazebo_robot_pose.pose.orientation.w);
+
+    tf2::Matrix3x3 mat(gazebo_robot_quat);
+    auto roll = 0.0, pitch = 0.0 , yaw = 0.0;
+    mat.getRPY(roll, pitch, yaw);
+
+
+    // odometry error
+    odom_error_msg.x_error = gazebo_robot_pose.pose.position.x - pose.x;
+    odom_error_msg.y_error = gazebo_robot_pose.pose.position.y - pose.y;
+
+    odom_error_msg.theta_error = normalize_angle_PI(normalize_angle_PI(yaw) - \
+                                                     normalize_angle_PI(pose.theta));
+
+    // slam error
+    TransformData2D Trd_mr = Tmr.displacement();
+
+    slam_error_msg.x_error = gazebo_robot_pose.pose.position.x - Trd_mr.x;
+    slam_error_msg.y_error = gazebo_robot_pose.pose.position.y - Trd_mr.y;
+
+    slam_error_msg.theta_error = normalize_angle_PI(normalize_angle_PI(yaw) - \
+                                                     normalize_angle_PI(Trd_mr.theta));
+
+    odom_error_pub.publish(odom_error_msg);
+    slam_error_pub.publish(slam_error_msg);
   }
 
   return 0;

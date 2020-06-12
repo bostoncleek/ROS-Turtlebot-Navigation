@@ -6,6 +6,7 @@ add_compile_options(-Wall -Wextra -Wno-psabi)
 # Compile as C++17
 set(CMAKE_CXX_STANDARD 17)
 # don't use gnu extensions
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 ## Find catkin macros and libraries
@@ -15,17 +16,18 @@ find_package(catkin REQUIRED COMPONENTS
 	gazebo_ros
 	geometry_msgs
 	message_generation
+	rigid2d
   roscpp
 	sensor_msgs
 	std_msgs
 	tf2
+	tsim
 	visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(rigid2d REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -135,20 +137,23 @@ catkin_package(
 include_directories(
 	include
   ${catkin_INCLUDE_DIRS}
-	${rigid2d_INCLUDE_DIRS}
-	${EIGEN3_INCLUDE_DIRS}
+	${Eigen3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-	src/${PROJECT_NAME}/filter.cpp
+	src/${PROJECT_NAME}/ekf_filter.cpp
   src/${PROJECT_NAME}/landmarks.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}
+								 ${${PROJECT_NAME}_EXPORTED_TARGETS}
+								 ${catkin_EXPORTED_TARGETS}
+								 Eigen3::Eigen
+)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -192,14 +197,13 @@ target_link_libraries(landmarks
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
 	${rigid2d_LIBRARIES}
-	${EIGEN3_LIBRARIES}
 )
 
 target_link_libraries(slam
   ${catkin_LIBRARIES}
 	${PROJECT_NAME}
+	${tsim_LIBRARIES}
 	${rigid2d_LIBRARIES}
-	${EIGEN3_LIBRARIES}
 )
 
 #############
@@ -207,6 +211,7 @@ target_link_libraries(slam
 #############
 
 install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+install(DIRECTORY msg/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/msg)
 
 
 # all install targets should use catkin DESTINATION variables
@@ -258,7 +263,11 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(${PROJECT_NAME}_test test/test_landmarks.cpp)
-    target_link_libraries(${PROJECT_NAME}_test ${catkin_Libraries} ${PROJECT_NAME} gtest_main)
+    target_link_libraries(${PROJECT_NAME}_test
+													${catkin_Libraries}
+													${PROJECT_NAME}
+													${rigid2d_LIBRARIES}
+ 													gtest_main)
 endif()
 
 ## Add folders to be run by python nosetests

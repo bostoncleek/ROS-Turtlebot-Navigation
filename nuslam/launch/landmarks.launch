@@ -30,10 +30,10 @@
 
 
   <!-- teleop -->
-  <!-- <group if="$(eval arg('robot') != 0)">
+  <group if="$(eval arg('robot') != 0)">
     <node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key"
        name="turtlebot3_teleop_keyboard"  output="screen" />
-  </group> -->
+  </group>
 
 
   <!-- feature detection -->
@@ -45,7 +45,10 @@
   <!-- publish real landmarks and robot pose from gazebo -->
   <group ns="real">
     <node machine="turtlebot" name="analysis" pkg="nuslam" type="analysis" output="screen" >
-      <param name="radius" value="5.0" />
+      <param name="radius" value="0.6" />
+      <param name="noise" value="true" />
+      <param name="noise_mean" value="0.0" />
+      <param name="noise_var" value="0.00001" />
       <param name="frame_id" value="base_scan" />
     </node>
   </group>
