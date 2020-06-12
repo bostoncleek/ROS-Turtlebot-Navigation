@@ -9,12 +9,6 @@ The goal of this project was to implement rao-blackwellized particle filter SLAM
 * Eigen
 * Point Cloud Library
 
-# How to Download
-1. `wstool init`
-2. `wstool merge nuturtle.rosinstall`
-3. `wstool update`
-4. `catkin_make`
-
 # How to Run
 Use the turtlebot teleop keys to move around and run:
 `roslaunch bmapping slam.launch`
