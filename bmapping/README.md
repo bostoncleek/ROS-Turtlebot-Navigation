@@ -21,7 +21,7 @@ The `slam` node performs odometry and SLAM by subscribing to `scan`, `joint_stat
 # Files
 * turtle_mapping_node.cpp - The `slam` node
 * partilce_filter.hpp - Rao-Blackwellized Particle Filter SLAM
-* grid_mapper.hpp - Occupancy Grid mapping, Raycasting, Euclidean Signed Distance Field, Scan Likelihood
+* grid_mapper.hpp - Occupancy Grid mapping, Raycasting, Euclidean Distance Field, Scan Likelihood
 * cloud_alignment.hpp - Iterative closes point using the Point Cloud Library
 * sensor_model.hpp - Models the lidar sensor
 * LDA_01_lidar.yaml - turtlebot3 lidar properties
@@ -57,10 +57,9 @@ The final error in the pose relative to gazebo is given bellow. The map was crea
 
 
 # Algorithms
-* The Rao-Blackwellized Particle Filter Algorithm from ["Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters"](http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti07tro.pdf)
-* Fast Marching Method - Creates [Euclidean Signed Distance Field](https://en.wikipedia.org/wiki/Signed_distance_function) (required for the scan likelihood)
-* Iterative Closest Point - Point Cloud Library [ICP](http://ais.informatik.uni-freiburg.de/teaching/ss11/robotics/slides/17-icp.pdf) solver
-* Occupancy Grid Mapping - Probabilistic Robotics Table 9.1
-* Updated the Occupancy Grid using Raycasting [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
-* Pose Likelihood - Probabilistic Robotics Table 5.5
-* Scan Likelihood - Probabilistic Robotics Table 6.3
+- The Rao-Blackwellized Particle Filter Algorithm from ["Improved Techniques for Grid Mapping with Rao-Blackwellized Particle Filters"](http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti07tro.pdf)
+- Iterative Closest Point - Point Cloud Library [ICP](http://ais.informatik.uni-freiburg.de/teaching/ss11/robotics/slides/17-icp.pdf) solver
+- Occupancy Grid Mapping - Probabilistic Robotics Table 9.1
+- Updated the Occupancy Grid using Raycasting [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm)
+- Pose Likelihood - Probabilistic Robotics Table 5.5
+- Scan Likelihood - Probabilistic Robotics Table 6.3
