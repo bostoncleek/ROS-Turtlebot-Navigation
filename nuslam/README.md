@@ -7,11 +7,11 @@ The orange path is gazebo, the green path is odometry, and the blue path is EKF 
 # How to run
 To run with ground truth data from gazebo:
 
-`roslaunch nulsam slam.launch debug:=true`
+`roslaunch nuslam slam.launch debug:=true`
 
 To run with lidar sensor and feature detection:
 
-`roslaunch nulsam slam.launch debug:=false`
+`roslaunch nuslam slam.launch debug:=false`
 
 You can adjust the landmark visibility range and noise levels for the ground truth data in `landmarks.launch`. You can remove the noise completely by setting the `noise` parameter to false.
 
